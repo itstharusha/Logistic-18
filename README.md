@@ -1,570 +1,569 @@
-# 🚀 Logistic 18 - Smart Logistics & Supply Chain Management System
+# Logistic 18 — Supply Chain Risk Management Platform
 
-A production-grade, multi-tenant, ML-powered supply chain risk management platform built on the MERN stack with a Python FastAPI ML microservice.
-
-**Group**: Y2S2-WE-DS-G18  
-**Supervisor**: Dr. Kapila  
-**Team Members**: 6 developers assigned per module  
-**Stack**: Node.js/Express + React + MongoDB + Python FastAPI
+**Project:** Y2S2-WE-DS-G18  
+**Supervisor:** Dr. Kapila  
+**Stack:** Node.js / Express · React · MongoDB · Python FastAPI  
+**Status:** Core system complete; module integration in progress
 
 ---
 
-## 📋 Project Overview
+## Table of Contents
 
-Logistic 18 replaces reactive logistics monitoring with **proactive, predictive risk scoring** across three critical domains:
-
-- 🏭 **Supplier Risk**: Financial health, on-time delivery, geopolitical exposure
-- 📦 **Shipment Tracking**: Delay detection, carrier reliability, real-time status
-- 📊 **Inventory Management**: Stockout prediction, demand forecasting, safety stock optimization
-
-### Key Features
-
-✓ Multi-tenant SaaS architecture with complete org-level isolation  
-✓ Role-based access control (RBAC) with 5 roles and 50+ permissions  
-✓ ML-powered risk scoring using XGBoost (3 independent models)  
-✓ Unified alert engine with auto-assignment and escalation  
-✓ JWT token rotation & refresh token management  
-✓ Immutable audit trails for compliance  
-✓ Real-time dashboards with 30-second polling  
-✓ Carrier API integration (FedEx, UPS, DHL)  
-
----
-
-## 👥 Team Assignments
-
-| Member | Module | Responsibility |
-|--------|--------|--------------------------|
-| **Rathnamalala** | User & Auth | Registration, JWT, RBAC, user mgmt |
-| **Rifshadh** | Supplier Risk | Risk scoring, CRUD, comparison dashboard |
-| **Umayanthi** | Shipment Tracking | Carrier APIs, delay detection, tracking |
-| **Wijemanna** | Inventory Mgmt | Stock levels, demand forecast, reorder |
-| **Kulatunga** | Alerts & Notifications | Alert generation, assignment, escalation |
-| **Senadeera** | Analytics & Reports | Dashboards, KPIs, PDF/CSV export |
+1. [Project Overview](#project-overview)
+2. [Team Assignments](#team-assignments)
+3. [Project Structure](#project-structure)
+4. [Prerequisites](#prerequisites)
+5. [Setup & Installation](#setup--installation)
+6. [Running the Application](#running-the-application)
+7. [Authentication Flow](#authentication-flow)
+8. [Role-Based Access Control](#role-based-access-control)
+9. [Database Models](#database-models)
+10. [API Reference](#api-reference)
+11. [Frontend Pages](#frontend-pages)
+12. [Design System](#design-system)
+13. [Testing](#testing)
+14. [Deployment](#deployment)
+15. [Troubleshooting](#troubleshooting)
+16. [Documentation](#documentation)
 
 ---
 
-## 🗂️ Project Structure
+## Project Overview
+
+Logistic 18 is a production-grade, multi-tenant supply chain risk management platform. It replaces reactive logistics monitoring with proactive, ML-powered risk scoring across three domains:
+
+- **Supplier Risk** — Financial health indicators, on-time delivery rates, and geopolitical exposure scoring.
+- **Shipment Tracking** — Delay detection, carrier reliability metrics, and real-time status updates.
+- **Inventory Management** — Stockout prediction, demand forecasting, and safety stock optimization.
+
+### Key Capabilities
+
+- Multi-tenant SaaS architecture with complete organizational-level data isolation
+- Role-based access control (RBAC) with 5 defined roles and 50+ granular permissions
+- ML-powered risk scoring via three independent XGBoost models
+- Unified alert engine with auto-assignment and SLA-based escalation
+- JWT access token and refresh token management with rotation and reuse detection
+- Immutable audit trails for compliance and forensic review
+- Real-time dashboards with 30-second polling intervals
+- Carrier API integrations: FedEx, UPS, DHL
+
+---
+
+## Team Assignments
+
+| Member | Module | Responsibilities |
+|---|---|---|
+| Rathnamalala | User & Authentication | Registration, JWT lifecycle, RBAC, user management |
+| Rifshadh | Supplier Risk | Risk scoring models, CRUD operations, comparison dashboard |
+| Umayanthi | Shipment Tracking | Carrier API integration, delay detection, tracking views |
+| Wijemanna | Inventory Management | Stock levels, demand forecasting, reorder logic |
+| Kulatunga | Alerts & Notifications | Alert generation, assignment, escalation engine |
+| Senadeera | Analytics & Reports | KPI dashboards, report generation, PDF/CSV export |
+
+---
+
+## Project Structure
 
 ```
 Logistics18/
-├── backend/                          # Node.js/Express API Server
+├── backend/                          # Node.js/Express API server
 │   ├── src/
-│   │   ├── models/                   # Mongoose schemas (User, Alert, Audit logs)
-│   │   ├── controllers/              # HTTP request handlers (AuthController, UserController)
-│   │   ├── services/                 # Business logic (AuthService, UserService)
-│   │   ├── repositories/             # Data access layer (UserRepository)
+│   │   ├── models/                   # Mongoose schemas
+│   │   ├── controllers/              # HTTP request handlers
+│   │   ├── services/                 # Business logic layer
+│   │   ├── repositories/             # Data access layer
 │   │   ├── middleware/               # Auth, RBAC, validation, error handling
-│   │   ├── routes/                   # API routing (auth, users, suppliers, etc.)
+│   │   ├── routes/                   # API routing definitions
 │   │   ├── utils/                    # Helper functions
-│   │   ├── config/                   # Database config
+│   │   ├── config/                   # Database configuration
 │   │   └── app.js                    # Express server entry point
-│   ├── package.json                  # Dependencies
-│   ├── .env.example                  # Environment variables template
-│   └── README.md
-│
-├── frontend/                         # React SPA
-│   ├── src/
-│   │   ├── components/               # Reusable UI components (TopNav, Layout)
-│   │   ├── pages/                    # Full page components (LoginPage, UsersPage)
-│   │   ├── redux/                    # State management (store, slices)
-│   │   ├── utils/                    # API client, helper functions
-│   │   ├── styles/                   # CSS files (global, auth, layout, pages)
-│   │   ├── App.jsx                   # Main app component with routing
-│   │   └── main.jsx                  # React entry point
-│   ├── index.html                    # HTML template
-│   ├── package.json                  # Dependencies
-│   ├── vite.config.js                # Vite build config
+│   ├── package.json
 │   ├── .env.example
 │   └── README.md
 │
-├── ml-service/                       # Python FastAPI ML Microservice
-│   ├── main.py                       # FastAPI endpoints (/predict/*)
-│   ├── requirements.txt               # Python dependencies
-│   ├── Dockerfile                    # Container config
-│   ├── models/                       # Saved XGBoost models (.joblib files)
+├── frontend/                         # React single-page application
+│   ├── src/
+│   │   ├── components/               # Reusable UI components
+│   │   ├── pages/                    # Full page views
+│   │   ├── redux/                    # State management (store and slices)
+│   │   ├── utils/                    # API client and helper functions
+│   │   ├── styles/                   # CSS (global, auth, layout, pages)
+│   │   ├── App.jsx                   # Root component with routing
+│   │   └── main.jsx                  # React entry point
+│   ├── index.html
+│   ├── package.json
+│   ├── vite.config.js
+│   ├── .env.example
 │   └── README.md
 │
-├── README.md                         # You are here
-├── SETUP_GUIDE.md                    # Step-by-step setup instructions
-├── API_DOCUMENTATION.md              # REST API endpoints
-└── ARCHITECTURE.md                   # Detailed system design
-
+├── ml-service/                       # Python FastAPI ML microservice
+│   ├── main.py                       # FastAPI endpoints (/predict/*)
+│   ├── requirements.txt
+│   ├── Dockerfile
+│   ├── models/                       # Saved XGBoost model files (.joblib)
+│   └── README.md
+│
+├── README.md
+├── SETUP_GUIDE.md
+├── API_DOCUMENTATION.md
+└── ARCHITECTURE.md
 ```
 
 ---
 
-## 🚀 Quick Start
+## Prerequisites
 
-### Prerequisites
+| Requirement | Minimum Version |
+|---|---|
+| Node.js | 16+ |
+| npm | 8+ |
+| Python | 3.9+ |
+| MongoDB | 5.0+ (or MongoDB Atlas free tier) |
 
-- **Node.js** 16+ (backend & frontend)
-- **Python** 3.9+ (ML service)
-- **MongoDB** 5.0+ or MongoDB Atlas free tier account
-- **npm** 8+ or **yarn**
+---
 
-### 1️⃣ Clone & Setup Environment
+## Setup & Installation
+
+**1. Clone the repository and configure environment files.**
 
 ```bash
 cd Logistics18
 
-# Backend setup
+# Backend
 cd backend
 cp .env.example .env
-# Edit .env with your MongoDB URI and JWT secrets
+# Edit .env: set MONGODB_URI, JWT_ACCESS_SECRET, JWT_REFRESH_SECRET
 npm install
 
-# Frontend setup
+# Frontend
 cd ../frontend
 cp .env.example .env
 npm install
 
-# ML Service setup (optional for full development)
+# ML Service (optional)
 cd ../ml-service
 pip install -r requirements.txt
 ```
 
-### 2️⃣ Start MongoDB
+**2. Start MongoDB.**
 
 ```bash
-# If using MongoDB Atlas, update MONGODB_URI in backend/.env
-
-# If using local MongoDB:
+# Local instance
 mongod
-```
 
-### 3️⃣ Start Services (in separate terminals)
-
-**Terminal 1 - Backend:**
-```bash
-cd backend
-npm run dev
-# Server running on http://localhost:5000
-# API available at http://localhost:5000/api
-```
-
-**Terminal 2 - Frontend:**
-```bash
-cd frontend
-npm run dev
-# Frontend running on http://localhost:5173
-```
-
-**Terminal 3 (Optional) - ML Service:**
-```bash
-cd ml-service
-python main.py
-# ML service running on http://localhost:8000
-# Health check: http://localhost:8000/health
-```
-
-### 4️⃣ Access the Application
-
-- **Frontend**: http://localhost:5173
-- **Backend API**: http://localhost:5000/api
-- **API Health Check**: http://localhost:5000/api/health
-- **ML Service Health**: http://localhost:8000/health
-
-### 5️⃣ Test Authentication
-
-Register a new account or login with test credentials:
-
-```
-Email: test@example.com
-Password: TestPassword123 (at least 8 chars, uppercase, lowercase, number)
+# If using MongoDB Atlas, update MONGODB_URI in backend/.env
 ```
 
 ---
 
-## 🔐 Authentication Flow
+## Running the Application
 
-### User Registration (Rathnamalala)
+Start each service in a separate terminal.
+
+**Backend**
+```bash
+cd backend
+npm run dev
+# Listening on http://localhost:5000
+# API root: http://localhost:5000/api
+```
+
+**Frontend**
+```bash
+cd frontend
+npm run dev
+# Listening on http://localhost:5173
+```
+
+**ML Service** (optional)
+```bash
+cd ml-service
+python main.py
+# Listening on http://localhost:8000
+```
+
+### Service URLs
+
+| Service | URL |
+|---|---|
+| Frontend | http://localhost:5173 |
+| Backend API | http://localhost:5000/api |
+| API Health Check | http://localhost:5000/api/health |
+| ML Service Health | http://localhost:8000/health |
+
+### Test Credentials
+
+```
+Email:    test@example.com
+Password: TestPassword123
+```
+
+Password requirements: minimum 8 characters, at least one uppercase letter, one lowercase letter, and one number.
+
+---
+
+## Authentication Flow
+
+### Registration
 
 ```
 POST /api/auth/register
 {
-  "name": "John Doe",
-  "email": "john@example.com",
+  "name": "Jane Smith",
+  "email": "jane@example.com",
   "password": "SecurePassword123",
   "orgId": "org-123"
 }
-
-↓
-
-Password hashed with bcrypt (10 salt rounds)
-User document created in MongoDB
-Audit log entry recorded
-Response: { user: { _id, name, email, role } }
 ```
 
-### User Login (Rathnamalala)
+- Password hashed with bcrypt (10 salt rounds)
+- User document created in MongoDB
+- Audit log entry recorded
+- Returns: `{ user: { _id, name, email, role } }`
+
+### Login
 
 ```
 POST /api/auth/login
 {
-  "email": "john@example.com",
+  "email": "jane@example.com",
   "password": "SecurePassword123"
-}
-
-↓
-
-Verify email exists
-Compare password with bcrypt hash
-Generate JWT Access Token (15 min expiry)
-Generate JWT Refresh Token (7 day expiry)
-Store refresh token in DB
-Set httpOnly cookie with refresh token
-Last login timestamp updated
-Audit log entry recorded
-
-Response: {
-  "accessToken": "eyJhbG...",
-  "refreshToken": "eyJhbG...",
-  "user": { _id, name, email, role, orgId }
 }
 ```
 
-### Token Refresh (Rathnamalala)
+- Verifies credentials via bcrypt comparison
+- Generates JWT access token (15-minute expiry)
+- Generates JWT refresh token (7-day expiry)
+- Stores refresh token in database
+- Sets `httpOnly` cookie with refresh token
+- Updates `lastLoginAt` timestamp and records audit log
+- Returns: `{ accessToken, refreshToken, user: { _id, name, email, role, orgId } }`
+
+### Token Refresh
 
 ```
 POST /api/auth/refresh
 {
-  "refreshToken": "eyJhbG..."
-}
-
-↓
-
-Verify refresh token signature
-Check token version (detects theft/reuse)
-Increment token version
-Generate new access token
-Rotate refresh token in DB
-
-Response: {
-  "accessToken": "new-token",
-  "refreshToken": "new-rotated-token"
+  "refreshToken": "<token>"
 }
 ```
 
-### Logout (Rathnamalala)
+- Verifies token signature and version number (detects reuse)
+- Increments token version
+- Issues new access token and rotated refresh token
+
+### Logout
 
 ```
 POST /api/auth/logout
-Authorization: Bearer {accessToken}
+Authorization: Bearer <accessToken>
+```
 
-↓
+- Invalidates all active refresh tokens
+- Clears `httpOnly` cookie
+- Records audit log entry
 
-Invalidate all refresh tokens
-Clear httpOnly cookie
-Audit log entry recorded
+---
 
-Response: { message: "Logout successful" }
+## Role-Based Access Control
+
+### Defined Roles
+
+| Role | Permitted Actions | Restrictions |
+|---|---|---|
+| `ORG_ADMIN` | Full access within the organization | Cannot access other organizations |
+| `RISK_ANALYST` | View and override risk scores; manage alerts | Cannot manage users |
+| `LOGISTICS_OPERATOR` | Register and manage shipments | Cannot manage users |
+| `INVENTORY_MANAGER` | Manage inventory; view forecasts | Cannot manage users |
+| `VIEWER` | Read-only access across all modules | No write operations |
+
+### Enforcement Layers
+
+RBAC is enforced at two levels:
+
+**Middleware (Backend)**
+```javascript
+router.post('/:alertId/acknowledge',
+  authenticate,                   // Verify JWT
+  authorize(['RISK_ANALYST']),    // Enforce role
+  handleAcknowledge               // Execute handler
+);
+```
+
+**Route Guards (Frontend)**
+```jsx
+<Route
+  path="/users"
+  element={
+    <ProtectedRoute requiredRoles={['ORG_ADMIN']}>
+      <UsersPage />
+    </ProtectedRoute>
+  }
+/>
 ```
 
 ---
 
-## 🛡️ Role-Based Access Control (Rathnamalala)
+## Database Models
 
-### 5 Roles Defined
+### `users`
 
-| Role | Can Do | Cannot Do |
-|------|--------|-----------|
-| **ORG_ADMIN** | Everything within org | Access other orgs |
-| **RISK_ANALYST** | View/override scores, manage alerts | User management |
-| **LOGISTICS_OPERATOR** | Register/manage shipments | User management |
-| **INVENTORY_MANAGER** | Manage inventory, view forecasts | User management |
-| **VIEWER** | Read-only access to all data | Any modifications |
-
-### RBAC Enforcement
-
-RBAC is enforced at **two layers**:
-
-1. **Middleware Layer** (Backend) - Prevents unauthorized API access
-   ```javascript
-   router.post('/:alertId/acknowledge', 
-     authenticate,                    // Verify JWT
-     authorize(['RISK_ANALYST']),     // Check role
-     handleAcknowledge                // Process request
-   );
-   ```
-
-2. **UI Layer** (Frontend) - Role-gated routes
-   ```jsx
-   <Route
-     path="/users"
-     element={
-       <ProtectedRoute requiredRoles={['ORG_ADMIN']}>
-         <UsersPage />
-       </ProtectedRoute>
-     }
-   />
-   ```
-
----
-
-## 📊 Database Models (MongoDB Collections)
-
-### `users` Collection
-```
+```json
 {
-  _id: ObjectId,
-  orgId: ObjectId,        // Multi-tenant isolation
-  name: String,
-  email: String (unique),
-  passwordHash: String (bcrypt),
-  role: String (enum),
-  isActive: Boolean,
-  refreshToken: String,
-  refreshTokenVersion: Number,  // Detects token reuse
-  lastLoginAt: Date,
-  createdAt: Date,
-  updatedAt: Date
+  "_id": "ObjectId",
+  "orgId": "ObjectId",
+  "name": "String",
+  "email": "String (unique)",
+  "passwordHash": "String (bcrypt)",
+  "role": "String (enum)",
+  "isActive": "Boolean",
+  "refreshToken": "String",
+  "refreshTokenVersion": "Number",
+  "lastLoginAt": "Date",
+  "createdAt": "Date",
+  "updatedAt": "Date"
 }
 ```
 
-### `audit_logs` Collection (Immutable)
-```
+### `audit_logs` (Immutable, TTL: 90 days)
+
+```json
 {
-  _id: ObjectId,
-  orgId: ObjectId,        // Multi-tenant
-  userId: ObjectId,
-  action: String          // e.g., "LOGIN", "USER_CREATED", "PASSWORD_CHANGED"
-  entityType: String,
-  entityId: ObjectId,
-  oldValue: Mixed,        // Previous state
-  newValue: Mixed,        // New state
-  ipAddress: String,
-  userAgent: String,
-  timestamp: Date (TTL: 90 days)
+  "_id": "ObjectId",
+  "orgId": "ObjectId",
+  "userId": "ObjectId",
+  "action": "String",
+  "entityType": "String",
+  "entityId": "ObjectId",
+  "oldValue": "Mixed",
+  "newValue": "Mixed",
+  "ipAddress": "String",
+  "userAgent": "String",
+  "timestamp": "Date"
 }
 ```
 
-### `organisations` Collection
-```
+### `organisations`
+
+```json
 {
-  _id: ObjectId,
-  name: String,
-  industry: String,
-  country: String,
-  timezone: String,
-  planTier: String,
-  alertDefaultSLA: Number,            // SLA in hours
-  alertCooldownMinutes: Number,
-  riskScoreRecalcInterval: Number,
-  carrierAPIKeys: {                   // Org-specific API keys
-    fedex: String,
-    ups: String,
-    dhl: String
+  "_id": "ObjectId",
+  "name": "String",
+  "industry": "String",
+  "country": "String",
+  "timezone": "String",
+  "planTier": "String",
+  "alertDefaultSLA": "Number (hours)",
+  "alertCooldownMinutes": "Number",
+  "riskScoreRecalcInterval": "Number",
+  "carrierAPIKeys": {
+    "fedex": "String",
+    "ups": "String",
+    "dhl": "String"
   }
 }
 ```
 
-### `alerts` Collection
-```
+### `alerts`
+
+```json
 {
-  _id: ObjectId,
-  orgId: ObjectId,
-  entityType: String,   // "supplier", "shipment", "inventory"
-  entityId: ObjectId,
-  severity: String,     // "low", "medium", "high", "critical"
-  title: String,
-  description: String,
-  mitigationRecommendation: String,
-  assignedTo: ObjectId  // User reference
-  status: String,       // "open", "acknowledged", "resolved", "escalated"
-  resolvedBy: ObjectId,
-  resolvedAt: Date,
-  resolutionNote: String,
-  escalatedAt: Date,
-  cooldownExpiresAt: Date,  // TTL for duplicate suppression
-  createdAt: Date
+  "_id": "ObjectId",
+  "orgId": "ObjectId",
+  "entityType": "String",
+  "entityId": "ObjectId",
+  "severity": "String (low | medium | high | critical)",
+  "title": "String",
+  "description": "String",
+  "mitigationRecommendation": "String",
+  "assignedTo": "ObjectId",
+  "status": "String (open | acknowledged | resolved | escalated)",
+  "resolvedBy": "ObjectId",
+  "resolvedAt": "Date",
+  "resolutionNote": "String",
+  "escalatedAt": "Date",
+  "cooldownExpiresAt": "Date",
+  "createdAt": "Date"
 }
 ```
 
 ---
 
-## 🔌 API Endpoints (By Module)
+## API Reference
 
-### Authentication (Rathnamalala)
-```
-POST   /api/auth/register              Create user account
-POST   /api/auth/login                 Generate tokens
-POST   /api/auth/refresh               Rotate refresh token
-POST   /api/auth/logout                Invalidate tokens
-POST   /api/auth/change-password       Update password
-GET    /api/auth/me                    Get current user
-```
+### Authentication
 
-### User Management (Rathnamalala)
-```
-GET    /api/users                      List org users (ORG_ADMIN only)
-GET    /api/users/:userId              Get user profile
-PUT    /api/users/:userId              Update profile
-POST   /api/users/invite               Invite new user (ORG_ADMIN only)
-POST   /api/users/:userId/assign-role  Assign role (ORG_ADMIN only)
-POST   /api/users/:userId/activate     Activate user (ORG_ADMIN only)
-POST   /api/users/:userId/deactivate   Deactivate user (ORG_ADMIN only)
-GET    /api/users/:userId/activity-log View user audit trail (ORG_ADMIN only)
-```
+| Method | Endpoint | Description |
+|---|---|---|
+| POST | `/api/auth/register` | Create user account |
+| POST | `/api/auth/login` | Authenticate and issue tokens |
+| POST | `/api/auth/refresh` | Rotate refresh token |
+| POST | `/api/auth/logout` | Invalidate all tokens |
+| POST | `/api/auth/change-password` | Update user password |
+| GET | `/api/auth/me` | Retrieve current user |
 
-### Supplier Management (Rifshadh) - Placeholder
-```
-GET    /api/suppliers                  List suppliers
-POST   /api/suppliers                  Create supplier
-GET    /api/suppliers/:supplierId      Get supplier details
-PUT    /api/suppliers/:supplierId      Update supplier
-GET    /api/suppliers/:supplierId/history Risk history
-POST   /api/suppliers/compare          Compare suppliers
-```
+### User Management
 
-### Shipment Tracking (Umayanthi) - Placeholder
-```
-GET    /api/shipments                  List shipments
-POST   /api/shipments                  Register shipment
-GET    /api/shipments/:shipmentId      Get shipment
-PUT    /api/shipments/:shipmentId      Update shipment
-GET    /api/shipments/:shipmentId/tracking Get tracking
-```
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/api/users` | List all org users (ORG_ADMIN) |
+| GET | `/api/users/:userId` | Get user profile |
+| PUT | `/api/users/:userId` | Update user profile |
+| POST | `/api/users/invite` | Invite user (ORG_ADMIN) |
+| POST | `/api/users/:userId/assign-role` | Assign role (ORG_ADMIN) |
+| POST | `/api/users/:userId/activate` | Activate user (ORG_ADMIN) |
+| POST | `/api/users/:userId/deactivate` | Deactivate user (ORG_ADMIN) |
+| GET | `/api/users/:userId/activity-log` | View audit trail (ORG_ADMIN) |
 
-### Inventory (Wijemanna) - Placeholder
-```
-GET    /api/inventory                  List inventory items
-POST   /api/inventory                  Create item
-GET    /api/inventory/:itemId          Get item details
-PUT    /api/inventory/:itemId          Update item
-GET    /api/inventory/:itemId/forecast Get forecast
-```
+### Supplier Management *(Placeholder)*
 
-### Alerts (Kulatunga) - Placeholder
-```
-GET    /api/alerts                     List alerts
-GET    /api/alerts/:alertId            Get alert
-POST   /api/alerts/:alertId/acknowledge Mark acknowledged
-POST   /api/alerts/:alertId/resolve    Resolve alert
-```
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/api/suppliers` | List suppliers |
+| POST | `/api/suppliers` | Create supplier |
+| GET | `/api/suppliers/:supplierId` | Get supplier details |
+| PUT | `/api/suppliers/:supplierId` | Update supplier |
+| GET | `/api/suppliers/:supplierId/history` | Supplier risk history |
+| POST | `/api/suppliers/compare` | Compare suppliers |
 
-### Analytics (Senadeera) - Placeholder
-```
-GET    /api/analytics/dashboard        Get KPI data
-GET    /api/analytics/kpi              Get specific KPIs
-POST   /api/analytics/generate         Generate report
-GET    /api/analytics/:reportId/download Download report
-```
+### Shipment Tracking *(Placeholder)*
 
----
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/api/shipments` | List shipments |
+| POST | `/api/shipments` | Register shipment |
+| GET | `/api/shipments/:shipmentId` | Get shipment details |
+| PUT | `/api/shipments/:shipmentId` | Update shipment |
+| GET | `/api/shipments/:shipmentId/tracking` | Get live tracking |
 
-## 📝 Frontend Pages (Implemented by Rathnamalala)
+### Inventory Management *(Placeholder)*
 
-| Route | Page | Purpose |
-|-------|------|---------|
-| `/login` | LoginPage | User authentication |
-| `/register` | RegisterPage | New user signup |
-| `/` | DashboardPage | Main overview (all roles) |
-| `/users` | UsersPage | User management (ORG_ADMIN only) |
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/api/inventory` | List inventory items |
+| POST | `/api/inventory` | Create inventory item |
+| GET | `/api/inventory/:itemId` | Get item details |
+| PUT | `/api/inventory/:itemId` | Update item |
+| GET | `/api/inventory/:itemId/forecast` | Get demand forecast |
 
-### Page Descriptions
+### Alerts *(Placeholder)*
 
-**LoginPage** (`/login`)
-- Email + password login
-- JWT token stored in localStorage & cookies
-- Error handling & validation
-- Link to registration
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/api/alerts` | List alerts |
+| GET | `/api/alerts/:alertId` | Get alert details |
+| POST | `/api/alerts/:alertId/acknowledge` | Acknowledge alert |
+| POST | `/api/alerts/:alertId/resolve` | Resolve alert |
 
-**RegisterPage** (`/register`)
-- Full name, email, password, org ID
-- Password strength requirements (8+ chars, uppercase, lowercase, number)
-- Email validation
-- Bcrypt hashing on backend
+### Analytics & Reports *(Placeholder)*
 
-**DashboardPage** (`/`)
-- KPI cards: Risk Score, Active Alerts, Delayed Shipments, At-Risk Inventory
-- Quick links to key modules
-- 30-second auto-refresh (in full implementation)
-- Role-aware content
-
-**UsersPage** (`/users`)
-- ✓ List all org users with pagination
-- ✓ Invite new users (send temporary password)
-- ✓ Assign/change roles
-- ✓ Deactivate/activate users
-- ✓ View user activity log
-- ✓ Edit user profiles (admin only)
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/api/analytics/dashboard` | Retrieve KPI summary |
+| GET | `/api/analytics/kpi` | Retrieve specific KPIs |
+| POST | `/api/analytics/generate` | Generate report |
+| GET | `/api/analytics/:reportId/download` | Download report |
 
 ---
 
-## 🎨 Design System (From UI Design Guide)
+## Frontend Pages
+
+| Route | Component | Access |
+|---|---|---|
+| `/login` | LoginPage | Public |
+| `/register` | RegisterPage | Public |
+| `/` | DashboardPage | All authenticated roles |
+| `/users` | UsersPage | ORG_ADMIN only |
+
+**LoginPage** — Email and password authentication with form validation and token storage. Includes a link to the registration page.
+
+**RegisterPage** — User registration form with fields for full name, email, password, and organization ID. Enforces password strength requirements client-side.
+
+**DashboardPage** — Displays KPI cards (Overall Risk Score, Active Alerts, Delayed Shipments, At-Risk Inventory), quick navigation links, 30-second auto-refresh, and role-conditional content.
+
+**UsersPage** — Paginated user listing with support for inviting new users, assigning roles, activating and deactivating accounts, editing profiles, and viewing per-user activity logs. Restricted to ORG_ADMIN.
+
+---
+
+## Design System
 
 ### Color Palette
-```css
---brand-primary: #E85D2F;      /* Burnt orange - CTAs */
---surface-card: #F2F4F0;       /* Light sage-white - cards */
---text-primary: #1A1C1A;       /* Dark text */
---risk-low: #2DB87A;           /* Green */
---risk-medium: #F5A623;        /* Amber */
---risk-high: #E8572F;          /* Orange */
---risk-critical: #C7253E;      /* Red + pulse animation */
-```
+
+| Token | Value | Usage |
+|---|---|---|
+| `--brand-primary` | `#E85D2F` | Primary CTAs |
+| `--surface-card` | `#F2F4F0` | Card backgrounds |
+| `--text-primary` | `#1A1C1A` | Body text |
+| `--risk-low` | `#2DB87A` | Low risk indicator |
+| `--risk-medium` | `#F5A623` | Medium risk indicator |
+| `--risk-high` | `#E8572F` | High risk indicator |
+| `--risk-critical` | `#C7253E` | Critical risk indicator (pulse animation) |
 
 ### Typography
-```css
---font-display: 'Syne' (headers, KPI values)
---font-body: 'DM Sans' (UI text, labels)
---font-mono: 'JetBrains Mono' (numbers, timestamps)
-```
 
-### Components
-- **Cards**: 16px radius, 24px padding, subtle shadow
-- **Buttons**: Rounded pills (28px), orange accent on hover
-- **Risk Badges**: Color-coded with animated pulse at Critical
-- **Dropdowns**: Appear on hover/click in TopNav
-- **Forms**: Clean, single-column layout with validation
+| Role | Font |
+|---|---|
+| Display / KPI values | Syne |
+| Body / UI labels | DM Sans |
+| Monospace / numbers / timestamps | JetBrains Mono |
+
+### Component Standards
+
+- **Cards:** 16px border radius, 24px padding, subtle box shadow
+- **Buttons:** Pill-shaped (28px radius), orange accent on hover
+- **Risk Badges:** Color-coded per severity; animated pulse at Critical level
+- **Forms:** Single-column layout with inline validation feedback
 
 ---
 
-## 🧪 Testing
+## Testing
 
-### Backend Testing
+### Backend
+
 ```bash
 cd backend
-npm test                  # Run Jest tests
-npm run test:watch       # Watch mode
-npm run test:coverage    # Coverage report
+npm test                  # Run all Jest tests
+npm run test:watch        # Watch mode
+npm run test:coverage     # Generate coverage report
 ```
 
-### Frontend Testing
+### Frontend
+
 ```bash
 cd frontend
-npm test                  # Run Vitest
-npm run test:watch
+npm test                  # Run all Vitest tests
+npm run test:watch        # Watch mode
 ```
 
-### Manual Testing Checklist
+### Manual Test Checklist
 
-**Auth Flow**
-- [ ] Register new user with bcrypt password hashing
-- [ ] Login with valid/invalid credentials
-- [ ] Token refresh on expiry
-- [ ] Logout invalidates tokens
-- [ ] Refresh token reuse detected & blocked
+**Authentication**
+- [ ] Registration persists hashed password
+- [ ] Login succeeds with valid credentials and fails with invalid
+- [ ] Access token refresh works on expiry
+- [ ] Logout invalidates all refresh tokens
+- [ ] Refresh token reuse is detected and blocked
 
 **RBAC**
-- [ ] ORG_ADMIN can manage users, assign roles
+- [ ] ORG_ADMIN can manage users and assign roles
 - [ ] RISK_ANALYST can manage alerts
-- [ ] LOGISTICS_OPERATOR cannot access admin features
-- [ ] Invalid org access blocked at middleware
+- [ ] LOGISTICS_OPERATOR is blocked from admin routes
+- [ ] Cross-org access is rejected at middleware level
 
-**Users Module**
-- [ ] Invite user generates secure temp password
-- [ ] Deactivate/activate user works
-- [ ] Role assignment updates permissions
-- [ ] Activity log captures all user actions
+**User Management**
+- [ ] User invite generates a secure temporary password
+- [ ] Deactivate and activate transitions work correctly
+- [ ] Role assignment updates permissions immediately
+- [ ] All user actions are captured in the activity log
 
 ---
 
-## 📦 Deployment
+## Deployment
 
-### Docker Compose (All services together)
+### Docker Compose
 
-Create `docker-compose.yml`:
+Create `docker-compose.yml` in the project root:
+
 ```yaml
 version: '3.8'
 services:
@@ -604,96 +603,82 @@ volumes:
   mongo_data:
 ```
 
-**Deploy:**
 ```bash
 docker-compose up -d
 ```
 
 ---
 
-## 📋 Checklist for Full Implementation
+## Troubleshooting
 
-### Rathnamalala (Auth & Users) - COMPLETED ✓
-- [x] User registration with bcrypt
-- [x] JWT login with Access + Refresh tokens
-- [x] Token rotation & reuse detection
-- [x] RBAC middleware enforcement
-- [x] User profile management
-- [x] Invite user with temp password
-- [x] Deactivate/activate users
-- [x] Audit logging for auth events
-
-### Other Modules (by team members) - PLACEHOLDERS READY
-- [ ] **Rifshadh** - Supplier risk scoring (routes ready)
-- [ ] **Umayanthi** - Shipment tracking (routes ready)
-- [ ] **Wijemanna** - Inventory management (routes ready)
-- [ ] **Kulatunga** - Alert engine (routes ready)
-- [ ] **Senadeera** - Analytics & reports (routes ready)
-
----
-
-## 🆘 Troubleshooting
-
-### Backend won't start
+**Backend fails to start**
 ```bash
-# Check MongoDB connection
-mongosh  # Test MongoDB
-echo $MONGODB_URI  # Verify env var
+# Verify MongoDB connectivity
+mongosh
 
-# Clear node_modules and reinstall
+# Confirm environment variable is set
+echo $MONGODB_URI
+
+# Reinstall dependencies
 rm -rf node_modules package-lock.json
 npm install
 npm run dev
 ```
 
-### Frontend won't start
+**Frontend fails to start**
 ```bash
-# Clear node_modules
 cd frontend
 rm -rf node_modules
 npm install
 npm run dev
-
-# Check port 5173 is available
+# Verify port 5173 is not in use
 ```
 
-### JWT not working
-- Verify .env contains `JWT_ACCESS_SECRET` & `JWT_REFRESH_SECRET`
-- Ensure tokens are 32+ characters
-- Check browser localStorage for tokens
+**JWT errors**
+- Confirm `JWT_ACCESS_SECRET` and `JWT_REFRESH_SECRET` are present in `backend/.env`
+- Both secrets must be at least 32 characters
+- Verify the `Authorization` header is included in API requests
+- Check `localStorage` in the browser for token presence
 
-### CORS errors
-- Verify `CORS_ORIGIN` in backend .env matches frontend URL
-- Check `Authorization` header is sent in API requests
-
----
-
-## 📚 Documentation Files
-
-- **[SETUP_GUIDE.md](./SETUP_GUIDE.md)** - Step-by-step installation
-- **[API_DOCUMENTATION.md](./API_DOCUMENTATION.md)** - Full REST API reference
-- **[ARCHITECTURE.md](./ARCHITECTURE.md)** - System design & flow
-- **[SYSTEM_DOCUMENTATION.txt](./system%20documentation.txt)** - Original requirements
+**CORS errors**
+- Confirm `CORS_ORIGIN` in `backend/.env` matches the frontend URL exactly
+- Verify the `Authorization` header is not being stripped by a proxy
 
 ---
 
-## 🔗 Resources
+## Documentation
 
-- **MongoDB Atlas**: https://www.mongodb.com/cloud/atlas
-- **Express.js Docs**: https://expressjs.com
-- **React Docs**: https://react.dev
-- **Redux Toolkit**: https://redux-toolkit.js.org
-- **FastAPI Docs**: https://fastapi.tiangolo.com
-- **XGBoost Docs**: https://xgboost.readthedocs.io
-
----
-
-## 📄 License
-
-MIT License - Academic & Commercial Use Allowed
+| File | Contents |
+|---|---|
+| `SETUP_GUIDE.md` | Step-by-step installation instructions |
+| `API_DOCUMENTATION.md` | Full REST API reference with request/response examples |
+| `ARCHITECTURE.md` | System design, component diagrams, and data flow |
 
 ---
 
-**Last Updated**: February 27, 2026  
-**Project**: Logistic 18 - Y2S2-WE-DS-G18  
-**Status**: Core system ready for module integration
+## Implementation Status
+
+| Module | Owner | Status |
+|---|---|---|
+| User & Authentication | Rathnamalala | Complete |
+| Supplier Risk Scoring | Rifshadh | Routes scaffolded |
+| Shipment Tracking | Umayanthi | Routes scaffolded |
+| Inventory Management | Wijemanna | Routes scaffolded |
+| Alerts & Notifications | Kulatunga | Routes scaffolded |
+| Analytics & Reports | Senadeera | Routes scaffolded |
+
+---
+
+## External References
+
+- [MongoDB Atlas](https://www.mongodb.com/cloud/atlas)
+- [Express.js Documentation](https://expressjs.com)
+- [React Documentation](https://react.dev)
+- [Redux Toolkit](https://redux-toolkit.js.org)
+- [FastAPI Documentation](https://fastapi.tiangolo.com)
+- [XGBoost Documentation](https://xgboost.readthedocs.io)
+
+---
+
+**Last Updated:** February 27, 2026  
+**License:** MIT — Academic and commercial use permitted
