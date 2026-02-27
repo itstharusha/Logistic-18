@@ -19,6 +19,17 @@ export default function TopNav() {
     navigate('/login');
   };
 
+  const [magnetic, setMagnetic] = useState({});
+
+  const handleMagnetic = (e, index) => {
+    const { left, top, width, height } = e.currentTarget.getBoundingClientRect();
+    const x = (e.clientX - (left + width / 2)) * 0.15;
+    const y = (e.clientY - (top + height / 2)) * 0.15;
+    setMagnetic({ [index]: { transform: `translate(${x}px, ${y}px)` } });
+  };
+
+  const resetMagnetic = () => setMagnetic({});
+
   return (
     <nav className="topnav" role="navigation" aria-label="Main navigation">
       <div className="nav-logo">
@@ -33,15 +44,22 @@ export default function TopNav() {
       </div>
 
       <div className="nav-tabs" role="tablist">
-        <Link to="/" className={`nav-tab ${isActive('/') ? 'active' : ''}`} role="tab" aria-selected={isActive('/')}>Overview</Link>
-        <Link to="/suppliers" className={`nav-tab ${isActive('/suppliers') ? 'active' : ''}`} role="tab" aria-selected={isActive('/suppliers')}>Suppliers</Link>
-        <Link to="/shipments" className={`nav-tab ${isActive('/shipments') ? 'active' : ''}`} role="tab" aria-selected={isActive('/shipments')}>Shipments</Link>
-        <Link to="/inventory" className={`nav-tab ${isActive('/inventory') ? 'active' : ''}`} role="tab" aria-selected={isActive('/inventory')}>Inventory</Link>
-        <Link to="/alerts" className={`nav-tab ${isActive('/alerts') ? 'active' : ''}`} role="tab" aria-selected={isActive('/alerts')}>Alerts</Link>
-        <Link to="/analytics" className={`nav-tab ${isActive('/analytics') ? 'active' : ''}`} role="tab" aria-selected={isActive('/analytics')}>Analytics</Link>
-        {user?.role === 'ORG_ADMIN' && (
-          <Link to="/users" className={`nav-tab ${isActive('/users') ? 'active' : ''}`} role="tab" aria-selected={isActive('/users')}>Users</Link>
-        )}
+        {['/', '/suppliers', '/shipments', '/inventory', '/alerts', '/analytics', '/users'].map((path, i) => {
+          if (path === '/users' && user?.role !== 'ORG_ADMIN') return null;
+          const label = path === '/' ? 'Overview' : path.slice(1).charAt(0).toUpperCase() + path.slice(2);
+          return (
+            <Link
+              key={path}
+              to={path}
+              className={`nav-tab ${isActive(path) ? 'active' : ''}`}
+              style={magnetic[i] || {}}
+              onMouseMove={(e) => handleMagnetic(e, i)}
+              onMouseLeave={resetMagnetic}
+            >
+              {label}
+            </Link>
+          );
+        })}
       </div>
 
       <div className="nav-actions">

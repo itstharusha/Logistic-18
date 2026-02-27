@@ -25,7 +25,7 @@ export class UserRepository {
   // Find all users in organization
   static async findByOrgId(orgId, options = {}) {
     const query = User.find({ orgId });
-    
+
     if (options.limit) query.limit(options.limit);
     if (options.skip) query.skip(options.skip);
     if (options.sort) query.sort(options.sort);
@@ -55,14 +55,14 @@ export class UserRepository {
 
   // Invalidate all refresh tokens (on rotation or breach detection)
   static async invalidateRefreshTokens(userId) {
-    return User.findByIdAndUpdate(
-      userId,
-      { 
-        refreshToken: null,
-        refreshTokenVersion: (await User.findById(userId)).refreshTokenVersion + 1 
-      },
-      { new: true }
-    );
+    if (!userId) return null;
+
+    const user = await User.findById(userId).select('+refreshTokenVersion');
+    if (!user) return null;
+
+    user.refreshToken = null;
+    user.refreshTokenVersion = (user.refreshTokenVersion || 0) + 1;
+    return user.save();
   }
 
   // Soft delete user (deactivate)

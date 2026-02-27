@@ -61,27 +61,32 @@
 }
 
 .nav-tab {
-  color: #B8BCB8;
-  font-family: var(--font-body);
-  font-size: 13px;
-  font-weight: 500;
   padding: 8px 18px;
   border-radius: 20px;
-  transition: all var(--duration-normal) var(--ease-smooth);
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 500;
+  color: #B8BCB8;
+  text-decoration: none;
+  transition: all var(--duration-normal) var(--ease-spring);
   white-space: nowrap;
+  /* Keep existing property */
 }
 
 .nav-tab:hover {
-  background-color: rgba(255, 255, 255, 0.08);
   color: var(--text-inverse);
-  opacity: 1;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.nav-tab:active {
+  transform: scale(0.94);
 }
 
 .nav-tab.active {
   background-color: #F2F4F0;
   color: #1A1C1A;
   font-weight: 600;
-  opacity: 1;
+  /* Keep existing property */
 }
 
 .nav-actions {

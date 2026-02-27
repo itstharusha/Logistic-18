@@ -48,11 +48,23 @@ function Counter({ target, decimals = 0, suffix = '' }) {
 export default function DashboardPage() {
   const chartRef = useRef(null);
   const [chartReady, setChartReady] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [currentTime, setCurrentTime] = useState(new Date());
 
   useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    // Initial loading shimmer duration
+    const shimmerTimer = setTimeout(() => setIsLoading(false), 800);
     // Trigger callout after chart animation completes
-    const timer = setTimeout(() => setChartReady(true), 1100);
-    return () => clearTimeout(timer);
+    const chartTimer = setTimeout(() => setChartReady(true), 1100);
+    return () => {
+      clearTimeout(shimmerTimer);
+      clearTimeout(chartTimer);
+    };
   }, []);
 
   /* ─── Chart.js Config ─── */
@@ -81,11 +93,32 @@ export default function DashboardPage() {
     responsive: true,
     maintainAspectRatio: false,
     animation: { duration: 900, easing: 'easeInOutQuart' },
-    plugins: { legend: { display: false }, tooltip: { enabled: false } },
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        enabled: true,
+        backgroundColor: '#1A1C1A',
+        titleFont: { family: 'Inter', size: 13, weight: '600' },
+        bodyFont: { family: 'Inter', size: 12 },
+        padding: 12,
+        cornerRadius: 8,
+        displayColors: false,
+        callbacks: {
+          label: (context) => `Risk: ${context.parsed.y}%`
+        }
+      }
+    },
     scales: {
       x: { grid: { display: false }, ticks: { font: { family: 'Inter', size: 11 }, color: '#9A9E9A' } },
       y: { min: 0, max: 100, grid: { color: 'rgba(90,94,90,0.12)' }, ticks: { font: { family: 'Inter', size: 11 }, color: '#9A9E9A' } },
     },
+  };
+
+  const [actionFeedback, setActionFeedback] = useState(null);
+
+  const triggerAction = (id) => {
+    setActionFeedback(id);
+    setTimeout(() => setActionFeedback(null), 2000);
   };
 
   return (
@@ -102,13 +135,21 @@ export default function DashboardPage() {
             <AlertTriangle size={15} /> Risk Alerts
           </button>
         </div>
+        <div className="hero-datetime">
+          <div className="hero-time">
+            {currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true })}
+          </div>
+          <div className="hero-date">
+            {currentTime.toLocaleDateString([], { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+          </div>
+        </div>
       </section>
 
       {/* ═══ CARD ROW 1 ═══ */}
       <div className="dashboard-row-1">
 
         {/* CARD A — Today's Risk Alerts */}
-        <div className="dash-card card-alerts anim-card" style={{ animationDelay: '0.10s' }}>
+        <div className={`dash-card card-alerts anim-card ${isLoading ? 'loading' : ''}`} style={{ animationDelay: '0.10s' }}>
           <div className="card-header">
             <div>
               <h2 className="card-title">Today's Risk Alerts</h2>
@@ -150,10 +191,13 @@ export default function DashboardPage() {
         </div>
 
         {/* CARD B — System Overview */}
-        <div className="dash-card card-overview anim-card" style={{ animationDelay: '0.15s' }}>
+        <div className={`dash-card card-overview anim-card ${isLoading ? 'loading' : ''}`} style={{ animationDelay: '0.20s' }}>
           <div className="card-header">
-            <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div className="status-pulse" style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#2DB87A', animation: 'pulse-live 2s infinite' }}></div>
               <h2 className="card-title">System Overview</h2>
+            </div>
+            <div>
               <span className="card-subtitle">Hub ID: LG-CMB-0018</span>
             </div>
             <a href="/analytics" className="card-expand-btn" aria-label="Expand overview">
@@ -163,67 +207,66 @@ export default function DashboardPage() {
 
           <div className="overview-grid">
             <div className="overview-metric">
-              <div className="metric-icon"><Activity size={16} /></div>
+              <div className="metric-icon"><Activity size={18} /></div>
               <div className="metric-data">
-                <span className="metric-value"><Counter target={42.5} decimals={1} /></span>
-                <span className="metric-label">Supply Chain Risk</span>
+                <div className="metric-value"><Counter target={42.5} decimals={1} suffix="%" /></div>
+                <div className="metric-label">Risk Score</div>
               </div>
             </div>
             <div className="overview-metric">
-              <div className="metric-icon"><Bell size={16} /></div>
+              <div className="metric-icon"><Bell size={18} /></div>
               <div className="metric-data">
-                <span className="metric-value"><Counter target={12} /></span>
-                <span className="metric-label">Active Alerts</span>
+                <div className="metric-value"><Counter target={12} /></div>
+                <div className="metric-label">Active Alerts</div>
               </div>
             </div>
             <div className="overview-metric">
-              <div className="metric-icon"><Truck size={16} /></div>
+              <div className="metric-icon"><Truck size={18} /></div>
               <div className="metric-data">
-                <span className="metric-value"><Counter target={3} /></span>
-                <span className="metric-label">Delayed Shipments</span>
+                <div className="metric-value"><Counter target={3} /></div>
+                <div className="metric-label">Delayed Ship</div>
               </div>
             </div>
             <div className="overview-metric">
-              <div className="metric-icon"><Archive size={16} /></div>
+              <div className="metric-icon"><Archive size={18} /></div>
               <div className="metric-data">
-                <span className="metric-value"><Counter target={18} /> <small>SKUs</small></span>
-                <span className="metric-label">At-Risk Inventory</span>
+                <div className="metric-value"><Counter target={18} /></div>
+                <div className="metric-label">At-Risk Inv</div>
               </div>
             </div>
             <div className="overview-metric">
-              <div className="metric-icon"><Users size={16} /></div>
+              <div className="metric-icon"><Users size={18} /></div>
               <div className="metric-data">
-                <span className="metric-value"><Counter target={7} /></span>
-                <span className="metric-label">Registered Users</span>
+                <div className="metric-value"><Counter target={7} /></div>
+                <div className="metric-label">Reg Users</div>
               </div>
             </div>
             <div className="overview-metric">
-              <div className="metric-icon"><CheckCircle2 size={16} /></div>
+              <div className="metric-icon"><CheckCircle2 size={18} /></div>
               <div className="metric-data">
-                <span className="metric-value"><Counter target={94.2} decimals={1} suffix="%" /></span>
-                <span className="metric-label">On-Time Rate</span>
+                <div className="metric-value"><Counter target={94.2} decimals={1} suffix="%" /></div>
+                <div className="metric-label">On-Time Rate</div>
               </div>
             </div>
           </div>
         </div>
 
         {/* CARD C — Risk Score Trend */}
-        <div className="dash-card card-trend anim-card" style={{ animationDelay: '0.20s' }}>
+        <div className={`dash-card card-trend anim-card ${isLoading ? 'loading' : ''}`} style={{ animationDelay: '0.30s' }}>
           <div className="card-header">
             <div>
               <h2 className="card-title">Risk Score Trend</h2>
-              <span className="card-subtitle">Last updated: 2025/06/20</span>
+              <span className="card-subtitle">Aggregated View</span>
             </div>
             <a href="/analytics" className="card-expand-btn" aria-label="Expand trend">
               <ArrowUpRight size={16} />
             </a>
           </div>
-
-          <div className="chart-wrapper">
+          <div className="chart-container">
             <Line ref={chartRef} data={chartData} options={chartOptions} />
             <div className={`chart-callout ${chartReady ? 'visible' : ''}`}>
-              <span className="callout-value">42.5</span>
-              <span className="callout-label">Medium</span>
+              <div className="callout-dot"></div>
+              <span>Trend Up +4.2%</span>
             </div>
           </div>
         </div>
@@ -233,51 +276,67 @@ export default function DashboardPage() {
       <div className="dashboard-row-2">
 
         {/* CARD D — Quick Actions */}
-        <div className="dash-card card-actions anim-card" style={{ animationDelay: '0.25s' }}>
+        <div className={`dash-card card-actions anim-card ${isLoading ? 'loading' : ''}`} style={{ animationDelay: '0.40s' }}>
           <div className="card-header">
             <div>
               <h2 className="card-title">Quick Actions</h2>
-              <span className="card-subtitle">4 shortcuts</span>
+              <span className="card-subtitle">One-tap utilities</span>
             </div>
           </div>
           <div className="actions-grid">
-            <a href="/users" className="action-item">
-              <div className="action-icon"><Users size={16} /></div>
+            <div className="action-item" onClick={() => triggerAction('users')}>
+              <Users size={18} className="action-icon" />
               <div className="action-text">
-                <span className="action-name">Manage Users</span>
-                <span className="action-desc">Admin panel</span>
+                <span className="action-name">Users</span>
+                <span className="action-desc">Manage organization users</span>
               </div>
-              <span className="action-badge">★ Admin</span>
-            </a>
-            <a href="/suppliers" className="action-item">
-              <div className="action-icon"><Briefcase size={16} /></div>
+              {actionFeedback === 'users' ? (
+                <CheckCircle2 size={14} color="#2DB87A" style={{ marginLeft: 'auto' }} />
+              ) : (
+                <span className="action-badge">★ Admin</span>
+              )}
+            </div>
+            <div className="action-item" onClick={() => triggerAction('suppliers')}>
+              <Briefcase size={18} className="action-icon" />
               <div className="action-text">
-                <span className="action-name">View Suppliers</span>
-                <span className="action-desc">Risk scoring</span>
+                <span className="action-name">Suppliers</span>
+                <span className="action-desc">Supplier risk profiles</span>
               </div>
-              <span className="action-badge">★ Risk</span>
-            </a>
-            <a href="/alerts" className="action-item">
-              <div className="action-icon"><Bell size={16} /></div>
+              {actionFeedback === 'suppliers' ? (
+                <CheckCircle2 size={14} color="#2DB87A" style={{ marginLeft: 'auto' }} />
+              ) : (
+                <span className="action-badge">★ Risk</span>
+              )}
+            </div>
+            <div className="action-item" onClick={() => triggerAction('alerts')}>
+              <Bell size={18} className="action-icon" />
               <div className="action-text">
-                <span className="action-name">View Alerts</span>
-                <span className="action-desc">12 active</span>
+                <span className="action-name">Alerts</span>
+                <span className="action-desc">Urgent system notifications</span>
               </div>
-              <span className="action-badge">★ Urgent</span>
-            </a>
-            <a href="/analytics" className="action-item">
-              <div className="action-icon"><BarChart3 size={16} /></div>
+              {actionFeedback === 'alerts' ? (
+                <CheckCircle2 size={14} color="#2DB87A" style={{ marginLeft: 'auto' }} />
+              ) : (
+                <span className="action-badge">★ Urgent</span>
+              )}
+            </div>
+            <div className="action-item" onClick={() => triggerAction('reports')}>
+              <BarChart3 size={18} className="action-icon" />
               <div className="action-text">
-                <span className="action-name">View Reports</span>
-                <span className="action-desc">Export data</span>
+                <span className="action-name">Reports</span>
+                <span className="action-desc">Analytics and insights</span>
               </div>
-              <span className="action-badge">★ Analytics</span>
-            </a>
+              {actionFeedback === 'reports' ? (
+                <CheckCircle2 size={14} color="#2DB87A" style={{ marginLeft: 'auto' }} />
+              ) : (
+                <span className="action-badge">★ Analytics</span>
+              )}
+            </div>
           </div>
         </div>
 
         {/* CARD E — Risk Breakdown */}
-        <div className="dash-card card-breakdown anim-card" style={{ animationDelay: '0.30s' }}>
+        <div className={`dash-card card-breakdown anim-card ${isLoading ? 'loading' : ''}`} style={{ animationDelay: '0.50s' }}>
           <div className="card-header">
             <div>
               <h2 className="card-title">Risk Breakdown</h2>
@@ -312,7 +371,7 @@ export default function DashboardPage() {
         </div>
 
         {/* CARD F — Active Users */}
-        <div className="dash-card card-users anim-card" style={{ animationDelay: '0.35s' }}>
+        <div className={`dash-card card-users anim-card ${isLoading ? 'loading' : ''}`} style={{ animationDelay: '0.60s' }}>
           <div className="card-header">
             <div>
               <h2 className="card-title">Active Users</h2>
@@ -361,7 +420,7 @@ export default function DashboardPage() {
             </div>
           </div>
         </div>
-      </div>
-    </Layout>
+      </div >
+    </Layout >
   );
 }
