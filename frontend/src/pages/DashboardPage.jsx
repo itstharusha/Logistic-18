@@ -17,6 +17,8 @@ import {
 import Layout from '../components/Layout.jsx';
 import '../styles/pages.css';
 
+
+
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Filler, Tooltip);
 
 /* ─── Animated Counter Hook ─── */
