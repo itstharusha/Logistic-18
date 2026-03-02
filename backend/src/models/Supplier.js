@@ -51,7 +51,8 @@ const supplierSchema = new mongoose.Schema(
     financialScore: { type: Number, min: 0, max: 100, default: 70 },
     yearsInBusiness: { type: Number, min: 0, default: 5 },
     contractValue: { type: Number, min: 0, default: 0 },
-    geopoliticalRisk: { type: Number, min: 0, max: 10, default: 3 },
+    geopoliticalRiskFlag: { type: Number, enum: [0, 1], default: 0 }, // 0=stable, 1=at-risk country
+    disputeFrequency: { type: Number, min: 0, max: 20, default: 0 }, // disputes per period
 
     // Computed risk
     riskScore: { type: Number, default: 0 },

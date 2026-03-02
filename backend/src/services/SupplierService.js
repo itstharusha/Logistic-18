@@ -15,22 +15,24 @@ export class SupplierService {
       defectRate = 0,
       financialScore = 70,
       yearsInBusiness = 5,
-      geopoliticalRisk = 3,
+      geopoliticalRiskFlag = 0,  // binary: 0=stable, 1=at-risk country
+      disputeFrequency = 0,       // 0–20 disputes per period
       weatherLevel = 'low',
     } = supplier;
 
-    // Each component contributes to a max of 100
-    const deliveryPenalty = (100 - Math.min(Number(onTimeDeliveryRate) || 0, 100)) * 0.30; // 0–30
-    const delayPenalty    = Math.min((Number(avgDelayDays) || 0) * 1.5, 15);               // 0–15
-    const defectPenalty   = Math.min(Number(defectRate) || 0, 100) * 0.20;                 // 0–20
-    const financialPenalty = (100 - Math.min(Number(financialScore) || 0, 100)) * 0.15;    // 0–15
+    // Weights aligned with dataset feature importance (total max = 100)
+    const deliveryPenalty   = (100 - Math.min(Number(onTimeDeliveryRate) || 0, 100)) * 0.28; // 0–28
+    const delayPenalty      = Math.min((Number(avgDelayDays) || 0) * 1.25, 15);              // 0–15
+    const defectPenalty     = Math.min(Number(defectRate) || 0, 30) * 0.567;                 // 0–17
+    const financialPenalty  = (100 - Math.min(Number(financialScore) || 0, 100)) * 0.15;     // 0–15
     const experiencePenalty = Math.max(0, 5 - Math.min(Number(yearsInBusiness) || 0, 5)) * 2; // 0–10
-    const geoPenalty      = Math.min(Number(geopoliticalRisk) || 0, 10);                   // 0–10
+    const geoPenalty        = (Number(geopoliticalRiskFlag) === 1) ? 10 : 0;                 // 0 or 10
+    const disputePenalty    = Math.min(Number(disputeFrequency) || 0, 20) * 0.25;            // 0–5
 
     const weatherMultiplier = { low: 1.0, medium: 1.05, high: 1.10 };
     const multiplier = weatherMultiplier[weatherLevel] ?? 1.0;
 
-    const raw = deliveryPenalty + delayPenalty + defectPenalty + financialPenalty + experiencePenalty + geoPenalty;
+    const raw = deliveryPenalty + delayPenalty + defectPenalty + financialPenalty + experiencePenalty + geoPenalty + disputePenalty;
     const riskScore = Math.round(Math.min(raw * multiplier, 100));
 
     let riskTier;

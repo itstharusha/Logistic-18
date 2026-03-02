@@ -429,7 +429,7 @@ export default function SupplierDetailPage() {
               {tier.charAt(0).toUpperCase() + tier.slice(1)} Risk Tier
             </span>
           </div>
-          {supplier?.geopoliticalRisk && (
+          {supplier?.geopoliticalRiskFlag === 1 && (
             <div className="geo-risk-flag">
               <Globe size={14} />
               <span>Geopolitical risk flagged for <strong>{supplier.country}</strong></span>

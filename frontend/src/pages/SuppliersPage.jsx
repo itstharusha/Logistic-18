@@ -39,6 +39,7 @@ const EMPTY_FORM = {
   category: 'raw_materials', weatherLevel: 'low',
   onTimeDeliveryRate: '', avgDelayDays: '', defectRate: '',
   financialScore: '', yearsInBusiness: '', contractValue: '',
+  geopoliticalRiskFlag: 0, disputeFrequency: '',
 };
 
 function getTierFromScore(score) {
@@ -117,6 +118,8 @@ export default function SuppliersPage() {
       financialScore: supplier.financialScore ?? '',
       yearsInBusiness: supplier.yearsInBusiness ?? '',
       contractValue: supplier.contractValue ?? '',
+      geopoliticalRiskFlag: supplier.geopoliticalRiskFlag ?? 0,
+      disputeFrequency: supplier.disputeFrequency ?? '',
     });
     setShowAddForm(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -367,6 +370,27 @@ export default function SuppliersPage() {
                 <div className="input-wrapper">
                   <Package size={18} className="input-icon" />
                   <input type="number" name="contractValue" placeholder="e.g. 500000" min="0" value={formData.contractValue} onChange={handleFormChange} />
+                </div>
+              </div>
+              <div className="form-group-premium">
+                <label>Dispute Frequency (per period)</label>
+                <div className="input-wrapper">
+                  <AlertTriangle size={18} className="input-icon" />
+                  <input type="number" name="disputeFrequency" placeholder="0–20" min="0" max="20" step="0.1" value={formData.disputeFrequency} onChange={handleFormChange} />
+                </div>
+              </div>
+              <div className="form-group-premium">
+                <label>Geopolitical Risk Flag</label>
+                <div className="input-wrapper" style={{ alignItems: 'center', gap: 'var(--space-3)', paddingLeft: 'var(--space-3)' }}>
+                  <Globe size={18} className="input-icon" />
+                  <select
+                    name="geopoliticalRiskFlag"
+                    value={formData.geopoliticalRiskFlag}
+                    onChange={e => setFormData({ ...formData, geopoliticalRiskFlag: Number(e.target.value) })}
+                  >
+                    <option value={0}>0 — Stable country (no flag)</option>
+                    <option value={1}>1 — At-risk country (flagged)</option>
+                  </select>
                 </div>
               </div>
             </div>
