@@ -5,6 +5,8 @@ import { login, clearError } from '../redux/authSlice.js';
 import AuthBackground from '../components/AuthBackground.jsx';
 import '../styles/auth.css';
 
+
+
 export default function LoginPage() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
