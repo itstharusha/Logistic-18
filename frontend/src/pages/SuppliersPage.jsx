@@ -381,15 +381,15 @@ export default function SuppliersPage() {
               </div>
               <div className="form-group-premium">
                 <label>Geopolitical Risk Flag</label>
-                <div className="input-wrapper" style={{ alignItems: 'center', gap: 'var(--space-3)', paddingLeft: 'var(--space-3)' }}>
+                <div className="input-wrapper">
                   <Globe size={18} className="input-icon" />
                   <select
                     name="geopoliticalRiskFlag"
                     value={formData.geopoliticalRiskFlag}
                     onChange={e => setFormData({ ...formData, geopoliticalRiskFlag: Number(e.target.value) })}
                   >
-                    <option value={0}>0 — Stable country (no flag)</option>
-                    <option value={1}>1 — At-risk country (flagged)</option>
+                    <option value={0}>Stable — No geopolitical risk</option>
+                    <option value={1}>At-Risk — Geopolitical risk flagged</option>
                   </select>
                 </div>
               </div>
