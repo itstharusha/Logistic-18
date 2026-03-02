@@ -1,0 +1,196 @@
+import { SupplierRepository } from '../repositories/SupplierRepository.js';
+import AuditLog from '../models/AuditLog.js';
+import { NotFoundError, ValidationError } from '../utils/errors.js';
+
+export class SupplierService {
+  /**
+   * Rule-based risk score computation from the 12 ML-ready features.
+   * Falls back gracefully when fields are missing.
+   * Score 0–100, tier: low/medium/high/critical
+   */
+  static computeRiskScore(supplier) {
+    const {
+      onTimeDeliveryRate = 80,
+      avgDelayDays = 0,
+      defectRate = 0,
+      financialScore = 70,
+      yearsInBusiness = 5,
+      geopoliticalRisk = 3,
+      weatherLevel = 'low',
+    } = supplier;
+
+    // Each component contributes to a max of 100
+    const deliveryPenalty = (100 - Math.min(Number(onTimeDeliveryRate) || 0, 100)) * 0.30; // 0–30
+    const delayPenalty    = Math.min((Number(avgDelayDays) || 0) * 1.5, 15);               // 0–15
+    const defectPenalty   = Math.min(Number(defectRate) || 0, 100) * 0.20;                 // 0–20
+    const financialPenalty = (100 - Math.min(Number(financialScore) || 0, 100)) * 0.15;    // 0–15
+    const experiencePenalty = Math.max(0, 5 - Math.min(Number(yearsInBusiness) || 0, 5)) * 2; // 0–10
+    const geoPenalty      = Math.min(Number(geopoliticalRisk) || 0, 10);                   // 0–10
+
+    const weatherMultiplier = { low: 1.0, medium: 1.05, high: 1.10 };
+    const multiplier = weatherMultiplier[weatherLevel] ?? 1.0;
+
+    const raw = deliveryPenalty + delayPenalty + defectPenalty + financialPenalty + experiencePenalty + geoPenalty;
+    const riskScore = Math.round(Math.min(raw * multiplier, 100));
+
+    let riskTier;
+    if (riskScore <= 30) riskTier = 'low';
+    else if (riskScore <= 60) riskTier = 'medium';
+    else if (riskScore <= 80) riskTier = 'high';
+    else riskTier = 'critical';
+
+    return { riskScore, riskTier };
+  }
+
+  static async listSuppliers(orgId, options = {}) {
+    return SupplierRepository.findAll(orgId, options);
+  }
+
+  static async getSupplier(orgId, supplierId) {
+    const supplier = await SupplierRepository.findById(orgId, supplierId);
+    if (!supplier) throw new NotFoundError('Supplier not found');
+    return supplier;
+  }
+
+  static async createSupplier(orgId, data, userId) {
+    const { riskScore, riskTier } = this.computeRiskScore(data);
+    const now = new Date();
+
+    const supplier = await SupplierRepository.create({
+      ...data,
+      orgId,
+      riskScore,
+      riskTier,
+      lastScoredAt: now,
+      riskHistory: [{ riskScore, riskTier, scoredAt: now }],
+    });
+
+    await AuditLog.create({
+      orgId,
+      userId,
+      action: 'SUPPLIER_CREATED',
+      entityType: 'SUPPLIER',
+      entityId: supplier._id,
+      newValue: { name: supplier.name, riskScore, riskTier },
+    });
+
+    return supplier;
+  }
+
+  static async updateSupplier(orgId, supplierId, data, userId) {
+    const existing = await SupplierRepository.findById(orgId, supplierId);
+    if (!existing) throw new NotFoundError('Supplier not found');
+
+    // Merge existing with incoming data for score recomputation
+    const merged = { ...existing.toObject(), ...data };
+    const { riskScore, riskTier } = this.computeRiskScore(merged);
+
+    const updated = await SupplierRepository.update(orgId, supplierId, {
+      ...data,
+      riskScore,
+      riskTier,
+      lastScoredAt: new Date(),
+    });
+
+    // Append risk snapshot when score changes
+    if (riskScore !== existing.riskScore) {
+      await SupplierRepository.appendRiskSnapshot(supplierId, {
+        riskScore,
+        riskTier,
+        scoredAt: new Date(),
+      });
+    }
+
+    await AuditLog.create({
+      orgId,
+      userId,
+      action: 'SUPPLIER_UPDATED',
+      entityType: 'SUPPLIER',
+      entityId: supplierId,
+      oldValue: { riskScore: existing.riskScore, riskTier: existing.riskTier },
+      newValue: { riskScore, riskTier },
+    });
+
+    return updated;
+  }
+
+  static async compareSuppliers(orgId, ids) {
+    if (!Array.isArray(ids) || ids.length < 2 || ids.length > 3) {
+      throw new ValidationError('Select between 2 and 3 suppliers to compare');
+    }
+    const suppliers = await SupplierRepository.findManyByIds(orgId, ids);
+    return suppliers;
+  }
+
+  static async getRiskHistory(orgId, supplierId) {
+    const supplier = await SupplierRepository.findById(orgId, supplierId);
+    if (!supplier) throw new NotFoundError('Supplier not found');
+    return supplier.riskHistory || [];
+  }
+
+  static async overrideScore(orgId, supplierId, analystId, newScore, justification) {
+    const supplier = await SupplierRepository.findById(orgId, supplierId);
+    if (!supplier) throw new NotFoundError('Supplier not found');
+
+    const score = Number(newScore);
+    if (isNaN(score) || score < 0 || score > 100) {
+      throw new ValidationError('Score must be a number between 0 and 100');
+    }
+    if (!justification || !justification.trim()) {
+      throw new ValidationError('Justification is required for score override');
+    }
+
+    const oldScore = supplier.riskScore;
+    const oldTier  = supplier.riskTier;
+
+    let newTier;
+    if (score <= 30) newTier = 'low';
+    else if (score <= 60) newTier = 'medium';
+    else if (score <= 80) newTier = 'high';
+    else newTier = 'critical';
+
+    const now = new Date();
+    const overrideEntry = { analystId, oldScore, newScore: score, oldTier, newTier, justification, overriddenAt: now };
+    const historyEntry  = { riskScore: score, riskTier: newTier, scoredAt: now };
+
+    const updated = await SupplierRepository.saveOverride(orgId, supplierId, {
+      riskScore: score,
+      riskTier: newTier,
+      overrideEntry,
+      historyEntry,
+    });
+
+    await AuditLog.create({
+      orgId,
+      userId: analystId,
+      action: 'SUPPLIER_SCORE_OVERRIDDEN',
+      entityType: 'SUPPLIER',
+      entityId: supplierId,
+      oldValue: { riskScore: oldScore, riskTier: oldTier },
+      newValue: { riskScore: score, riskTier: newTier, justification },
+    });
+
+    return updated;
+  }
+
+  static async updateStatus(orgId, supplierId, status, userId) {
+    const validStatuses = ['active', 'under_watch', 'high_risk', 'suspended'];
+    if (!validStatuses.includes(status)) {
+      throw new ValidationError(`Invalid status. Must be one of: ${validStatuses.join(', ')}`);
+    }
+
+    const supplier = await SupplierRepository.update(orgId, supplierId, { status });
+    if (!supplier) throw new NotFoundError('Supplier not found');
+
+    await AuditLog.create({
+      orgId,
+      userId,
+      action: 'SUPPLIER_STATUS_UPDATED',
+      entityType: 'SUPPLIER',
+      entityId: supplierId,
+      newValue: { status },
+    });
+
+    return supplier;
+  }
+}

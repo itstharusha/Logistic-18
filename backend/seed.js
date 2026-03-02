@@ -1,9 +1,10 @@
+import 'dotenv/config';
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 import Organisation from './src/models/Organisation.js';
 import User from './src/models/User.js';
 
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/logistic18';
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://rifshadh:Rifshad1234@ac-wu6kzcf-shard-00-00.eu6ui55.mongodb.net:27017,ac-wu6kzcf-shard-00-01.eu6ui55.mongodb.net:27017,ac-wu6kzcf-shard-00-02.eu6ui55.mongodb.net:27017/logistic18?ssl=true&replicaSet=atlas-hgultx-shard-0&authSource=admin&retryWrites=true&w=majority';
 
 async function seed() {
   await mongoose.connect(MONGODB_URI);
