@@ -23,6 +23,22 @@ const overrideHistorySchema = new mongoose.Schema(
   { _id: false }
 );
 
+const metricsAdjustmentSchema = new mongoose.Schema(
+  {
+    adjustedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    source: { type: String, enum: ['manual', 'auto_shipment'], default: 'manual' },
+    shipmentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Shipment' },
+    reason: { type: String, required: true },
+    changes: {
+      onTimeDeliveryRate: { old: Number, new: Number },
+      defectRate:         { old: Number, new: Number },
+      disputeFrequency:   { old: Number, new: Number },
+    },
+    adjustedAt: { type: Date, default: Date.now },
+  },
+  { _id: false }
+);
+
 const supplierSchema = new mongoose.Schema(
   {
     orgId: {
@@ -73,6 +89,7 @@ const supplierSchema = new mongoose.Schema(
     // History
     riskHistory: [riskHistorySchema],
     overrideHistory: [overrideHistorySchema],
+    metricsAdjustmentHistory: [metricsAdjustmentSchema],
 
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now },

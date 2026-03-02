@@ -33,6 +33,7 @@ export const supplierAPI = {
   getRiskHistory: (id) => apiClient.get(`/suppliers/${id}/history`),
   overrideScore: (id, data) => apiClient.post(`/suppliers/${id}/override-score`, data),
   updateStatus: (id, data) => apiClient.patch(`/suppliers/${id}/status`, data),
+  updateMetrics: (id, data) => apiClient.post(`/suppliers/${id}/update-metrics`, data),
 };
 
 // Shipment API calls (placeholder)

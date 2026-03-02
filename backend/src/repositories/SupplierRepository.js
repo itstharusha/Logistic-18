@@ -43,11 +43,22 @@ export class SupplierRepository {
     return Supplier.find({ _id: { $in: ids }, orgId });
   }
 
-  static async appendRiskSnapshot(supplierId, snapshot) {
-    return Supplier.findByIdAndUpdate(
-      supplierId,
+  static async appendRiskSnapshot(orgId, supplierId, snapshot) {
+    return Supplier.findOneAndUpdate(
+      { _id: supplierId, orgId },
       { $push: { riskHistory: snapshot } },
       { new: true }
+    );
+  }
+
+  static async saveMetricsAdjustment(orgId, supplierId, { metricUpdates, adjustmentEntry }) {
+    return Supplier.findOneAndUpdate(
+      { _id: supplierId, orgId },
+      {
+        $set: { ...metricUpdates, updatedAt: new Date() },
+        $push: { metricsAdjustmentHistory: adjustmentEntry },
+      },
+      { new: true, runValidators: true }
     );
   }
 

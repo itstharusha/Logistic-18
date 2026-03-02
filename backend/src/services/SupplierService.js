@@ -96,7 +96,7 @@ export class SupplierService {
 
     // Append risk snapshot when score changes
     if (riskScore !== existing.riskScore) {
-      await SupplierRepository.appendRiskSnapshot(supplierId, {
+      await SupplierRepository.appendRiskSnapshot(orgId, supplierId, {
         riskScore,
         riskTier,
         scoredAt: new Date(),
@@ -121,6 +121,11 @@ export class SupplierService {
       throw new ValidationError('Select between 2 and 3 suppliers to compare');
     }
     const suppliers = await SupplierRepository.findManyByIds(orgId, ids);
+    if (suppliers.length !== ids.length) {
+      const foundIds = suppliers.map(s => s._id.toString());
+      const missing = ids.filter(id => !foundIds.includes(id));
+      throw new NotFoundError(`${missing.length} supplier(s) not found or not accessible: ${missing.join(', ')}`);
+    }
     return suppliers;
   }
 
@@ -170,6 +175,58 @@ export class SupplierService {
       entityId: supplierId,
       oldValue: { riskScore: oldScore, riskTier: oldTier },
       newValue: { riskScore: score, riskTier: newTier, justification },
+    });
+
+    return updated;
+  }
+
+  static async updateMetrics(orgId, supplierId, userId, { onTimeDeliveryRate, defectRate, disputeFrequency, reason, source = 'manual', shipmentId = null }) {
+    const supplier = await SupplierRepository.findById(orgId, supplierId);
+    if (!supplier) throw new NotFoundError('Supplier not found');
+
+    if (!reason || !reason.trim()) throw new ValidationError('Reason is required for metrics adjustment');
+
+    const metricUpdates = {};
+    const changes = {};
+
+    if (onTimeDeliveryRate != null) {
+      changes.onTimeDeliveryRate = { old: supplier.onTimeDeliveryRate, new: Number(onTimeDeliveryRate) };
+      metricUpdates.onTimeDeliveryRate = Number(onTimeDeliveryRate);
+    }
+    if (defectRate != null) {
+      changes.defectRate = { old: supplier.defectRate, new: Number(defectRate) };
+      metricUpdates.defectRate = Number(defectRate);
+    }
+    if (disputeFrequency != null) {
+      changes.disputeFrequency = { old: supplier.disputeFrequency, new: Number(disputeFrequency) };
+      metricUpdates.disputeFrequency = Number(disputeFrequency);
+    }
+
+    if (Object.keys(metricUpdates).length === 0) throw new ValidationError('At least one metric must be provided');
+
+    // Recompute risk score with updated metrics
+    const merged = { ...supplier.toObject(), ...metricUpdates };
+    const { riskScore, riskTier } = this.computeRiskScore(merged);
+    metricUpdates.riskScore = riskScore;
+    metricUpdates.riskTier = riskTier;
+    metricUpdates.lastScoredAt = new Date();
+
+    const adjustmentEntry = { adjustedBy: userId, source, shipmentId, reason, changes, adjustedAt: new Date() };
+
+    const updated = await SupplierRepository.saveMetricsAdjustment(orgId, supplierId, { metricUpdates, adjustmentEntry });
+
+    // Append risk snapshot if score changed
+    if (riskScore !== supplier.riskScore) {
+      await SupplierRepository.appendRiskSnapshot(orgId, supplierId, { riskScore, riskTier, scoredAt: new Date() });
+    }
+
+    await AuditLog.create({
+      orgId, userId,
+      action: source === 'auto_shipment' ? 'SUPPLIER_METRICS_AUTO_UPDATED' : 'SUPPLIER_METRICS_MANUALLY_UPDATED',
+      entityType: 'SUPPLIER',
+      entityId: supplierId,
+      oldValue: Object.fromEntries(Object.entries(changes).map(([k, v]) => [k, v.old])),
+      newValue: Object.fromEntries(Object.entries(changes).map(([k, v]) => [k, v.new])),
     });
 
     return updated;

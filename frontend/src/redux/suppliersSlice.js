@@ -85,6 +85,18 @@ export const overrideScore = createAsyncThunk(
   }
 );
 
+export const updateSupplierMetrics = createAsyncThunk(
+  'suppliers/updateSupplierMetrics',
+  async ({ id, data }, { rejectWithValue }) => {
+    try {
+      const response = await supplierAPI.updateMetrics(id, data);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.error || 'Failed to update metrics');
+    }
+  }
+);
+
 export const updateSupplierStatus = createAsyncThunk(
   'suppliers/updateSupplierStatus',
   async ({ id, status }, { rejectWithValue }) => {
@@ -208,6 +220,19 @@ const suppliersSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
+      // Update metrics
+      .addCase(updateSupplierMetrics.pending, (state) => { state.loading = true; })
+      .addCase(updateSupplierMetrics.fulfilled, (state, action) => {
+        state.loading = false;
+        state.message = 'Supplier metrics updated successfully';
+        state.selectedSupplier = action.payload.supplier;
+        const idx = state.suppliers.findIndex(s => s._id === action.payload.supplier._id);
+        if (idx !== -1) state.suppliers[idx] = action.payload.supplier;
+      })
+      .addCase(updateSupplierMetrics.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
       // Update status
       .addCase(updateSupplierStatus.pending, (state) => { state.loading = true; })
       .addCase(updateSupplierStatus.fulfilled, (state, action) => {
@@ -227,4 +252,5 @@ const suppliersSlice = createSlice({
 });
 
 export const { clearError, clearMessage, clearSelectedSupplier, clearComparisonData } = suppliersSlice.actions;
+export { updateSupplierMetrics };
 export default suppliersSlice.reducer;

@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import {
   getSupplier, getRiskHistory, overrideScore, updateSupplier,
-  updateSupplierStatus, clearError, clearMessage, clearSelectedSupplier
+  updateSupplierStatus, updateSupplierMetrics, clearError, clearMessage, clearSelectedSupplier
 } from '../redux/suppliersSlice.js';
 import Layout from '../components/Layout.jsx';
 import '../styles/pages.css';
@@ -125,11 +125,20 @@ export default function SupplierDetailPage() {
   const [showEditForm, setShowEditForm] = useState(false);
   const [editData, setEditData] = useState({});
 
+  const [showMetricsForm, setShowMetricsForm] = useState(false);
+  const [metricsData, setMetricsData] = useState({ onTimeDeliveryRate: '', defectRate: '', disputeFrequency: '', reason: '' });
+
+  const isValidObjectId = (val) => /^[a-f\d]{24}$/i.test(val);
+
   useEffect(() => {
+    if (!isValidObjectId(id)) {
+      navigate('/suppliers', { replace: true });
+      return;
+    }
     dispatch(getSupplier(id));
     dispatch(getRiskHistory(id));
     return () => dispatch(clearSelectedSupplier());
-  }, [dispatch, id]);
+  }, [dispatch, id, navigate]);
 
   useEffect(() => {
     if (message) {
@@ -159,6 +168,20 @@ export default function SupplierDetailPage() {
 
   const handleStatusChange = async (newStatus) => {
     await dispatch(updateSupplierStatus({ id, status: newStatus }));
+  };
+
+  const handleMetricsSubmit = async (e) => {
+    e.preventDefault();
+    const payload = { reason: metricsData.reason, source: 'manual' };
+    if (metricsData.onTimeDeliveryRate !== '') payload.onTimeDeliveryRate = Number(metricsData.onTimeDeliveryRate);
+    if (metricsData.defectRate !== '') payload.defectRate = Number(metricsData.defectRate);
+    if (metricsData.disputeFrequency !== '') payload.disputeFrequency = Number(metricsData.disputeFrequency);
+    const result = await dispatch(updateSupplierMetrics({ id, data: payload }));
+    if (!result.error) {
+      setShowMetricsForm(false);
+      setMetricsData({ onTimeDeliveryRate: '', defectRate: '', disputeFrequency: '', reason: '' });
+      dispatch(getRiskHistory(id));
+    }
   };
 
   const canManage = user?.role === 'ORG_ADMIN';
@@ -280,6 +303,12 @@ export default function SupplierDetailPage() {
         </div>
         <div className="header-actions">
           {canOverride && (
+            <button onClick={() => setShowMetricsForm(!showMetricsForm)} className="action-btn-premium" style={{ background: '#3b82f6' }}>
+              <BarChart2 size={18} />
+              <span>Update Metrics</span>
+            </button>
+          )}
+          {canOverride && (
             <button onClick={() => setShowOverrideForm(!showOverrideForm)} className="action-btn-premium" style={{ background: TIER_COLORS[tier] }}>
               <ShieldCheck size={18} />
               <span>Override Score</span>
@@ -314,44 +343,138 @@ export default function SupplierDetailPage() {
             <div className="form-header">
               <Edit2 size={20} /><h3>Edit Supplier Profile</h3>
             </div>
+
+            {/* ── Basic Information ── */}
+            <div className="form-section-label">Basic Information</div>
             <div className="form-grid">
-              {[
-                { name: 'name', label: 'Supplier Name', type: 'text', icon: Building2 },
-                { name: 'contactEmail', label: 'Contact Email', type: 'email', icon: Package },
-                { name: 'contactPhone', label: 'Phone', type: 'text', icon: Package },
-                { name: 'country', label: 'Country', type: 'text', icon: Globe },
-              ].map(f => (
-                <div key={f.name} className="form-group-premium">
-                  <label>{f.label}</label>
-                  <div className="input-wrapper">
-                    <f.icon size={18} className="input-icon" />
-                    <input
-                      type={f.type}
-                      value={editData[f.name] || ''}
-                      onChange={e => setEditData({ ...editData, [f.name]: e.target.value })}
-                    />
-                  </div>
+              <div className="form-group-premium">
+                <label>Supplier Name</label>
+                <div className="input-wrapper">
+                  <Building2 size={18} className="input-icon" />
+                  <input type="text" value={editData.name || ''} onChange={e => setEditData({ ...editData, name: e.target.value })} required />
                 </div>
-              ))}
+              </div>
+              <div className="form-group-premium">
+                <label>Contact Email</label>
+                <div className="input-wrapper">
+                  <Package size={18} className="input-icon" />
+                  <input type="email" value={editData.contactEmail || ''} onChange={e => setEditData({ ...editData, contactEmail: e.target.value })} />
+                </div>
+              </div>
+              <div className="form-group-premium">
+                <label>Contact Phone</label>
+                <div className="input-wrapper">
+                  <Package size={18} className="input-icon" />
+                  <input type="text" value={editData.contactPhone || ''} onChange={e => setEditData({ ...editData, contactPhone: e.target.value })} />
+                </div>
+              </div>
+              <div className="form-group-premium">
+                <label>Country</label>
+                <div className="input-wrapper">
+                  <Globe size={18} className="input-icon" />
+                  <input type="text" value={editData.country || ''} onChange={e => setEditData({ ...editData, country: e.target.value })} />
+                </div>
+              </div>
               <div className="form-group-premium">
                 <label>Category</label>
                 <div className="input-wrapper">
                   <Tag size={18} className="input-icon" />
-                  <select value={editData.category || ''} onChange={e => setEditData({ ...editData, category: e.target.value })}>
+                  <select value={editData.category || 'raw_materials'} onChange={e => setEditData({ ...editData, category: e.target.value })}>
                     {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
                   </select>
                 </div>
               </div>
               <div className="form-group-premium">
-                <label>Status</label>
+                <label>Weather Exposure</label>
                 <div className="input-wrapper">
-                  <ShieldAlert size={18} className="input-icon" />
-                  <select value={editData.status || 'active'} onChange={e => setEditData({ ...editData, status: e.target.value })}>
-                    {STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+                  <AlertTriangle size={18} className="input-icon" />
+                  <select value={editData.weatherLevel || 'low'} onChange={e => setEditData({ ...editData, weatherLevel: e.target.value })}>
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                  </select>
+                </div>
+              </div>
+              <div className="form-group-premium">
+                <label>Geopolitical Risk Flag</label>
+                <div className="input-wrapper">
+                  <Globe size={18} className="input-icon" />
+                  <select value={editData.geopoliticalRiskFlag ?? 0} onChange={e => setEditData({ ...editData, geopoliticalRiskFlag: Number(e.target.value) })}>
+                    <option value={0}>Stable — No geopolitical risk</option>
+                    <option value={1}>At-Risk — Geopolitical risk flagged</option>
                   </select>
                 </div>
               </div>
             </div>
+
+            {/* ── Performance Metrics ── */}
+            <div className="form-section-label" style={{ marginTop: 'var(--space-4)' }}>Performance Metrics</div>
+            <div className="form-grid">
+              <div className="form-group-premium">
+                <label>On-Time Delivery Rate (%)</label>
+                <div className="input-wrapper">
+                  <BarChart2 size={18} className="input-icon" />
+                  <input type="number" min="0" max="100" step="0.1" placeholder="0–100"
+                    value={editData.onTimeDeliveryRate ?? ''}
+                    onChange={e => setEditData({ ...editData, onTimeDeliveryRate: e.target.value })} />
+                </div>
+              </div>
+              <div className="form-group-premium">
+                <label>Avg Delay Days</label>
+                <div className="input-wrapper">
+                  <Clock size={18} className="input-icon" />
+                  <input type="number" min="0" step="0.1" placeholder="e.g. 3"
+                    value={editData.avgDelayDays ?? ''}
+                    onChange={e => setEditData({ ...editData, avgDelayDays: e.target.value })} />
+                </div>
+              </div>
+              <div className="form-group-premium">
+                <label>Defect Rate (%)</label>
+                <div className="input-wrapper">
+                  <ShieldAlert size={18} className="input-icon" />
+                  <input type="number" min="0" max="100" step="0.01" placeholder="0–100"
+                    value={editData.defectRate ?? ''}
+                    onChange={e => setEditData({ ...editData, defectRate: e.target.value })} />
+                </div>
+              </div>
+              <div className="form-group-premium">
+                <label>Financial Health Score (0–100)</label>
+                <div className="input-wrapper">
+                  <BarChart2 size={18} className="input-icon" />
+                  <input type="number" min="0" max="100" placeholder="0–100"
+                    value={editData.financialScore ?? ''}
+                    onChange={e => setEditData({ ...editData, financialScore: e.target.value })} />
+                </div>
+              </div>
+              <div className="form-group-premium">
+                <label>Years in Business</label>
+                <div className="input-wrapper">
+                  <Clock size={18} className="input-icon" />
+                  <input type="number" min="0" step="1" placeholder="e.g. 5"
+                    value={editData.yearsInBusiness ?? ''}
+                    onChange={e => setEditData({ ...editData, yearsInBusiness: e.target.value })} />
+                </div>
+              </div>
+              <div className="form-group-premium">
+                <label>Annual Contract Value ($)</label>
+                <div className="input-wrapper">
+                  <Package size={18} className="input-icon" />
+                  <input type="number" min="0" placeholder="e.g. 500000"
+                    value={editData.contractValue ?? ''}
+                    onChange={e => setEditData({ ...editData, contractValue: e.target.value })} />
+                </div>
+              </div>
+              <div className="form-group-premium">
+                <label>Dispute Frequency (per period)</label>
+                <div className="input-wrapper">
+                  <AlertTriangle size={18} className="input-icon" />
+                  <input type="number" min="0" max="20" step="0.1" placeholder="0–20"
+                    value={editData.disputeFrequency ?? ''}
+                    onChange={e => setEditData({ ...editData, disputeFrequency: e.target.value })} />
+                </div>
+              </div>
+            </div>
+
             <div className="form-actions-premium">
               <button type="submit" className="btn-primary-premium" disabled={loading}>
                 {loading ? <span className="spinner" /> : null} Save Changes
@@ -414,6 +537,73 @@ export default function SupplierDetailPage() {
         </div>
       )}
 
+      {/* ── Update Metrics Form ── */}
+      {showMetricsForm && canOverride && (
+        <div className="glass-panel anim-card" style={{ marginBottom: 'var(--space-6)', '--delay': '0s' }}>
+          <form onSubmit={handleMetricsSubmit} className="invite-form-premium">
+            <div className="form-header">
+              <BarChart2 size={20} /><h3>Update Performance Metrics</h3>
+            </div>
+            <p className="form-subtitle">
+              Update supplier performance data after a shipment delivery or based on new information.
+              Leave fields blank to keep existing values. Changes are permanently logged.
+            </p>
+            <div className="form-section-label">Metric Values</div>
+            <div className="form-grid">
+              <div className="form-group-premium">
+                <label>On-Time Delivery Rate (%)</label>
+                <div className="input-wrapper">
+                  <CheckCircle2 size={18} className="input-icon" />
+                  <input type="number" min="0" max="100" step="0.1"
+                    placeholder={`Current: ${supplier?.onTimeDeliveryRate ?? '—'}%`}
+                    value={metricsData.onTimeDeliveryRate}
+                    onChange={e => setMetricsData({ ...metricsData, onTimeDeliveryRate: e.target.value })} />
+                </div>
+              </div>
+              <div className="form-group-premium">
+                <label>Defect Rate (%)</label>
+                <div className="input-wrapper">
+                  <ShieldAlert size={18} className="input-icon" />
+                  <input type="number" min="0" max="100" step="0.01"
+                    placeholder={`Current: ${supplier?.defectRate ?? '—'}%`}
+                    value={metricsData.defectRate}
+                    onChange={e => setMetricsData({ ...metricsData, defectRate: e.target.value })} />
+                </div>
+              </div>
+              <div className="form-group-premium">
+                <label>Dispute Frequency (per period)</label>
+                <div className="input-wrapper">
+                  <AlertTriangle size={18} className="input-icon" />
+                  <input type="number" min="0" max="20" step="0.1"
+                    placeholder={`Current: ${supplier?.disputeFrequency ?? '—'}`}
+                    value={metricsData.disputeFrequency}
+                    onChange={e => setMetricsData({ ...metricsData, disputeFrequency: e.target.value })} />
+                </div>
+              </div>
+              <div className="form-group-premium" style={{ gridColumn: 'span 2' }}>
+                <label>Reason for Update <span style={{ color: 'var(--risk-high)' }}>*</span></label>
+                <div className="input-wrapper">
+                  <History size={18} className="input-icon" style={{ top: 14 }} />
+                  <textarea
+                    placeholder="e.g. Updated after delivery of Shipment #SHP-2024-001 — 2 day delay recorded"
+                    value={metricsData.reason}
+                    onChange={e => setMetricsData({ ...metricsData, reason: e.target.value })}
+                    required rows={2}
+                    style={{ paddingTop: 10, paddingLeft: 40, resize: 'vertical' }}
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="form-actions-premium">
+              <button type="submit" className="btn-primary-premium" disabled={loading}>
+                {loading ? <span className="spinner" /> : null} Save Metrics
+              </button>
+              <button type="button" onClick={() => setShowMetricsForm(false)} className="btn-ghost">Cancel</button>
+            </div>
+          </form>
+        </div>
+      )}
+
       {/* ── Risk Score Gauge + Metrics ── */}
       <div className="detail-top-grid">
         <div className="dash-card anim-card gauge-card" style={{ '--delay': '0.1s' }}>
@@ -444,6 +634,7 @@ export default function SupplierDetailPage() {
           <MetricCard icon={BarChart2} label="Financial Score" value={supplier?.financialScore} unit="" color="#3b82f6" delay="0.3s" />
           <MetricCard icon={TrendingUp} label="Years in Business" value={supplier?.yearsInBusiness} unit=" yrs" color="#8b5cf6" delay="0.35s" />
           <MetricCard icon={Package} label="Contract Value" value={supplier?.contractValue != null ? `$${Number(supplier.contractValue).toLocaleString()}` : null} unit="" color="#E85D2F" delay="0.4s" />
+          <MetricCard icon={ShieldAlert} label="Dispute Frequency" value={supplier?.disputeFrequency} unit=" /period" color="#C7253E" delay="0.45s" />
         </div>
       </div>
 
@@ -521,6 +712,68 @@ export default function SupplierDetailPage() {
         </div>
       )}
 
+      {/* ── Metrics Adjustment Log (manual only) ── */}
+      {supplier?.metricsAdjustmentHistory?.filter(e => e.source === 'manual').length > 0 && (
+        <div className="dash-card table-section anim-card" style={{ '--delay': '0.55s', marginBottom: 'var(--space-6)' }}>
+          <div className="card-header-premium">
+            <div className="header-info">
+              <h3>Manual Metrics Adjustments</h3>
+              <span className="badge">{supplier.metricsAdjustmentHistory.filter(e => e.source === 'manual').length} entries</span>
+            </div>
+          </div>
+          <div className="users-table-canvas">
+            <table className="premium-table">
+              <thead>
+                <tr>
+                  <th>Changes</th>
+                  <th>Reason</th>
+                  <th>Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[...supplier.metricsAdjustmentHistory].filter(e => e.source === 'manual').reverse().map((entry, i) => (
+                  <tr key={i}>
+                    <td>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 13 }}>
+                        {entry.changes?.onTimeDeliveryRate && (
+                          <span>
+                            On-Time: <span style={{ color: 'var(--text-tertiary)' }}>{entry.changes.onTimeDeliveryRate.old}%</span>
+                            <span className="score-arrow"> → </span>
+                            <strong style={{ color: 'var(--risk-low)' }}>{entry.changes.onTimeDeliveryRate.new}%</strong>
+                          </span>
+                        )}
+                        {entry.changes?.defectRate && (
+                          <span>
+                            Defect Rate: <span style={{ color: 'var(--text-tertiary)' }}>{entry.changes.defectRate.old}%</span>
+                            <span className="score-arrow"> → </span>
+                            <strong style={{ color: 'var(--risk-high)' }}>{entry.changes.defectRate.new}%</strong>
+                          </span>
+                        )}
+                        {entry.changes?.disputeFrequency && (
+                          <span>
+                            Disputes: <span style={{ color: 'var(--text-tertiary)' }}>{entry.changes.disputeFrequency.old}</span>
+                            <span className="score-arrow"> → </span>
+                            <strong style={{ color: 'var(--risk-medium)' }}>{entry.changes.disputeFrequency.new}</strong>
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td style={{ maxWidth: 300 }}>
+                      <span style={{ color: 'var(--text-secondary)', fontSize: 13 }}>{entry.reason}</span>
+                    </td>
+                    <td>
+                      <span style={{ color: 'var(--text-tertiary)', fontSize: 13 }}>
+                        {entry.adjustedAt ? new Date(entry.adjustedAt).toLocaleDateString() : '—'}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
       {/* ── Contact / Profile info ── */}
       <div className="dash-card anim-card" style={{ '--delay': '0.55s' }}>
         <div className="card-header-premium">
@@ -546,6 +799,21 @@ export default function SupplierDetailPage() {
           <div className="profile-detail-row">
             <span className="profile-detail-label"><AlertTriangle size={14} /> Weather Exposure</span>
             <span className="profile-detail-value" style={{ textTransform: 'capitalize' }}>{supplier?.weatherLevel || '—'}</span>
+          </div>
+          <div className="profile-detail-row">
+            <span className="profile-detail-label"><Globe size={14} /> Geopolitical Risk</span>
+            <span className="profile-detail-value">
+              {supplier?.geopoliticalRiskFlag === 1
+                ? <span className="risk-tier-chip tier-high" style={{ fontSize: 12 }}>At-Risk Country</span>
+                : <span className="risk-tier-chip tier-low" style={{ fontSize: 12 }}>Stable Country</span>
+              }
+            </span>
+          </div>
+          <div className="profile-detail-row">
+            <span className="profile-detail-label"><ShieldAlert size={14} /> Dispute Frequency</span>
+            <span className="profile-detail-value">
+              {supplier?.disputeFrequency != null ? `${supplier.disputeFrequency} per period` : '—'}
+            </span>
           </div>
           <div className="profile-detail-row">
             <span className="profile-detail-label"><Calendar size={14} /> Registered</span>

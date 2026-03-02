@@ -74,6 +74,20 @@ export class SupplierController {
     res.json({ message: 'Risk score overridden successfully', supplier });
   });
 
+  // POST /api/suppliers/:id/update-metrics
+  static updateMetrics = asyncHandler(async (req, res) => {
+    const { onTimeDeliveryRate, defectRate, disputeFrequency, reason, source, shipmentId } = req.body;
+
+    const supplier = await SupplierService.updateMetrics(
+      req.user.orgId,
+      req.params.id,
+      req.user.userId,
+      { onTimeDeliveryRate, defectRate, disputeFrequency, reason, source, shipmentId }
+    );
+
+    res.json({ message: 'Supplier metrics updated successfully', supplier });
+  });
+
   // PATCH /api/suppliers/:id/status
   static updateStatus = asyncHandler(async (req, res) => {
     const { status } = req.body;
