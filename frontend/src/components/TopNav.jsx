@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
-import { Bell, LogOut, User, Settings } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Bell, LogOut, User, Settings, Sun, Moon, Monitor } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
 import { logout } from '../redux/authSlice.js';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { useTheme } from '../context/ThemeContext.jsx';
 import '../styles/layout.css';
 
 export default function TopNav() {
@@ -11,6 +12,29 @@ export default function TopNav() {
   const location = useLocation();
   const user = useSelector((state) => state.auth.user);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [showThemeMenu, setShowThemeMenu] = useState(false);
+  const { theme, setTheme } = useTheme();
+  const themeMenuRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (themeMenuRef.current && !themeMenuRef.current.contains(e.target)) {
+        setShowThemeMenu(false);
+      }
+    };
+    if (showThemeMenu) document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showThemeMenu]);
+
+  const themeIcon = theme === 'night' ? <Moon size={18} strokeWidth={1.8} />
+    : theme === 'day' ? <Sun size={18} strokeWidth={1.8} />
+    : <Monitor size={18} strokeWidth={1.8} />;
+
+  const themeOptions = [
+    { id: 'default', label: 'Default', icon: <Monitor size={15} strokeWidth={1.8} /> },
+    { id: 'day',     label: 'Day',     icon: <Sun  size={15} strokeWidth={1.8} /> },
+    { id: 'night',   label: 'Night',   icon: <Moon size={15} strokeWidth={1.8} /> },
+  ];
 
   const isActive = (path) => location.pathname === path;
 
@@ -67,6 +91,34 @@ export default function TopNav() {
           <Bell size={20} strokeWidth={1.8} />
           <span id="notification-badge" className="notification-badge" aria-live="polite" aria-atomic="true">3</span>
         </button>
+
+        <div className="nav-theme-menu" ref={themeMenuRef}>
+          <button
+            className="nav-icon-btn"
+            title="Switch theme"
+            aria-label="Switch theme"
+            aria-haspopup="true"
+            aria-expanded={showThemeMenu}
+            onClick={() => setShowThemeMenu(!showThemeMenu)}
+          >
+            {themeIcon}
+          </button>
+          {showThemeMenu && (
+            <div className="nav-theme-dropdown">
+              {themeOptions.map((t) => (
+                <button
+                  key={t.id}
+                  className={`theme-option${theme === t.id ? ' active' : ''}`}
+                  onClick={() => { setTheme(t.id); setShowThemeMenu(false); }}
+                >
+                  {t.icon}
+                  <span className="theme-option-label">{t.label}</span>
+                  {theme === t.id && <span className="theme-option-check" />}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
 
         <div className="nav-user-menu">
           <button className="nav-user-btn" title="User menu" aria-haspopup="true" aria-expanded={showUserMenu} onClick={() => setShowUserMenu(!showUserMenu)} aria-label={`User menu for ${user?.email || 'User'}`}>
