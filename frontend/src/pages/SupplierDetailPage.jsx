@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import {
   Line
 } from 'react-chartjs-2';
@@ -115,18 +115,31 @@ export default function SupplierDetailPage() {
   const { id } = useParams();
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const { selectedSupplier: supplier, riskHistory, detailLoading, loading, error, message } = useSelector(s => s.suppliers);
   const user = useSelector(s => s.auth.user);
 
-  const [showOverrideForm, setShowOverrideForm] = useState(false);
+  // Only one form is open at a time: 'edit' | 'override' | 'metrics' | null
+  const [activeForm, setActiveForm] = useState(null);
+  const openForm  = (name) => setActiveForm(prev => prev === name ? null : name);
+  const closeForm = ()     => setActiveForm(null);
+
+  const showEditForm     = activeForm === 'edit';
+  const showOverrideForm = activeForm === 'override';
+  const showMetricsForm  = activeForm === 'metrics';
+
+  const setShowEditForm     = (v) => setActiveForm(v ? 'edit'     : null);
+  const setShowOverrideForm = (v) => setActiveForm(v ? 'override' : null);
+  const setShowMetricsForm  = (v) => setActiveForm(v ? 'metrics'  : null);
+
   const [overrideData, setOverrideData] = useState({ newScore: '', justification: '' });
-
-  const [showEditForm, setShowEditForm] = useState(false);
   const [editData, setEditData] = useState({});
-
-  const [showMetricsForm, setShowMetricsForm] = useState(false);
-  const [metricsData, setMetricsData] = useState({ onTimeDeliveryRate: '', defectRate: '', disputeFrequency: '', reason: '' });
+  const [metricsData, setMetricsData] = useState({
+    onTimeDeliveryRate: '', defectRate: '', disputeFrequency: '',
+    avgDelayDays: '', financialScore: '', yearsInBusiness: '', contractValue: '',
+    reason: '',
+  });
 
   const isValidObjectId = (val) => /^[a-f\d]{24}$/i.test(val);
 
@@ -147,6 +160,15 @@ export default function SupplierDetailPage() {
     }
   }, [message, dispatch]);
 
+  // Auto-open edit form when navigated from the suppliers list edit button
+  useEffect(() => {
+    if (location.state?.openEdit && supplier) {
+      setEditData({ ...supplier });
+      openForm('edit');
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location.state?.openEdit, supplier]);
+
   const handleOverrideSubmit = async (e) => {
     e.preventDefault();
     const result = await dispatch(overrideScore({
@@ -154,7 +176,7 @@ export default function SupplierDetailPage() {
       data: { newScore: Number(overrideData.newScore), justification: overrideData.justification }
     }));
     if (!result.error) {
-      setShowOverrideForm(false);
+      closeForm();
       setOverrideData({ newScore: '', justification: '' });
       dispatch(getRiskHistory(id));
     }
@@ -163,7 +185,7 @@ export default function SupplierDetailPage() {
   const handleEditSubmit = async (e) => {
     e.preventDefault();
     const result = await dispatch(updateSupplier({ id, data: editData }));
-    if (!result.error) setShowEditForm(false);
+    if (!result.error) closeForm();
   };
 
   const handleStatusChange = async (newStatus) => {
@@ -174,12 +196,20 @@ export default function SupplierDetailPage() {
     e.preventDefault();
     const payload = { reason: metricsData.reason, source: 'manual' };
     if (metricsData.onTimeDeliveryRate !== '') payload.onTimeDeliveryRate = Number(metricsData.onTimeDeliveryRate);
-    if (metricsData.defectRate !== '') payload.defectRate = Number(metricsData.defectRate);
-    if (metricsData.disputeFrequency !== '') payload.disputeFrequency = Number(metricsData.disputeFrequency);
+    if (metricsData.defectRate !== '')         payload.defectRate         = Number(metricsData.defectRate);
+    if (metricsData.disputeFrequency !== '')   payload.disputeFrequency   = Number(metricsData.disputeFrequency);
+    if (metricsData.avgDelayDays !== '')       payload.avgDelayDays       = Number(metricsData.avgDelayDays);
+    if (metricsData.financialScore !== '')     payload.financialScore     = Number(metricsData.financialScore);
+    if (metricsData.yearsInBusiness !== '')    payload.yearsInBusiness    = Number(metricsData.yearsInBusiness);
+    if (metricsData.contractValue !== '')      payload.contractValue      = Number(metricsData.contractValue);
     const result = await dispatch(updateSupplierMetrics({ id, data: payload }));
     if (!result.error) {
-      setShowMetricsForm(false);
-      setMetricsData({ onTimeDeliveryRate: '', defectRate: '', disputeFrequency: '', reason: '' });
+      closeForm();
+      setMetricsData({
+        onTimeDeliveryRate: '', defectRate: '', disputeFrequency: '',
+        avgDelayDays: '', financialScore: '', yearsInBusiness: '', contractValue: '',
+        reason: '',
+      });
       dispatch(getRiskHistory(id));
     }
   };
@@ -303,19 +333,19 @@ export default function SupplierDetailPage() {
         </div>
         <div className="header-actions">
           {canOverride && (
-            <button onClick={() => setShowMetricsForm(!showMetricsForm)} className="action-btn-premium" style={{ background: '#3b82f6' }}>
+            <button onClick={() => openForm('metrics')} className="action-btn-premium" style={{ background: '#3b82f6' }}>
               <BarChart2 size={18} />
               <span>Update Metrics</span>
             </button>
           )}
           {canOverride && (
-            <button onClick={() => setShowOverrideForm(!showOverrideForm)} className="action-btn-premium" style={{ background: TIER_COLORS[tier] }}>
+            <button onClick={() => openForm('override')} className="action-btn-premium" style={{ background: TIER_COLORS[tier] }}>
               <ShieldCheck size={18} />
               <span>Override Score</span>
             </button>
           )}
           {canManage && (
-            <button onClick={() => { setEditData({ ...supplier }); setShowEditForm(!showEditForm); }} className="action-btn-premium">
+            <button onClick={() => { setEditData({ ...supplier }); openForm('edit'); }} className="action-btn-premium">
               <Edit2 size={18} />
               <span>Edit Profile</span>
             </button>
@@ -407,79 +437,11 @@ export default function SupplierDetailPage() {
               </div>
             </div>
 
-            {/* ── Performance Metrics ── */}
-            <div className="form-section-label" style={{ marginTop: 'var(--space-4)' }}>Performance Metrics</div>
-            <div className="form-grid">
-              <div className="form-group-premium">
-                <label>On-Time Delivery Rate (%)</label>
-                <div className="input-wrapper">
-                  <BarChart2 size={18} className="input-icon" />
-                  <input type="number" min="0" max="100" step="0.1" placeholder="0–100"
-                    value={editData.onTimeDeliveryRate ?? ''}
-                    onChange={e => setEditData({ ...editData, onTimeDeliveryRate: e.target.value })} />
-                </div>
-              </div>
-              <div className="form-group-premium">
-                <label>Avg Delay Days</label>
-                <div className="input-wrapper">
-                  <Clock size={18} className="input-icon" />
-                  <input type="number" min="0" step="0.1" placeholder="e.g. 3"
-                    value={editData.avgDelayDays ?? ''}
-                    onChange={e => setEditData({ ...editData, avgDelayDays: e.target.value })} />
-                </div>
-              </div>
-              <div className="form-group-premium">
-                <label>Defect Rate (%)</label>
-                <div className="input-wrapper">
-                  <ShieldAlert size={18} className="input-icon" />
-                  <input type="number" min="0" max="100" step="0.01" placeholder="0–100"
-                    value={editData.defectRate ?? ''}
-                    onChange={e => setEditData({ ...editData, defectRate: e.target.value })} />
-                </div>
-              </div>
-              <div className="form-group-premium">
-                <label>Financial Health Score (0–100)</label>
-                <div className="input-wrapper">
-                  <BarChart2 size={18} className="input-icon" />
-                  <input type="number" min="0" max="100" placeholder="0–100"
-                    value={editData.financialScore ?? ''}
-                    onChange={e => setEditData({ ...editData, financialScore: e.target.value })} />
-                </div>
-              </div>
-              <div className="form-group-premium">
-                <label>Years in Business</label>
-                <div className="input-wrapper">
-                  <Clock size={18} className="input-icon" />
-                  <input type="number" min="0" step="1" placeholder="e.g. 5"
-                    value={editData.yearsInBusiness ?? ''}
-                    onChange={e => setEditData({ ...editData, yearsInBusiness: e.target.value })} />
-                </div>
-              </div>
-              <div className="form-group-premium">
-                <label>Annual Contract Value ($)</label>
-                <div className="input-wrapper">
-                  <Package size={18} className="input-icon" />
-                  <input type="number" min="0" placeholder="e.g. 500000"
-                    value={editData.contractValue ?? ''}
-                    onChange={e => setEditData({ ...editData, contractValue: e.target.value })} />
-                </div>
-              </div>
-              <div className="form-group-premium">
-                <label>Dispute Frequency (per period)</label>
-                <div className="input-wrapper">
-                  <AlertTriangle size={18} className="input-icon" />
-                  <input type="number" min="0" max="20" step="0.1" placeholder="0–20"
-                    value={editData.disputeFrequency ?? ''}
-                    onChange={e => setEditData({ ...editData, disputeFrequency: e.target.value })} />
-                </div>
-              </div>
-            </div>
-
             <div className="form-actions-premium">
               <button type="submit" className="btn-primary-premium" disabled={loading}>
                 {loading ? <span className="spinner" /> : null} Save Changes
               </button>
-              <button type="button" onClick={() => setShowEditForm(false)} className="btn-ghost">Cancel</button>
+              <button type="button" onClick={closeForm} className="btn-ghost">Cancel</button>
             </div>
           </form>
         </div>
@@ -531,7 +493,7 @@ export default function SupplierDetailPage() {
               <button type="submit" className="btn-primary-premium" disabled={loading}>
                 {loading ? <span className="spinner" /> : null} Apply Override
               </button>
-              <button type="button" onClick={() => setShowOverrideForm(false)} className="btn-ghost">Cancel</button>
+              <button type="button" onClick={closeForm} className="btn-ghost">Cancel</button>
             </div>
           </form>
         </div>
@@ -580,6 +542,46 @@ export default function SupplierDetailPage() {
                     onChange={e => setMetricsData({ ...metricsData, disputeFrequency: e.target.value })} />
                 </div>
               </div>
+              <div className="form-group-premium">
+                <label>Avg Delay Days</label>
+                <div className="input-wrapper">
+                  <Clock size={18} className="input-icon" />
+                  <input type="number" min="0" step="0.1"
+                    placeholder={`Current: ${supplier?.avgDelayDays ?? '—'} days`}
+                    value={metricsData.avgDelayDays}
+                    onChange={e => setMetricsData({ ...metricsData, avgDelayDays: e.target.value })} />
+                </div>
+              </div>
+              <div className="form-group-premium">
+                <label>Financial Health Score (0–100)</label>
+                <div className="input-wrapper">
+                  <BarChart2 size={18} className="input-icon" />
+                  <input type="number" min="0" max="100"
+                    placeholder={`Current: ${supplier?.financialScore ?? '—'}`}
+                    value={metricsData.financialScore}
+                    onChange={e => setMetricsData({ ...metricsData, financialScore: e.target.value })} />
+                </div>
+              </div>
+              <div className="form-group-premium">
+                <label>Years in Business</label>
+                <div className="input-wrapper">
+                  <TrendingUp size={18} className="input-icon" />
+                  <input type="number" min="0" step="1"
+                    placeholder={`Current: ${supplier?.yearsInBusiness ?? '—'} yrs`}
+                    value={metricsData.yearsInBusiness}
+                    onChange={e => setMetricsData({ ...metricsData, yearsInBusiness: e.target.value })} />
+                </div>
+              </div>
+              <div className="form-group-premium">
+                <label>Annual Contract Value ($)</label>
+                <div className="input-wrapper">
+                  <Package size={18} className="input-icon" />
+                  <input type="number" min="0"
+                    placeholder={`Current: $${supplier?.contractValue != null ? Number(supplier.contractValue).toLocaleString() : '—'}`}
+                    value={metricsData.contractValue}
+                    onChange={e => setMetricsData({ ...metricsData, contractValue: e.target.value })} />
+                </div>
+              </div>
               <div className="form-group-premium" style={{ gridColumn: 'span 2' }}>
                 <label>Reason for Update <span style={{ color: 'var(--risk-high)' }}>*</span></label>
                 <div className="input-wrapper">
@@ -598,7 +600,7 @@ export default function SupplierDetailPage() {
               <button type="submit" className="btn-primary-premium" disabled={loading}>
                 {loading ? <span className="spinner" /> : null} Save Metrics
               </button>
-              <button type="button" onClick={() => setShowMetricsForm(false)} className="btn-ghost">Cancel</button>
+              <button type="button" onClick={closeForm} className="btn-ghost">Cancel</button>
             </div>
           </form>
         </div>
@@ -686,7 +688,15 @@ export default function SupplierDetailPage() {
                         <div className="user-avatar" style={{ width: 32, height: 32, fontSize: 13 }}>
                           {h.analystName?.charAt(0) || 'A'}
                         </div>
-                        <span className="user-name">{h.analystName || 'Analyst'}</span>
+                        <div className="user-info">
+                          <span className="user-name">{h.analystName || 'Analyst'}</span>
+                          {h.analystEmail && <span className="user-email">{h.analystEmail}</span>}
+                          {h.analystRole && (
+                            <span className="role-chip" style={{ marginTop: 2, fontSize: 11 }}>
+                              {h.analystRole.replace(/_/g, ' ')}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </td>
                     <td>
@@ -701,7 +711,14 @@ export default function SupplierDetailPage() {
                     </td>
                     <td>
                       <span style={{ color: 'var(--text-tertiary)', fontSize: 13 }}>
-                        {h.overriddenAt ? new Date(h.overriddenAt).toLocaleDateString() : '—'}
+                        {h.overriddenAt ? (
+                          <>
+                            <span>{new Date(h.overriddenAt).toLocaleDateString()}</span>
+                            <span style={{ display: 'block', fontSize: 11, color: 'var(--text-tertiary)', marginTop: 2 }}>
+                              {new Date(h.overriddenAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </>
+                        ) : '—'}
                       </span>
                     </td>
                   </tr>
@@ -725,6 +742,7 @@ export default function SupplierDetailPage() {
             <table className="premium-table">
               <thead>
                 <tr>
+                  <th>Adjusted By</th>
                   <th>Changes</th>
                   <th>Reason</th>
                   <th>Date</th>
@@ -734,36 +752,59 @@ export default function SupplierDetailPage() {
                 {[...supplier.metricsAdjustmentHistory].filter(e => e.source === 'manual').reverse().map((entry, i) => (
                   <tr key={i}>
                     <td>
+                      <div className="user-identity">
+                        <div className="user-avatar" style={{ width: 32, height: 32, fontSize: 13 }}>
+                          {entry.adjustedByName?.charAt(0) || '?'}
+                        </div>
+                        <div className="user-info">
+                          <span className="user-name">{entry.adjustedByName || 'Unknown'}</span>
+                          {entry.adjustedByEmail && <span className="user-email">{entry.adjustedByEmail}</span>}
+                          {entry.adjustedByRole && (
+                            <span className="role-chip" style={{ marginTop: 2, fontSize: 11 }}>
+                              {entry.adjustedByRole.replace(/_/g, ' ')}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </td>
+                    <td>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 13 }}>
                         {entry.changes?.onTimeDeliveryRate && (
-                          <span>
-                            On-Time: <span style={{ color: 'var(--text-tertiary)' }}>{entry.changes.onTimeDeliveryRate.old}%</span>
-                            <span className="score-arrow"> → </span>
-                            <strong style={{ color: 'var(--risk-low)' }}>{entry.changes.onTimeDeliveryRate.new}%</strong>
-                          </span>
+                          <span>On-Time: <span style={{ color: 'var(--text-tertiary)' }}>{entry.changes.onTimeDeliveryRate.old}%</span><span className="score-arrow"> → </span><strong style={{ color: 'var(--risk-low)' }}>{entry.changes.onTimeDeliveryRate.new}%</strong></span>
                         )}
                         {entry.changes?.defectRate && (
-                          <span>
-                            Defect Rate: <span style={{ color: 'var(--text-tertiary)' }}>{entry.changes.defectRate.old}%</span>
-                            <span className="score-arrow"> → </span>
-                            <strong style={{ color: 'var(--risk-high)' }}>{entry.changes.defectRate.new}%</strong>
-                          </span>
+                          <span>Defect Rate: <span style={{ color: 'var(--text-tertiary)' }}>{entry.changes.defectRate.old}%</span><span className="score-arrow"> → </span><strong style={{ color: 'var(--risk-high)' }}>{entry.changes.defectRate.new}%</strong></span>
                         )}
                         {entry.changes?.disputeFrequency && (
-                          <span>
-                            Disputes: <span style={{ color: 'var(--text-tertiary)' }}>{entry.changes.disputeFrequency.old}</span>
-                            <span className="score-arrow"> → </span>
-                            <strong style={{ color: 'var(--risk-medium)' }}>{entry.changes.disputeFrequency.new}</strong>
-                          </span>
+                          <span>Disputes: <span style={{ color: 'var(--text-tertiary)' }}>{entry.changes.disputeFrequency.old}</span><span className="score-arrow"> → </span><strong style={{ color: 'var(--risk-medium)' }}>{entry.changes.disputeFrequency.new}</strong></span>
+                        )}
+                        {entry.changes?.avgDelayDays && (
+                          <span>Avg Delay: <span style={{ color: 'var(--text-tertiary)' }}>{entry.changes.avgDelayDays.old}d</span><span className="score-arrow"> → </span><strong>{entry.changes.avgDelayDays.new}d</strong></span>
+                        )}
+                        {entry.changes?.financialScore && (
+                          <span>Financial: <span style={{ color: 'var(--text-tertiary)' }}>{entry.changes.financialScore.old}</span><span className="score-arrow"> → </span><strong style={{ color: '#3b82f6' }}>{entry.changes.financialScore.new}</strong></span>
+                        )}
+                        {entry.changes?.yearsInBusiness && (
+                          <span>Years: <span style={{ color: 'var(--text-tertiary)' }}>{entry.changes.yearsInBusiness.old}</span><span className="score-arrow"> → </span><strong>{entry.changes.yearsInBusiness.new}</strong></span>
+                        )}
+                        {entry.changes?.contractValue && (
+                          <span>Contract: <span style={{ color: 'var(--text-tertiary)' }}>${Number(entry.changes.contractValue.old).toLocaleString()}</span><span className="score-arrow"> → </span><strong>${Number(entry.changes.contractValue.new).toLocaleString()}</strong></span>
                         )}
                       </div>
                     </td>
-                    <td style={{ maxWidth: 300 }}>
+                    <td style={{ maxWidth: 260 }}>
                       <span style={{ color: 'var(--text-secondary)', fontSize: 13 }}>{entry.reason}</span>
                     </td>
                     <td>
                       <span style={{ color: 'var(--text-tertiary)', fontSize: 13 }}>
-                        {entry.adjustedAt ? new Date(entry.adjustedAt).toLocaleDateString() : '—'}
+                        {entry.adjustedAt ? (
+                          <>
+                            <span>{new Date(entry.adjustedAt).toLocaleDateString()}</span>
+                            <span style={{ display: 'block', fontSize: 11, color: 'var(--text-tertiary)', marginTop: 2 }}>
+                              {new Date(entry.adjustedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </>
+                        ) : '—'}
                       </span>
                     </td>
                   </tr>
