@@ -76,13 +76,17 @@ export class SupplierController {
 
   // POST /api/suppliers/:id/update-metrics
   static updateMetrics = asyncHandler(async (req, res) => {
-    const { onTimeDeliveryRate, defectRate, disputeFrequency, reason, source, shipmentId } = req.body;
+    const {
+      onTimeDeliveryRate, defectRate, disputeFrequency,
+      avgDelayDays, financialScore, yearsInBusiness, contractValue,
+      reason, source, shipmentId,
+    } = req.body;
 
     const supplier = await SupplierService.updateMetrics(
       req.user.orgId,
       req.params.id,
       req.user.userId,
-      { onTimeDeliveryRate, defectRate, disputeFrequency, reason, source, shipmentId }
+      { onTimeDeliveryRate, defectRate, disputeFrequency, avgDelayDays, financialScore, yearsInBusiness, contractValue, reason, source, shipmentId }
     );
 
     res.json({ message: 'Supplier metrics updated successfully', supplier });

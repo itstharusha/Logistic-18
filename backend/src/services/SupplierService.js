@@ -1,4 +1,5 @@
 import { SupplierRepository } from '../repositories/SupplierRepository.js';
+import { UserRepository } from '../repositories/UserRepository.js';
 import AuditLog from '../models/AuditLog.js';
 import { NotFoundError, ValidationError } from '../utils/errors.js';
 
@@ -156,9 +157,16 @@ export class SupplierService {
     else if (score <= 80) newTier = 'high';
     else newTier = 'critical';
 
+    const analyst = await UserRepository.findById(analystId);
     const now = new Date();
-    const overrideEntry = { analystId, oldScore, newScore: score, oldTier, newTier, justification, overriddenAt: now };
-    const historyEntry  = { riskScore: score, riskTier: newTier, scoredAt: now };
+    const overrideEntry = {
+      analystId,
+      analystName:  analyst?.name  || 'Unknown',
+      analystEmail: analyst?.email || '',
+      analystRole:  analyst?.role  || '',
+      oldScore, newScore: score, oldTier, newTier, justification, overriddenAt: now,
+    };
+    const historyEntry = { riskScore: score, riskTier: newTier, scoredAt: now };
 
     const updated = await SupplierRepository.saveOverride(orgId, supplierId, {
       riskScore: score,
@@ -180,8 +188,11 @@ export class SupplierService {
     return updated;
   }
 
-  static async updateMetrics(orgId, supplierId, userId, { onTimeDeliveryRate, defectRate, disputeFrequency, reason, source = 'manual', shipmentId = null }) {
-    const supplier = await SupplierRepository.findById(orgId, supplierId);
+  static async updateMetrics(orgId, supplierId, userId, { onTimeDeliveryRate, defectRate, disputeFrequency, avgDelayDays, financialScore, yearsInBusiness, contractValue, reason, source = 'manual', shipmentId = null }) {
+    const [supplier, user] = await Promise.all([
+      SupplierRepository.findById(orgId, supplierId),
+      UserRepository.findById(userId),
+    ]);
     if (!supplier) throw new NotFoundError('Supplier not found');
 
     if (!reason || !reason.trim()) throw new ValidationError('Reason is required for metrics adjustment');
@@ -189,18 +200,20 @@ export class SupplierService {
     const metricUpdates = {};
     const changes = {};
 
-    if (onTimeDeliveryRate != null) {
-      changes.onTimeDeliveryRate = { old: supplier.onTimeDeliveryRate, new: Number(onTimeDeliveryRate) };
-      metricUpdates.onTimeDeliveryRate = Number(onTimeDeliveryRate);
-    }
-    if (defectRate != null) {
-      changes.defectRate = { old: supplier.defectRate, new: Number(defectRate) };
-      metricUpdates.defectRate = Number(defectRate);
-    }
-    if (disputeFrequency != null) {
-      changes.disputeFrequency = { old: supplier.disputeFrequency, new: Number(disputeFrequency) };
-      metricUpdates.disputeFrequency = Number(disputeFrequency);
-    }
+    const trackMetric = (key, val) => {
+      if (val != null) {
+        changes[key] = { old: supplier[key], new: Number(val) };
+        metricUpdates[key] = Number(val);
+      }
+    };
+
+    trackMetric('onTimeDeliveryRate', onTimeDeliveryRate);
+    trackMetric('defectRate',         defectRate);
+    trackMetric('disputeFrequency',   disputeFrequency);
+    trackMetric('avgDelayDays',       avgDelayDays);
+    trackMetric('financialScore',     financialScore);
+    trackMetric('yearsInBusiness',    yearsInBusiness);
+    trackMetric('contractValue',      contractValue);
 
     if (Object.keys(metricUpdates).length === 0) throw new ValidationError('At least one metric must be provided');
 
@@ -211,7 +224,13 @@ export class SupplierService {
     metricUpdates.riskTier = riskTier;
     metricUpdates.lastScoredAt = new Date();
 
-    const adjustmentEntry = { adjustedBy: userId, source, shipmentId, reason, changes, adjustedAt: new Date() };
+    const adjustmentEntry = {
+      adjustedBy:      userId,
+      adjustedByName:  user?.name  || 'Unknown',
+      adjustedByEmail: user?.email || '',
+      adjustedByRole:  user?.role  || '',
+      source, shipmentId, reason, changes, adjustedAt: new Date(),
+    };
 
     const updated = await SupplierRepository.saveMetricsAdjustment(orgId, supplierId, { metricUpdates, adjustmentEntry });
 

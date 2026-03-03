@@ -509,10 +509,10 @@ export default function SuppliersPage() {
                         </td>
                       )}
                       <td>
-                        <div className="user-identity">
+                        <div className="user-identity" style={{ cursor: 'pointer' }} onClick={() => navigate(`/suppliers/${s._id}`)}>
                           <div className="user-avatar supplier-avatar">{s.name?.charAt(0) || '?'}</div>
                           <div className="user-info">
-                            <span className="user-name">{s.name}</span>
+                            <span className="user-name supplier-name-link">{s.name}</span>
                             <span className="user-email">
                               <Globe size={11} style={{ marginRight: 3 }} />
                               {s.country || '—'}
@@ -551,7 +551,7 @@ export default function SuppliersPage() {
                           {canManage && (
                             <>
                               <button
-                                onClick={() => handleEditClick(s)}
+                                onClick={() => navigate(`/suppliers/${s._id}`, { state: { openEdit: true } })}
                                 className="icon-btn-premium"
                                 title="Edit Supplier"
                               >

@@ -1754,6 +1754,16 @@
   margin-bottom: var(--space-4);
 }
 
+/* ── Clickable supplier name in list ── */
+.supplier-name-link {
+  transition: color var(--duration-normal) var(--ease-smooth);
+}
+.user-identity:hover .supplier-name-link {
+  color: var(--brand-primary);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
 /* ── Responsive Supplier ── */
 @media (max-width: 1024px) {
   .detail-top-grid {

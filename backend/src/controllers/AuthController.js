@@ -36,19 +36,15 @@ export class AuthController {
 
   // POST /api/auth/refresh
   static refresh = asyncHandler(async (req, res) => {
-    const refreshToken = req.cookies.refreshToken || req.body.refreshToken;
+    const refreshToken = req.cookies?.refreshToken || req.body?.refreshToken;
     const ipAddress = req.ip;
 
     if (!refreshToken) {
       return res.status(401).json({ error: 'Refresh token missing' });
     }
 
-    const result = await AuthService.refreshAccessToken(
-      refreshToken,
-      req.user.userId,
-      req.user.orgId,
-      ipAddress
-    );
+    // userId and orgId are decoded from the refresh token itself — req.user is not available on this public route
+    const result = await AuthService.refreshAccessToken(refreshToken, ipAddress);
 
     // Update refresh token cookie
     res.cookie('refreshToken', result.refreshToken, {

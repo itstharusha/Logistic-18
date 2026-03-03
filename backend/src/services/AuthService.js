@@ -93,13 +93,10 @@ export class AuthService {
   }
 
   // Refresh access token
-  static async refreshAccessToken(refreshToken, userId, orgId, ipAddress) {
+  static async refreshAccessToken(refreshToken, ipAddress) {
     try {
       const decoded = verifyRefreshToken(refreshToken);
-
-      if (decoded.userId !== userId.toString()) {
-        throw new Error('Token does not belong to this user');
-      }
+      const { userId, orgId } = decoded;
 
       // Get user and check token version (detect reuse)
       const user = await UserRepository.findById(userId).select('+refreshTokenVersion');

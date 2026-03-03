@@ -252,5 +252,4 @@ const suppliersSlice = createSlice({
 });
 
 export const { clearError, clearMessage, clearSelectedSupplier, clearComparisonData } = suppliersSlice.actions;
-export { updateSupplierMetrics };
 export default suppliersSlice.reducer;

@@ -34,14 +34,23 @@ function App() {
   const { isInitialized, accessToken } = useSelector((state) => state.auth);
 
   useEffect(() => {
-    // Verify session on app load if token exists
     if (accessToken) {
       dispatch(getMe());
     } else {
-      // No token, finish initialization immediately
       dispatch({ type: 'auth/getMe/rejected' });
     }
   }, [dispatch, accessToken]);
+
+  // Failsafe: if a token exists but auth never resolves within 8s, force clear and continue
+  useEffect(() => {
+    if (!accessToken || isInitialized) return;
+    const timer = setTimeout(() => {
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
+      dispatch({ type: 'auth/getMe/rejected' });
+    }, 8000);
+    return () => clearTimeout(timer);
+  }, [accessToken, isInitialized, dispatch]);
 
   if (accessToken && !isInitialized) {
     return (

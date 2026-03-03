@@ -11,12 +11,14 @@ const riskHistorySchema = new mongoose.Schema(
 
 const overrideHistorySchema = new mongoose.Schema(
   {
-    analystId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-    analystName: { type: String },
-    oldScore: { type: Number },
-    newScore: { type: Number },
-    oldTier: { type: String },
-    newTier: { type: String },
+    analystId:    { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    analystName:  { type: String },
+    analystEmail: { type: String },
+    analystRole:  { type: String },
+    oldScore:     { type: Number },
+    newScore:     { type: Number },
+    oldTier:      { type: String },
+    newTier:      { type: String },
     justification: { type: String, required: true },
     overriddenAt: { type: Date, default: Date.now },
   },
@@ -25,14 +27,21 @@ const overrideHistorySchema = new mongoose.Schema(
 
 const metricsAdjustmentSchema = new mongoose.Schema(
   {
-    adjustedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-    source: { type: String, enum: ['manual', 'auto_shipment'], default: 'manual' },
+    adjustedBy:      { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    adjustedByName:  { type: String },
+    adjustedByEmail: { type: String },
+    adjustedByRole:  { type: String },
+    source:    { type: String, enum: ['manual', 'auto_shipment'], default: 'manual' },
     shipmentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Shipment' },
     reason: { type: String, required: true },
     changes: {
       onTimeDeliveryRate: { old: Number, new: Number },
       defectRate:         { old: Number, new: Number },
       disputeFrequency:   { old: Number, new: Number },
+      avgDelayDays:       { old: Number, new: Number },
+      financialScore:     { old: Number, new: Number },
+      yearsInBusiness:    { old: Number, new: Number },
+      contractValue:      { old: Number, new: Number },
     },
     adjustedAt: { type: Date, default: Date.now },
   },
