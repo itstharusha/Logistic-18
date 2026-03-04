@@ -44,7 +44,7 @@ export default function TopNav() {
       </div>
 
       <div className="nav-tabs" role="tablist">
-        {['/', '/suppliers', '/shipments', '/inventory', '/alerts', '/analytics', '/users'].map((path, i) => {
+        {['/', '/suppliers', '/shipments', '/inventory', '/warehouses', '/alerts', '/analytics', '/users'].map((path, i) => {
           if (path === '/users' && user?.role !== 'ORG_ADMIN') return null;
           const label = path === '/' ? 'Overview' : path.slice(1).charAt(0).toUpperCase() + path.slice(2);
           return (

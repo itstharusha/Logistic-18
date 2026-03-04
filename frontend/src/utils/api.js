@@ -38,11 +38,45 @@ export const shipmentAPI = {
   registerShipment: (data) => apiClient.post('/shipments', data),
 };
 
-// Inventory API calls (placeholder)
+// Inventory API calls (Wijemanna)
 export const inventoryAPI = {
   listInventory: (params) => apiClient.get('/inventory', { params }),
   getInventoryItem: (id) => apiClient.get(`/inventory/${id}`),
   createInventoryItem: (data) => apiClient.post('/inventory', data),
+  updateInventoryItem: (id, data) => apiClient.put(`/inventory/${id}`, data),
+  updateStock: (id, data) => apiClient.patch(`/inventory/${id}/stock`, data),
+  updatePendingOrder: (id, data) => apiClient.patch(`/inventory/${id}/pending-order`, data),
+  deleteInventoryItem: (id) => apiClient.delete(`/inventory/${id}`),
+  getForecast: (id) => apiClient.get(`/inventory/${id}/forecast`),
+  getDashboard: () => apiClient.get('/inventory/dashboard'),
+  getReorderList: () => apiClient.get('/inventory/reorder-list'),
+};
+
+// Warehouse API calls (Wijemanna)
+export const warehouseAPI = {
+  listWarehouses: (params) => apiClient.get('/inventory/warehouses', { params }),
+  getActiveWarehouses: () => apiClient.get('/inventory/warehouses/active'),
+  getWarehouseStats: () => apiClient.get('/inventory/warehouses/stats'),
+  getWarehouse: (id) => apiClient.get(`/inventory/warehouses/${id}`),
+  getWarehouseWithInventory: (id) => apiClient.get(`/inventory/warehouses/${id}/inventory`),
+  createWarehouse: (data) => apiClient.post('/inventory/warehouses', data),
+  updateWarehouse: (id, data) => apiClient.put(`/inventory/warehouses/${id}`, data),
+  setDefaultWarehouse: (id) => apiClient.patch(`/inventory/warehouses/${id}/default`),
+  deleteWarehouse: (id) => apiClient.delete(`/inventory/warehouses/${id}`),
+};
+
+// Warehouse Transfer API calls (Wijemanna)
+export const transferAPI = {
+  listTransfers: (params) => apiClient.get('/inventory/transfers', { params }),
+  getTransferStats: () => apiClient.get('/inventory/transfers/stats'),
+  getTransfer: (id) => apiClient.get(`/inventory/transfers/${id}`),
+  createTransfer: (data) => apiClient.post('/inventory/transfers', data),
+  approveTransfer: (id) => apiClient.patch(`/inventory/transfers/${id}/approve`),
+  completeTransfer: (id) => apiClient.patch(`/inventory/transfers/${id}/complete`),
+  cancelTransfer: (id, reason) => apiClient.patch(`/inventory/transfers/${id}/cancel`, { reason }),
+  getWarehousePendingTransfers: (warehouseId, direction) => 
+    apiClient.get(`/inventory/transfers/warehouse/${warehouseId}`, { params: { direction } }),
+  getItemTransferHistory: (itemId) => apiClient.get(`/inventory/transfers/item/${itemId}`),
 };
 
 // Alerts API calls (placeholder)

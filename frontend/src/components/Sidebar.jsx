@@ -17,6 +17,7 @@ export default function Sidebar() {
           <a href="/suppliers" className="sidebar-link">Suppliers</a>
           <a href="/shipments" className="sidebar-link">Shipments</a>
           <a href="/inventory" className="sidebar-link">Inventory</a>
+          <a href="/warehouses" className="sidebar-link">Warehouses</a>
         </div>
 
         <div className="sidebar-section">

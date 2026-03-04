@@ -8,6 +8,8 @@ import LoginPage from './pages/LoginPage.jsx';
 import RegisterPage from './pages/RegisterPage.jsx';
 import DashboardPage from './pages/DashboardPage.jsx';
 import UsersPage from './pages/UsersPage.jsx';
+import InventoryPage from './pages/InventoryPage.jsx';
+import WarehousePage from './pages/WarehousePage.jsx';
 
 // Protected Route Component
 function ProtectedRoute({ children, requiredRoles = [] }) {
@@ -79,7 +81,22 @@ function App() {
         {/* Placeholder routes */}
         <Route path="/suppliers" element={<div className="temp-page">Suppliers page - implemented by Rifshadh</div>} />
         <Route path="/shipments" element={<div className="temp-page">Shipments page - implemented by Umayanthi</div>} />
-        <Route path="/inventory" element={<div className="temp-page">Inventory page - implemented by Wijemanna</div>} />
+        <Route
+          path="/inventory"
+          element={
+            <ProtectedRoute requiredRoles={['ORG_ADMIN', 'INVENTORY_MANAGER', 'VIEWER']}>
+              <InventoryPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/warehouses"
+          element={
+            <ProtectedRoute requiredRoles={['ORG_ADMIN', 'INVENTORY_MANAGER', 'VIEWER']}>
+              <WarehousePage />
+            </ProtectedRoute>
+          }
+        />
         <Route path="/alerts" element={<div className="temp-page">Alerts page - implemented by Kulatunga</div>} />
         <Route path="/analytics" element={<div className="temp-page">Analytics page - implemented by Senadeera</div>} />
 

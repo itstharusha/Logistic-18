@@ -5,6 +5,9 @@ import dotenv from 'dotenv';
 import { connectDB } from './config/database.js';
 import { requestLogger, errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 
+// Import placeholder models to register them with mongoose
+import './models/index.js';
+
 // Import routes
 import authRoutes from './routes/authRoutes.js';
 import userRoutes from './routes/userRoutes.js';
