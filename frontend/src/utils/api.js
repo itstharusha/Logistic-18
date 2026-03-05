@@ -31,11 +31,14 @@ export const supplierAPI = {
   updateSupplier: (id, data) => apiClient.put(`/suppliers/${id}`, data),
 };
 
-// Shipment API calls (placeholder)
+// Shipment API calls
 export const shipmentAPI = {
-  listShipments: (params) => apiClient.get('/shipments', { params }),
-  getShipment: (id) => apiClient.get(`/shipments/${id}`),
-  registerShipment: (data) => apiClient.post('/shipments', data),
+  listShipments:        (params)     => apiClient.get('/shipments', { params }),
+  getShipment:          (id)         => apiClient.get(`/shipments/${id}`),
+  registerShipment:     (data)       => apiClient.post('/shipments', data),
+  updateShipment:       (id, data)   => apiClient.put(`/shipments/${id}`, data),
+  updateShipmentStatus: (id, data)   => apiClient.patch(`/shipments/${id}/status`, data),
+  getTrackingEvents:    (id)         => apiClient.get(`/shipments/${id}/tracking`),
 };
 
 // Inventory API calls (placeholder)

@@ -8,6 +8,10 @@ import LoginPage from './pages/LoginPage.jsx';
 import RegisterPage from './pages/RegisterPage.jsx';
 import DashboardPage from './pages/DashboardPage.jsx';
 import UsersPage from './pages/UsersPage.jsx';
+import SuppliersPage from './pages/SuppliersPage.jsx';
+import SupplierDetailPage from './pages/SupplierDetailPage.jsx';
+import ShipmentsPage from './pages/ShipmentsPage.jsx';
+import ShipmentDetailPage from './pages/ShipmentDetailPage.jsx';
 
 // Protected Route Component
 function ProtectedRoute({ children, requiredRoles = [] }) {
@@ -76,9 +80,25 @@ function App() {
           }
         />
 
-        {/* Placeholder routes */}
-        <Route path="/suppliers" element={<div className="temp-page">Suppliers page - implemented by Rifshadh</div>} />
-        <Route path="/shipments" element={<div className="temp-page">Shipments page - implemented by Umayanthi</div>} />
+        {/* Supplier routes */}
+        <Route
+          path="/suppliers"
+          element={
+            <ProtectedRoute>
+              <SuppliersPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/suppliers/:id"
+          element={
+            <ProtectedRoute>
+              <SupplierDetailPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="/shipments" element={<ProtectedRoute><ShipmentsPage /></ProtectedRoute>} />
+        <Route path="/shipments/:id" element={<ProtectedRoute><ShipmentDetailPage /></ProtectedRoute>} />
         <Route path="/inventory" element={<div className="temp-page">Inventory page - implemented by Wijemanna</div>} />
         <Route path="/alerts" element={<div className="temp-page">Alerts page - implemented by Kulatunga</div>} />
         <Route path="/analytics" element={<div className="temp-page">Analytics page - implemented by Senadeera</div>} />

@@ -1,7 +1,7 @@
 // API client for all HTTP requests
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 // Create axios instance
 const apiClient = axios.create({
@@ -38,7 +38,7 @@ apiClient.interceptors.response.use(
 
       if (refreshToken) {
         try {
-          const response = await axios.post(`${API_URL}/auth/refresh`, {
+          const response = await axios.post('/api/auth/refresh', {
             refreshToken,
           });
 
