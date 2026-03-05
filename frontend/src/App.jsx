@@ -8,6 +8,8 @@ import LoginPage from './pages/LoginPage.jsx';
 import RegisterPage from './pages/RegisterPage.jsx';
 import DashboardPage from './pages/DashboardPage.jsx';
 import UsersPage from './pages/UsersPage.jsx';
+import SuppliersPage from './pages/SuppliersPage.jsx';
+import SupplierDetailPage from './pages/SupplierDetailPage.jsx';
 import ShipmentsPage from './pages/ShipmentsPage.jsx';
 import ShipmentDetailPage from './pages/ShipmentDetailPage.jsx';
 
@@ -78,8 +80,23 @@ function App() {
           }
         />
 
-        {/* Placeholder — Supplier module lives on Supplier-Risk-Module branch */}
-        <Route path="/suppliers" element={<div className="temp-page">Suppliers page - implemented by Rifshadh</div>} />
+        {/* Supplier routes */}
+        <Route
+          path="/suppliers"
+          element={
+            <ProtectedRoute>
+              <SuppliersPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/suppliers/:id"
+          element={
+            <ProtectedRoute>
+              <SupplierDetailPage />
+            </ProtectedRoute>
+          }
+        />
 
         {/* Shipment Tracking routes */}
         <Route path="/shipments" element={<ProtectedRoute><ShipmentsPage /></ProtectedRoute>} />
