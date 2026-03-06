@@ -1,25 +1,59 @@
+/**
+ * shipmentRoutes.js — Express Router for Shipment Management API
+ *
+ * Responsibility:
+ *   Defines all HTTP routes for the shipment module and maps them to the
+ *   appropriate ShipmentController handler, with authentication and RBAC middleware.
+ *
+ *   Base path: /api/shipments (mounted in app.js)
+ *
+ *   RBAC Summary:
+ *   ┌────────────────────────────────────────┬──────────────────────────────────────────┐
+ *   │ Route                                  │ Allowed Roles                            │
+ *   ├────────────────────────────────────────┼──────────────────────────────────────────┤
+ *   │ GET  /                                 │ All authenticated users                  │
+ *   │ POST /                                 │ ORG_ADMIN, LOGISTICS_OPERATOR            │
+ *   │ GET  /:shipmentId                      │ All authenticated users                  │
+ *   │ PUT  /:shipmentId                      │ ORG_ADMIN, LOGISTICS_OPERATOR            │
+ *   │ PATCH /:shipmentId/status              │ ORG_ADMIN, LOGISTICS_OPERATOR            │
+ *   │ GET  /:shipmentId/tracking             │ All authenticated users                  │
+ *   └────────────────────────────────────────┴──────────────────────────────────────────┘
+ */
+
 import express from 'express';
 import { authenticate, authorize } from '../middleware/auth.js';
 import { ShipmentController } from '../controllers/ShipmentController.js';
 
 const router = express.Router();
 
-// GET  /api/shipments — list all shipments (all authenticated roles)
+// List all shipments for the org (all roles can view)
 router.get('/', authenticate, ShipmentController.listShipments);
 
-// POST /api/shipments — register new shipment (ORG_ADMIN, LOGISTICS_OPERATOR)
-router.post('/', authenticate, authorize(['ORG_ADMIN', 'LOGISTICS_OPERATOR']), ShipmentController.createShipment);
+// Register a new shipment — restricted to operators and admins
+router.post('/',
+    authenticate,
+    authorize(['ORG_ADMIN', 'LOGISTICS_OPERATOR']),
+    ShipmentController.createShipment
+);
 
-// GET  /api/shipments/:shipmentId — get shipment detail (all authenticated roles)
+// Get a single shipment's full detail (all roles can view)
 router.get('/:shipmentId', authenticate, ShipmentController.getShipment);
 
-// PUT  /api/shipments/:shipmentId — update shipment (ORG_ADMIN, LOGISTICS_OPERATOR)
-router.put('/:shipmentId', authenticate, authorize(['ORG_ADMIN', 'LOGISTICS_OPERATOR']), ShipmentController.updateShipment);
+// Update shipment fields — restricted to operators and admins
+router.put('/:shipmentId',
+    authenticate,
+    authorize(['ORG_ADMIN', 'LOGISTICS_OPERATOR']),
+    ShipmentController.updateShipment
+);
 
-// PATCH /api/shipments/:shipmentId/status — change shipment status (ORG_ADMIN, LOGISTICS_OPERATOR)
-router.patch('/:shipmentId/status', authenticate, authorize(['ORG_ADMIN', 'LOGISTICS_OPERATOR']), ShipmentController.updateStatus);
+// Advance the shipment status through the workflow state machine
+router.patch('/:shipmentId/status',
+    authenticate,
+    authorize(['ORG_ADMIN', 'LOGISTICS_OPERATOR']),
+    ShipmentController.updateStatus
+);
 
-// GET  /api/shipments/:shipmentId/tracking — get tracking events timeline (all authenticated roles)
+// Get the ordered tracking events timeline for the detail page
 router.get('/:shipmentId/tracking', authenticate, ShipmentController.getTrackingEvents);
 
 export default router;

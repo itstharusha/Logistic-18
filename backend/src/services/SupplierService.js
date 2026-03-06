@@ -22,13 +22,13 @@ export class SupplierService {
     } = supplier;
 
     // Weights aligned with dataset feature importance (total max = 100)
-    const deliveryPenalty   = (100 - Math.min(Number(onTimeDeliveryRate) || 0, 100)) * 0.28; // 0–28
-    const delayPenalty      = Math.min((Number(avgDelayDays) || 0) * 1.25, 15);              // 0–15
-    const defectPenalty     = Math.min(Number(defectRate) || 0, 30) * 0.567;                 // 0–17
-    const financialPenalty  = (100 - Math.min(Number(financialScore) || 0, 100)) * 0.15;     // 0–15
+    const deliveryPenalty = (100 - Math.min(Number(onTimeDeliveryRate) || 0, 100)) * 0.28; // 0–28
+    const delayPenalty = Math.min((Number(avgDelayDays) || 0) * 1.25, 15);              // 0–15
+    const defectPenalty = Math.min(Number(defectRate) || 0, 30) * 0.567;                 // 0–17
+    const financialPenalty = (100 - Math.min(Number(financialScore) || 0, 100)) * 0.15;     // 0–15
     const experiencePenalty = Math.max(0, 5 - Math.min(Number(yearsInBusiness) || 0, 5)) * 2; // 0–10
-    const geoPenalty        = (Number(geopoliticalRiskFlag) === 1) ? 10 : 0;                 // 0 or 10
-    const disputePenalty    = Math.min(Number(disputeFrequency) || 0, 20) * 0.25;            // 0–5
+    const geoPenalty = (Number(geopoliticalRiskFlag) === 1) ? 10 : 0;                 // 0 or 10
+    const disputePenalty = Math.min(Number(disputeFrequency) || 0, 20) * 0.25;            // 0–5
 
     const weatherMultiplier = { low: 1.0, medium: 1.05, high: 1.10 };
     const multiplier = weatherMultiplier[weatherLevel] ?? 1.0;
@@ -87,22 +87,19 @@ export class SupplierService {
     // Merge existing with incoming data for score recomputation
     const merged = { ...existing.toObject(), ...data };
     const { riskScore, riskTier } = this.computeRiskScore(merged);
+    const now = new Date();
 
-    const updated = await SupplierRepository.update(orgId, supplierId, {
+    // Decide whether to append a new risk-history snapshot
+    const scoreChanged = riskScore !== existing.riskScore;
+    const snapshot = scoreChanged ? { riskScore, riskTier, scoredAt: now } : null;
+
+    // Single atomic operation — returned document already contains the new snapshot
+    const updated = await SupplierRepository.updateWithSnapshot(orgId, supplierId, {
       ...data,
       riskScore,
       riskTier,
-      lastScoredAt: new Date(),
-    });
-
-    // Append risk snapshot when score changes
-    if (riskScore !== existing.riskScore) {
-      await SupplierRepository.appendRiskSnapshot(orgId, supplierId, {
-        riskScore,
-        riskTier,
-        scoredAt: new Date(),
-      });
-    }
+      lastScoredAt: now,
+    }, snapshot);
 
     await AuditLog.create({
       orgId,
@@ -149,7 +146,7 @@ export class SupplierService {
     }
 
     const oldScore = supplier.riskScore;
-    const oldTier  = supplier.riskTier;
+    const oldTier = supplier.riskTier;
 
     let newTier;
     if (score <= 30) newTier = 'low';
@@ -161,9 +158,9 @@ export class SupplierService {
     const now = new Date();
     const overrideEntry = {
       analystId,
-      analystName:  analyst?.name  || 'Unknown',
+      analystName: analyst?.name || 'Unknown',
       analystEmail: analyst?.email || '',
-      analystRole:  analyst?.role  || '',
+      analystRole: analyst?.role || '',
       oldScore, newScore: score, oldTier, newTier, justification, overriddenAt: now,
     };
     const historyEntry = { riskScore: score, riskTier: newTier, scoredAt: now };
@@ -208,12 +205,12 @@ export class SupplierService {
     };
 
     trackMetric('onTimeDeliveryRate', onTimeDeliveryRate);
-    trackMetric('defectRate',         defectRate);
-    trackMetric('disputeFrequency',   disputeFrequency);
-    trackMetric('avgDelayDays',       avgDelayDays);
-    trackMetric('financialScore',     financialScore);
-    trackMetric('yearsInBusiness',    yearsInBusiness);
-    trackMetric('contractValue',      contractValue);
+    trackMetric('defectRate', defectRate);
+    trackMetric('disputeFrequency', disputeFrequency);
+    trackMetric('avgDelayDays', avgDelayDays);
+    trackMetric('financialScore', financialScore);
+    trackMetric('yearsInBusiness', yearsInBusiness);
+    trackMetric('contractValue', contractValue);
 
     if (Object.keys(metricUpdates).length === 0) throw new ValidationError('At least one metric must be provided');
 
@@ -225,19 +222,18 @@ export class SupplierService {
     metricUpdates.lastScoredAt = new Date();
 
     const adjustmentEntry = {
-      adjustedBy:      userId,
-      adjustedByName:  user?.name  || 'Unknown',
+      adjustedBy: userId,
+      adjustedByName: user?.name || 'Unknown',
       adjustedByEmail: user?.email || '',
-      adjustedByRole:  user?.role  || '',
+      adjustedByRole: user?.role || '',
       source, shipmentId, reason, changes, adjustedAt: new Date(),
     };
 
-    const updated = await SupplierRepository.saveMetricsAdjustment(orgId, supplierId, { metricUpdates, adjustmentEntry });
+    const scoreChanged = riskScore !== supplier.riskScore;
+    const snapshot = scoreChanged ? { riskScore, riskTier, scoredAt: new Date() } : null;
 
-    // Append risk snapshot if score changed
-    if (riskScore !== supplier.riskScore) {
-      await SupplierRepository.appendRiskSnapshot(orgId, supplierId, { riskScore, riskTier, scoredAt: new Date() });
-    }
+    // Single atomic operation — push metricsAdjustment and optionally a new riskHistory entry
+    const updated = await SupplierRepository.saveMetricsAdjustment(orgId, supplierId, { metricUpdates, adjustmentEntry, snapshot });
 
     await AuditLog.create({
       orgId, userId,

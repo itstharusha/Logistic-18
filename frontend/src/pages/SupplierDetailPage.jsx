@@ -122,16 +122,16 @@ export default function SupplierDetailPage() {
 
   // Only one form is open at a time: 'edit' | 'override' | 'metrics' | null
   const [activeForm, setActiveForm] = useState(null);
-  const openForm  = (name) => setActiveForm(prev => prev === name ? null : name);
-  const closeForm = ()     => setActiveForm(null);
+  const openForm = (name) => setActiveForm(prev => prev === name ? null : name);
+  const closeForm = () => setActiveForm(null);
 
-  const showEditForm     = activeForm === 'edit';
+  const showEditForm = activeForm === 'edit';
   const showOverrideForm = activeForm === 'override';
-  const showMetricsForm  = activeForm === 'metrics';
+  const showMetricsForm = activeForm === 'metrics';
 
-  const setShowEditForm     = (v) => setActiveForm(v ? 'edit'     : null);
+  const setShowEditForm = (v) => setActiveForm(v ? 'edit' : null);
   const setShowOverrideForm = (v) => setActiveForm(v ? 'override' : null);
-  const setShowMetricsForm  = (v) => setActiveForm(v ? 'metrics'  : null);
+  const setShowMetricsForm = (v) => setActiveForm(v ? 'metrics' : null);
 
   const [overrideData, setOverrideData] = useState({ newScore: '', justification: '' });
   const [editData, setEditData] = useState({});
@@ -178,7 +178,6 @@ export default function SupplierDetailPage() {
     if (!result.error) {
       closeForm();
       setOverrideData({ newScore: '', justification: '' });
-      dispatch(getRiskHistory(id));
     }
   };
 
@@ -196,12 +195,12 @@ export default function SupplierDetailPage() {
     e.preventDefault();
     const payload = { reason: metricsData.reason, source: 'manual' };
     if (metricsData.onTimeDeliveryRate !== '') payload.onTimeDeliveryRate = Number(metricsData.onTimeDeliveryRate);
-    if (metricsData.defectRate !== '')         payload.defectRate         = Number(metricsData.defectRate);
-    if (metricsData.disputeFrequency !== '')   payload.disputeFrequency   = Number(metricsData.disputeFrequency);
-    if (metricsData.avgDelayDays !== '')       payload.avgDelayDays       = Number(metricsData.avgDelayDays);
-    if (metricsData.financialScore !== '')     payload.financialScore     = Number(metricsData.financialScore);
-    if (metricsData.yearsInBusiness !== '')    payload.yearsInBusiness    = Number(metricsData.yearsInBusiness);
-    if (metricsData.contractValue !== '')      payload.contractValue      = Number(metricsData.contractValue);
+    if (metricsData.defectRate !== '') payload.defectRate = Number(metricsData.defectRate);
+    if (metricsData.disputeFrequency !== '') payload.disputeFrequency = Number(metricsData.disputeFrequency);
+    if (metricsData.avgDelayDays !== '') payload.avgDelayDays = Number(metricsData.avgDelayDays);
+    if (metricsData.financialScore !== '') payload.financialScore = Number(metricsData.financialScore);
+    if (metricsData.yearsInBusiness !== '') payload.yearsInBusiness = Number(metricsData.yearsInBusiness);
+    if (metricsData.contractValue !== '') payload.contractValue = Number(metricsData.contractValue);
     const result = await dispatch(updateSupplierMetrics({ id, data: payload }));
     if (!result.error) {
       closeForm();
@@ -210,7 +209,6 @@ export default function SupplierDetailPage() {
         avgDelayDays: '', financialScore: '', yearsInBusiness: '', contractValue: '',
         reason: '',
       });
-      dispatch(getRiskHistory(id));
     }
   };
 
