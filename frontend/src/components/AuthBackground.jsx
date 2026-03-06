@@ -62,39 +62,32 @@ export default function AuthBackground({ children }) {
     };
 
     return (
-        {/* Clicking anywhere on the page advances the slideshow */ }
-        < div className = "auth-page-wrapper" onClick = { changeImage } >
+        <div className="auth-page-wrapper" onClick={changeImage}>
 
-            {/* Slideshow image layers — only the active and incoming slides are visible */ }
-            < div className = "slideshow-container" >
-            {
-                authImages.map((img, index) => (
+            {/* Slideshow image layers — only the active and incoming slides are visible */}
+            <div className="slideshow-container">
+                {authImages.map((img, index) => (
                     <div
                         key={index}
-                        className={`slide
-              ${index === currentIndex ? 'active' : ''}
-              ${index === nextIndex ? 'incoming' : ''}`}
+                        className={`slide ${index === currentIndex ? 'active' : ''} ${index === nextIndex ? 'incoming' : ''}`}
                         style={{ backgroundImage: `url("${img}")` }}
                     />
-                ))
-            }
+                ))}
 
-    {/* Semi-transparent dark overlay to ensure auth form text is readable */ }
-    <div className="slideshow-overlay" />
-      </div >
+                {/* Semi-transparent dark overlay to ensure auth form text is readable */}
+                <div className="slideshow-overlay" />
+            </div>
 
-        {/* Login / Register form rendered above the slideshow */ }
-        < div className = "auth-content-layer" >
-            { children }
-      </div >
+            {/* Login / Register form rendered above the slideshow */}
+            <div className="auth-content-layer">
+                {children}
+            </div>
 
-        {/* Hint text shown at the bottom when multiple images are available */ }
-    {
-        authImages.length > 1 && (
-            <div className="slideshow-hint">Click anywhere to change background</div>
-        )
-    }
+            {/* Hint text shown at the bottom when multiple images are available */}
+            {authImages.length > 1 && (
+                <div className="slideshow-hint">Click anywhere to change background</div>
+            )}
 
-    </div >
-  );
+        </div>
+    );
 }
