@@ -1,9 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {
   Warehouse, Plus, Search, Edit2, Trash2, MapPin, Users, Clock,
   CheckCircle, AlertCircle, Settings, Star, Package, TrendingUp,
-  ArrowRightLeft, BarChart3, Activity, RefreshCw, Eye
+  ArrowRightLeft, BarChart3, Activity, RefreshCw, Eye, ArrowUpRight
 } from 'lucide-react';
 import {
   listWarehouses, getWarehouseStats, createWarehouse, updateWarehouse,
@@ -14,6 +14,32 @@ import {
 import { listInventory, getWarehouses } from '../redux/inventorySlice.js';
 import Layout from '../components/Layout.jsx';
 import '../styles/pages.css';
+
+/* ─── Animated Counter Hook ─── */
+function useAnimatedCounter(target, duration = 700, decimals = 0) {
+  const [value, setValue] = useState(0);
+  const rafRef = useRef(null);
+
+  useEffect(() => {
+    const start = performance.now();
+    const tick = (now) => {
+      const t = Math.min((now - start) / duration, 1);
+      const eased = 1 - Math.pow(1 - t, 3);
+      setValue(+(eased * target).toFixed(decimals));
+      if (t < 1) rafRef.current = requestAnimationFrame(tick);
+    };
+    rafRef.current = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafRef.current);
+  }, [target, duration, decimals]);
+
+  return value;
+}
+
+/* ─── Counter Component ─── */
+function Counter({ target, decimals = 0, suffix = '' }) {
+  const val = useAnimatedCounter(target, 700, decimals);
+  return <>{val}{suffix}</>;
+}
 
 // Status badge component
 function StatusBadge({ status }) {
@@ -75,6 +101,8 @@ export default function WarehousePage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [filterTransferStatus, setFilterTransferStatus] = useState('');
+  const [currentTime, setCurrentTime] = useState(new Date());
+  const [isLoading, setIsLoading] = useState(true);
 
   const [warehouseForm, setWarehouseForm] = useState({
     code: '',
@@ -98,6 +126,16 @@ export default function WarehousePage() {
   });
 
   const canEdit = user?.role === 'ORG_ADMIN' || user?.role === 'INVENTORY_MANAGER';
+
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    const shimmerTimer = setTimeout(() => setIsLoading(false), 800);
+    return () => clearTimeout(shimmerTimer);
+  }, []);
 
   useEffect(() => {
     dispatch(listWarehouses({ limit: 50 }));
@@ -247,84 +285,120 @@ export default function WarehousePage() {
 
   return (
     <Layout>
-      {/* Header */}
-      <div className="page-header-premium anim-fade-in">
-        <div className="header-content">
-          <h1>Warehouse Management</h1>
-          <p>Manage warehouses and internal transfers</p>
-        </div>
-        <div className="header-actions">
-          {canEdit && activeTab === 'warehouses' && (
-            <button onClick={() => setShowCreateWarehouse(true)} className="action-btn-premium">
-              <Plus size={18} />
-              <span>Add Warehouse</span>
+      {/* ═══ HERO BANNER ═══ */}
+      <section className="dashboard-hero warehouse-hero">
+        <span className="hero-location"><Warehouse size={14} style={{ marginRight: '6px' }} />Warehouse Network Hub</span>
+        <h1 className="hero-title">Warehouse<br />Management</h1>
+        <div className="hero-actions">
+          {canEdit && (
+            <button className="hero-btn hero-btn--light" onClick={() => activeTab === 'warehouses' ? setShowCreateWarehouse(true) : setShowCreateTransfer(true)}>
+              <Plus size={15} /> {activeTab === 'warehouses' ? 'Add Warehouse' : 'New Transfer'}
             </button>
           )}
-          {canEdit && activeTab === 'transfers' && (
-            <button onClick={() => setShowCreateTransfer(true)} className="action-btn-premium">
-              <Plus size={18} />
-              <span>New Transfer</span>
-            </button>
-          )}
+          <button className="hero-btn hero-btn--dark" onClick={() => setActiveTab(activeTab === 'warehouses' ? 'transfers' : 'warehouses')}>
+            <ArrowRightLeft size={15} /> {activeTab === 'warehouses' ? 'View Transfers' : 'View Warehouses'}
+          </button>
         </div>
-      </div>
+        <div className="hero-datetime">
+          <div className="hero-time">
+            {currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true })}
+          </div>
+          <div className="hero-date">
+            {currentTime.toLocaleDateString([], { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+          </div>
+        </div>
+      </section>
 
       {/* Notifications */}
       {message && (
-        <div className="notification success" style={{ marginBottom: '16px', padding: '12px 16px', background: 'rgba(45, 184, 122, 0.15)', borderRadius: '8px', color: '#2DB87A', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div style={{ marginBottom: '16px', padding: '12px 16px', background: 'rgba(45, 184, 122, 0.15)', borderRadius: '12px', color: '#2DB87A', display: 'flex', alignItems: 'center', gap: '8px', border: '1px solid rgba(45, 184, 122, 0.3)' }}>
           <CheckCircle size={18} /> {message}
         </div>
       )}
       {error && (
-        <div className="notification error" style={{ marginBottom: '16px', padding: '12px 16px', background: 'rgba(239, 68, 68, 0.15)', borderRadius: '8px', color: '#EF4444', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div style={{ marginBottom: '16px', padding: '12px 16px', background: 'rgba(239, 68, 68, 0.15)', borderRadius: '12px', color: '#EF4444', display: 'flex', alignItems: 'center', gap: '8px', border: '1px solid rgba(239, 68, 68, 0.3)' }}>
           <AlertCircle size={18} /> {error}
         </div>
       )}
 
-      {/* Stats Overview */}
+      {/* ═══ STATS ROW ═══ */}
       {warehouseStats && (
-        <div className="stats-grid" style={{ marginBottom: '24px' }}>
-          <div className="dash-card anim-card" style={{ '--delay': '0.1s' }}>
-            <div className="overview-metric">
-              <div className="metric-icon" style={{ background: 'rgba(232, 93, 47, 0.1)', color: 'var(--brand-primary)' }}>
-                <Warehouse size={20} />
+        <div className="dashboard-row-1" style={{ gridTemplateColumns: 'repeat(2, 1fr)', marginBottom: '20px' }}>
+          {/* Card: Warehouse Overview */}
+          <div className={`dash-card card-overview anim-card ${isLoading ? 'loading' : ''}`} style={{ animationDelay: '0.10s' }}>
+            <div className="card-header">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div className="status-pulse" style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#2DB87A', animation: 'pulse-live 2s infinite' }}></div>
+                <h2 className="card-title">Warehouse Overview</h2>
               </div>
-              <div className="metric-data">
-                <span className="metric-value">{warehouseStats.total || 0}</span>
-                <span className="metric-label">Total Warehouses</span>
+              <a href="/warehouses" className="card-expand-btn" aria-label="Expand">
+                <ArrowUpRight size={16} />
+              </a>
+            </div>
+            <div className="overview-grid">
+              <div className="overview-metric">
+                <div className="metric-icon"><Warehouse size={18} /></div>
+                <div className="metric-data">
+                  <div className="metric-value"><Counter target={warehouseStats.total || 0} /></div>
+                  <div className="metric-label">Total Warehouses</div>
+                </div>
+              </div>
+              <div className="overview-metric">
+                <div className="metric-icon"><Activity size={18} /></div>
+                <div className="metric-data">
+                  <div className="metric-value"><Counter target={warehouseStats.active || 0} /></div>
+                  <div className="metric-label">Active</div>
+                </div>
+              </div>
+              <div className="overview-metric">
+                <div className="metric-icon"><BarChart3 size={18} /></div>
+                <div className="metric-data">
+                  <div className="metric-value"><Counter target={warehouseStats.avgUtilizationPercent || 0} suffix="%" /></div>
+                  <div className="metric-label">Avg Utilization</div>
+                </div>
+              </div>
+              <div className="overview-metric">
+                <div className="metric-icon"><Package size={18} /></div>
+                <div className="metric-data">
+                  <div className="metric-value"><Counter target={warehouseStats.totalCapacity || 0} /></div>
+                  <div className="metric-label">Total Capacity</div>
+                </div>
               </div>
             </div>
           </div>
-          <div className="dash-card anim-card" style={{ '--delay': '0.2s' }}>
-            <div className="overview-metric">
-              <div className="metric-icon" style={{ background: 'rgba(45, 184, 122, 0.1)', color: '#2DB87A' }}>
-                <Activity size={20} />
-              </div>
-              <div className="metric-data">
-                <span className="metric-value">{warehouseStats.active || 0}</span>
-                <span className="metric-label">Active</span>
-              </div>
-            </div>
-          </div>
-          <div className="dash-card anim-card" style={{ '--delay': '0.3s' }}>
-            <div className="overview-metric">
-              <div className="metric-icon" style={{ background: 'rgba(59, 130, 246, 0.1)', color: '#3B82F6' }}>
-                <BarChart3 size={20} />
-              </div>
-              <div className="metric-data">
-                <span className="metric-value">{warehouseStats.avgUtilizationPercent || 0}%</span>
-                <span className="metric-label">Avg Utilization</span>
+
+          {/* Card: Transfer Stats */}
+          <div className={`dash-card card-breakdown anim-card ${isLoading ? 'loading' : ''}`} style={{ animationDelay: '0.20s' }}>
+            <div className="card-header">
+              <div>
+                <h2 className="card-title">Transfer Activity</h2>
+                <span className="card-subtitle">Current transfer status</span>
               </div>
             </div>
-          </div>
-          <div className="dash-card anim-card" style={{ '--delay': '0.4s' }}>
-            <div className="overview-metric">
-              <div className="metric-icon" style={{ background: 'rgba(139, 92, 246, 0.1)', color: '#8B5CF6' }}>
-                <ArrowRightLeft size={20} />
+            <span className="breakdown-overline">TRANSFER STATUS</span>
+            <div className="breakdown-rows">
+              <div className="breakdown-row">
+                <span style={{ width: '12px', height: '12px', borderRadius: '3px', background: '#F59E0B', flexShrink: 0 }}></span>
+                <span className="breakdown-label">Pending</span>
+                <span className="breakdown-value">{transferStats?.pending || 0}</span>
               </div>
-              <div className="metric-data">
-                <span className="metric-value">{transferStats?.pending || 0}</span>
-                <span className="metric-label">Pending Transfers</span>
+              <div className="alert-divider"></div>
+              <div className="breakdown-row">
+                <span style={{ width: '12px', height: '12px', borderRadius: '3px', background: '#3B82F6', flexShrink: 0 }}></span>
+                <span className="breakdown-label">In Transit</span>
+                <span className="breakdown-value">{transferStats?.inTransit || 0}</span>
+              </div>
+              <div className="alert-divider"></div>
+              <div className="breakdown-row">
+                <span style={{ width: '12px', height: '12px', borderRadius: '3px', background: '#2DB87A', flexShrink: 0 }}></span>
+                <span className="breakdown-label">Completed</span>
+                <span className="breakdown-value">{transferStats?.completed || 0}</span>
+              </div>
+              <div className="alert-divider"></div>
+              <div className="breakdown-row">
+                <span style={{ width: '12px', height: '12px', borderRadius: '3px', background: '#EF4444', flexShrink: 0 }}></span>
+                <span className="breakdown-label">Cancelled</span>
+                <span className="breakdown-value">{transferStats?.cancelled || 0}</span>
               </div>
             </div>
           </div>
@@ -333,11 +407,11 @@ export default function WarehousePage() {
 
       {/* Tabs */}
       <div style={{ display: 'flex', gap: '8px', marginBottom: '20px' }}>
-        <button onClick={() => setActiveTab('warehouses')} style={{ padding: '10px 20px', borderRadius: '8px', background: activeTab === 'warehouses' ? 'var(--brand-primary)' : 'var(--surface-elevated)', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <Warehouse size={16} /> Warehouses
+        <button onClick={() => setActiveTab('warehouses')} className="tab-btn-light" style={{ background: activeTab === 'warehouses' ? '#1A1C1A' : 'white', color: activeTab === 'warehouses' ? 'white' : '#1A1C1A' }}>
+          <Warehouse size={16} style={{ marginRight: '6px' }} /> Warehouses
         </button>
-        <button onClick={() => setActiveTab('transfers')} style={{ padding: '10px 20px', borderRadius: '8px', background: activeTab === 'transfers' ? 'var(--brand-primary)' : 'var(--surface-elevated)', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <ArrowRightLeft size={16} /> Transfers
+        <button onClick={() => setActiveTab('transfers')} className="tab-btn-light" style={{ background: activeTab === 'transfers' ? '#1A1C1A' : 'white', color: activeTab === 'transfers' ? 'white' : '#1A1C1A' }}>
+          <ArrowRightLeft size={16} style={{ marginRight: '6px' }} /> Transfers
         </button>
       </div>
 
@@ -345,12 +419,12 @@ export default function WarehousePage() {
       {activeTab === 'warehouses' && (
         <>
           {/* Search & Filter */}
-          <div className="glass-panel" style={{ padding: '16px', marginBottom: '20px', display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
+          <div className="dash-card" style={{ padding: '16px', marginBottom: '20px', display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
             <div style={{ position: 'relative', flex: 1, minWidth: '200px' }}>
-              <Search size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.5)' }} />
-              <input type="text" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Search warehouses..." style={{ width: '100%', padding: '10px 10px 10px 40px', borderRadius: '8px', border: '1px solid var(--border-light)', background: 'var(--surface-base)', color: '#fff' }} />
+              <Search size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#9A9E9A' }} />
+              <input type="text" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Search warehouses..." className="search-input-light" />
             </div>
-            <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} style={{ padding: '10px 16px', borderRadius: '8px', border: '1px solid var(--border-light)', background: 'var(--surface-base)', color: '#fff' }}>
+            <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className="select-light">
               <option value="">All Status</option>
               <option value="active">Active</option>
               <option value="inactive">Inactive</option>
@@ -360,44 +434,44 @@ export default function WarehousePage() {
 
           {/* Warehouses Grid */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '20px' }}>
-            {loading && <div style={{ padding: '40px', textAlign: 'center', color: 'rgba(255,255,255,0.6)' }}><RefreshCw size={24} className="spin" /> Loading...</div>}
+            {loading && <div style={{ padding: '40px', textAlign: 'center', color: '#9A9E9A', gridColumn: '1/-1' }}><RefreshCw size={24} className="spin" /> Loading...</div>}
             {!loading && filteredWarehouses.length === 0 && (
-              <div className="glass-panel" style={{ padding: '40px', textAlign: 'center', color: 'rgba(255,255,255,0.6)', gridColumn: '1/-1' }}>
+              <div className="dash-card" style={{ padding: '40px', textAlign: 'center', color: '#9A9E9A', gridColumn: '1/-1' }}>
                 No warehouses found. Create your first warehouse to get started.
               </div>
             )}
             {filteredWarehouses.map((warehouse) => (
-              <div key={warehouse._id} className="glass-panel" style={{ padding: '20px' }}>
+              <div key={warehouse._id} className="dash-card" style={{ padding: '20px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                      <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#fff' }}>{warehouse.name}</h3>
+                      <h3 style={{ fontSize: '18px', fontWeight: '700', color: '#1A1C1A' }}>{warehouse.name}</h3>
                       {warehouse.isDefault && <Star size={16} style={{ color: '#F59E0B', fill: '#F59E0B' }} />}
                     </div>
-                    <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.6)', fontFamily: 'monospace' }}>{warehouse.code}</p>
+                    <p style={{ fontSize: '14px', color: '#5A5E5A', fontFamily: 'monospace' }}>{warehouse.code}</p>
                   </div>
                   <StatusBadge status={warehouse.status} />
                 </div>
 
                 <div style={{ display: 'grid', gap: '12px', marginBottom: '16px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', color: 'rgba(255,255,255,0.7)' }}>
-                    <Package size={16} />
-                    <span>Type: <strong style={{ color: '#fff', textTransform: 'capitalize' }}>{warehouse.type}</strong></span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', color: '#5A5E5A' }}>
+                    <Package size={16} style={{ color: '#E85D2F' }} />
+                    <span>Type: <strong style={{ color: '#1A1C1A', textTransform: 'capitalize' }}>{warehouse.type}</strong></span>
                   </div>
                   {warehouse.location?.city && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', color: 'rgba(255,255,255,0.7)' }}>
-                      <MapPin size={16} />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', color: '#5A5E5A' }}>
+                      <MapPin size={16} style={{ color: '#E85D2F' }} />
                       <span>{warehouse.location.city}{warehouse.location.country ? `, ${warehouse.location.country}` : ''}</span>
                     </div>
                   )}
                   {warehouse.manager?.name && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', color: 'rgba(255,255,255,0.7)' }}>
-                      <Users size={16} />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', color: '#5A5E5A' }}>
+                      <Users size={16} style={{ color: '#E85D2F' }} />
                       <span>{warehouse.manager.name}</span>
                     </div>
                   )}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', color: 'rgba(255,255,255,0.7)' }}>
-                    <Clock size={16} />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', color: '#5A5E5A' }}>
+                    <Clock size={16} style={{ color: '#E85D2F' }} />
                     <span>{warehouse.operatingHours?.open || '08:00'} - {warehouse.operatingHours?.close || '18:00'}</span>
                   </div>
                 </div>
@@ -405,22 +479,22 @@ export default function WarehousePage() {
                 {warehouse.capacity > 0 && (
                   <div style={{ marginBottom: '16px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '4px' }}>
-                      <span style={{ color: 'rgba(255,255,255,0.6)' }}>Capacity</span>
-                      <span style={{ color: 'rgba(255,255,255,0.8)' }}>{warehouse.currentUtilization || 0} / {warehouse.capacity}</span>
+                      <span style={{ color: '#9A9E9A' }}>Capacity</span>
+                      <span style={{ color: '#5A5E5A' }}>{warehouse.currentUtilization || 0} / {warehouse.capacity}</span>
                     </div>
-                    <div style={{ height: '6px', background: 'var(--surface-elevated)', borderRadius: '3px', overflow: 'hidden' }}>
+                    <div style={{ height: '6px', background: '#E2E5E0', borderRadius: '3px', overflow: 'hidden' }}>
                       <div style={{ height: '100%', width: `${warehouse.utilizationPercent || 0}%`, background: warehouse.utilizationPercent > 90 ? '#EF4444' : warehouse.utilizationPercent > 70 ? '#F59E0B' : '#2DB87A', borderRadius: '3px', transition: 'width 0.3s' }}></div>
                     </div>
                   </div>
                 )}
 
                 {canEdit && (
-                  <div style={{ display: 'flex', gap: '8px', paddingTop: '12px', borderTop: '1px solid var(--border-light)' }}>
-                    <button onClick={() => startEditWarehouse(warehouse)} style={{ flex: 1, padding: '8px', borderRadius: '6px', border: '1px solid var(--border-light)', background: 'var(--surface-base)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', fontSize: '13px', color: '#fff' }}>
+                  <div style={{ display: 'flex', gap: '8px', paddingTop: '12px', borderTop: '1px solid #E2E5E0' }}>
+                    <button onClick={() => startEditWarehouse(warehouse)} style={{ flex: 1, padding: '8px', borderRadius: '6px', border: '1px solid #E2E5E0', background: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', fontSize: '13px', color: '#1A1C1A' }}>
                       <Edit2 size={14} /> Edit
                     </button>
                     {!warehouse.isDefault && (
-                      <button onClick={() => handleSetDefault(warehouse._id)} style={{ flex: 1, padding: '8px', borderRadius: '6px', border: '1px solid var(--border-light)', background: 'var(--surface-base)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', fontSize: '13px', color: '#fff' }}>
+                      <button onClick={() => handleSetDefault(warehouse._id)} style={{ flex: 1, padding: '8px', borderRadius: '6px', border: '1px solid #E2E5E0', background: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', fontSize: '13px', color: '#1A1C1A' }}>
                         <Star size={14} /> Set Default
                       </button>
                     )}
@@ -438,22 +512,22 @@ export default function WarehousePage() {
       {/* Transfers Tab */}
       {activeTab === 'transfers' && (
         <>
-          {/* Transfer Stats */}
+          {/* Transfer Stats Card */}
           {transferStats && (
-            <div className="glass-panel" style={{ padding: '16px', marginBottom: '20px', display: 'flex', gap: '24px', flexWrap: 'wrap' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#fff' }}>
+            <div className="dash-card" style={{ padding: '16px', marginBottom: '20px', display: 'flex', gap: '24px', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#1A1C1A' }}>
                 <span style={{ width: '12px', height: '12px', borderRadius: '3px', background: '#F59E0B' }}></span>
                 <span>Pending: <strong>{transferStats.pending}</strong></span>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#fff' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#1A1C1A' }}>
                 <span style={{ width: '12px', height: '12px', borderRadius: '3px', background: '#3B82F6' }}></span>
                 <span>In Transit: <strong>{transferStats.inTransit}</strong></span>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#fff' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#1A1C1A' }}>
                 <span style={{ width: '12px', height: '12px', borderRadius: '3px', background: '#2DB87A' }}></span>
                 <span>Completed: <strong>{transferStats.completed}</strong></span>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#fff' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#1A1C1A' }}>
                 <span style={{ width: '12px', height: '12px', borderRadius: '3px', background: '#EF4444' }}></span>
                 <span>Cancelled: <strong>{transferStats.cancelled}</strong></span>
               </div>
@@ -461,8 +535,8 @@ export default function WarehousePage() {
           )}
 
           {/* Filter */}
-          <div className="glass-panel" style={{ padding: '16px', marginBottom: '20px' }}>
-            <select value={filterTransferStatus} onChange={(e) => setFilterTransferStatus(e.target.value)} style={{ padding: '10px 16px', borderRadius: '8px', border: '1px solid var(--border-light)', background: 'var(--surface-base)', color: '#fff' }}>
+          <div className="dash-card" style={{ padding: '16px', marginBottom: '20px' }}>
+            <select value={filterTransferStatus} onChange={(e) => setFilterTransferStatus(e.target.value)} className="select-light">
               <option value="">All Status</option>
               <option value="pending">Pending</option>
               <option value="in-transit">In Transit</option>
@@ -472,52 +546,52 @@ export default function WarehousePage() {
           </div>
 
           {/* Transfers Table */}
-          <div className="glass-panel">
+          <div className="dash-card" style={{ padding: 0 }}>
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
-                  <tr style={{ borderBottom: '1px solid var(--border-light)' }}>
-                    <th style={{ padding: '14px 16px', textAlign: 'left', fontWeight: '600', color: 'rgba(255,255,255,0.7)' }}>Transfer #</th>
-                    <th style={{ padding: '14px 16px', textAlign: 'left', fontWeight: '600', color: 'rgba(255,255,255,0.7)' }}>Item</th>
-                    <th style={{ padding: '14px 16px', textAlign: 'left', fontWeight: '600', color: 'rgba(255,255,255,0.7)' }}>From</th>
-                    <th style={{ padding: '14px 16px', textAlign: 'left', fontWeight: '600', color: 'rgba(255,255,255,0.7)' }}>To</th>
-                    <th style={{ padding: '14px 16px', textAlign: 'right', fontWeight: '600', color: 'rgba(255,255,255,0.7)' }}>Qty</th>
-                    <th style={{ padding: '14px 16px', textAlign: 'center', fontWeight: '600', color: 'rgba(255,255,255,0.7)' }}>Priority</th>
-                    <th style={{ padding: '14px 16px', textAlign: 'center', fontWeight: '600', color: 'rgba(255,255,255,0.7)' }}>Status</th>
-                    <th style={{ padding: '14px 16px', textAlign: 'center', fontWeight: '600', color: 'rgba(255,255,255,0.7)' }}>Actions</th>
+                  <tr style={{ borderBottom: '1px solid #E2E5E0' }}>
+                    <th style={{ padding: '14px 16px', textAlign: 'left', fontWeight: '600', color: '#5A5E5A', fontSize: '13px' }}>Transfer #</th>
+                    <th style={{ padding: '14px 16px', textAlign: 'left', fontWeight: '600', color: '#5A5E5A', fontSize: '13px' }}>Item</th>
+                    <th style={{ padding: '14px 16px', textAlign: 'left', fontWeight: '600', color: '#5A5E5A', fontSize: '13px' }}>From</th>
+                    <th style={{ padding: '14px 16px', textAlign: 'left', fontWeight: '600', color: '#5A5E5A', fontSize: '13px' }}>To</th>
+                    <th style={{ padding: '14px 16px', textAlign: 'right', fontWeight: '600', color: '#5A5E5A', fontSize: '13px' }}>Qty</th>
+                    <th style={{ padding: '14px 16px', textAlign: 'center', fontWeight: '600', color: '#5A5E5A', fontSize: '13px' }}>Priority</th>
+                    <th style={{ padding: '14px 16px', textAlign: 'center', fontWeight: '600', color: '#5A5E5A', fontSize: '13px' }}>Status</th>
+                    <th style={{ padding: '14px 16px', textAlign: 'center', fontWeight: '600', color: '#5A5E5A', fontSize: '13px' }}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {loading && (
-                    <tr><td colSpan="8" style={{ padding: '40px', textAlign: 'center', color: 'rgba(255,255,255,0.6)' }}><RefreshCw size={24} className="spin" /></td></tr>
+                    <tr><td colSpan="8" style={{ padding: '40px', textAlign: 'center', color: '#9A9E9A' }}><RefreshCw size={24} className="spin" /></td></tr>
                   )}
                   {!loading && filteredTransfers.length === 0 && (
-                    <tr><td colSpan="8" style={{ padding: '40px', textAlign: 'center', color: 'rgba(255,255,255,0.6)' }}>No transfers found</td></tr>
+                    <tr><td colSpan="8" style={{ padding: '40px', textAlign: 'center', color: '#9A9E9A' }}>No transfers found</td></tr>
                   )}
                   {filteredTransfers.map((transfer) => (
-                    <tr key={transfer._id} style={{ borderBottom: '1px solid var(--border-light)' }}>
-                      <td style={{ padding: '14px 16px', fontFamily: 'monospace', fontSize: '13px', color: '#fff' }}>{transfer.transferNumber}</td>
-                      <td style={{ padding: '14px 16px', color: '#fff' }}>
-                        <div>{transfer.inventoryItemId?.sku}</div>
-                        <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)' }}>{transfer.inventoryItemId?.productName}</div>
+                    <tr key={transfer._id} className="table-row-hover" style={{ borderBottom: '1px solid #E2E5E0' }}>
+                      <td style={{ padding: '14px 16px', fontFamily: 'monospace', fontSize: '13px', color: '#1A1C1A' }}>{transfer.transferNumber}</td>
+                      <td style={{ padding: '14px 16px', color: '#1A1C1A' }}>
+                        <div style={{ fontWeight: '500' }}>{transfer.inventoryItemId?.sku}</div>
+                        <div style={{ fontSize: '12px', color: '#9A9E9A' }}>{transfer.inventoryItemId?.productName}</div>
                       </td>
-                      <td style={{ padding: '14px 16px', color: '#fff' }}>{transfer.fromWarehouseId?.code || transfer.fromWarehouseId}</td>
-                      <td style={{ padding: '14px 16px', color: '#fff' }}>{transfer.toWarehouseId?.code || transfer.toWarehouseId}</td>
-                      <td style={{ padding: '14px 16px', textAlign: 'right', fontWeight: '600', color: '#fff' }}>{transfer.quantity}</td>
+                      <td style={{ padding: '14px 16px', color: '#1A1C1A' }}>{transfer.fromWarehouseId?.code || transfer.fromWarehouseId}</td>
+                      <td style={{ padding: '14px 16px', color: '#1A1C1A' }}>{transfer.toWarehouseId?.code || transfer.toWarehouseId}</td>
+                      <td style={{ padding: '14px 16px', textAlign: 'right', fontWeight: '600', color: '#1A1C1A' }}>{transfer.quantity}</td>
                       <td style={{ padding: '14px 16px', textAlign: 'center' }}><PriorityBadge priority={transfer.priority} /></td>
                       <td style={{ padding: '14px 16px', textAlign: 'center' }}><TransferStatusBadge status={transfer.status} /></td>
                       <td style={{ padding: '14px 16px', textAlign: 'center' }}>
                         {canEdit && transfer.status === 'pending' && (
                           <div style={{ display: 'flex', gap: '4px', justifyContent: 'center' }}>
-                            <button onClick={() => handleApproveTransfer(transfer._id)} style={{ padding: '6px 12px', borderRadius: '4px', background: '#2DB87A', color: 'white', border: 'none', cursor: 'pointer', fontSize: '12px' }}>Approve</button>
-                            <button onClick={() => handleCancelTransfer(transfer._id)} style={{ padding: '6px 12px', borderRadius: '4px', background: '#EF4444', color: 'white', border: 'none', cursor: 'pointer', fontSize: '12px' }}>Cancel</button>
+                            <button onClick={() => handleApproveTransfer(transfer._id)} style={{ padding: '6px 12px', borderRadius: '4px', background: '#2DB87A', color: 'white', border: 'none', cursor: 'pointer', fontSize: '12px', fontWeight: '500' }}>Approve</button>
+                            <button onClick={() => handleCancelTransfer(transfer._id)} style={{ padding: '6px 12px', borderRadius: '4px', background: '#EF4444', color: 'white', border: 'none', cursor: 'pointer', fontSize: '12px', fontWeight: '500' }}>Cancel</button>
                           </div>
                         )}
                         {canEdit && transfer.status === 'in-transit' && (
-                          <button onClick={() => handleCompleteTransfer(transfer._id)} style={{ padding: '6px 12px', borderRadius: '4px', background: '#3B82F6', color: 'white', border: 'none', cursor: 'pointer', fontSize: '12px' }}>Complete</button>
+                          <button onClick={() => handleCompleteTransfer(transfer._id)} style={{ padding: '6px 12px', borderRadius: '4px', background: '#3B82F6', color: 'white', border: 'none', cursor: 'pointer', fontSize: '12px', fontWeight: '500' }}>Complete</button>
                         )}
                         {(transfer.status === 'completed' || transfer.status === 'cancelled') && (
-                          <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)' }}>—</span>
+                          <span style={{ fontSize: '12px', color: '#9A9E9A' }}>—</span>
                         )}
                       </td>
                     </tr>
@@ -531,23 +605,23 @@ export default function WarehousePage() {
 
       {/* Create Warehouse Modal */}
       {showCreateWarehouse && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div className="glass-panel" style={{ width: '100%', maxWidth: '600px', maxHeight: '90vh', overflow: 'auto', padding: '24px' }}>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div className="dash-card" style={{ width: '100%', maxWidth: '600px', maxHeight: '90vh', overflow: 'auto', padding: '24px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <h3 style={{ color: '#fff' }}>Create New Warehouse</h3>
-              <button onClick={() => { setShowCreateWarehouse(false); resetWarehouseForm(); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#fff', fontSize: '20px' }}>✕</button>
+              <h3 style={{ color: '#1A1C1A', fontSize: '18px', fontWeight: '600' }}>Create New Warehouse</h3>
+              <button onClick={() => { setShowCreateWarehouse(false); resetWarehouseForm(); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#5A5E5A', fontSize: '20px' }}>✕</button>
             </div>
             <form onSubmit={handleCreateWarehouse}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                <div className="form-group-premium">
+                <div className="form-group-light">
                   <label>Warehouse Code *</label>
                   <input type="text" name="code" value={warehouseForm.code} onChange={handleWarehouseFormChange} placeholder="WH-001" required />
                 </div>
-                <div className="form-group-premium">
+                <div className="form-group-light">
                   <label>Warehouse Name *</label>
                   <input type="text" name="name" value={warehouseForm.name} onChange={handleWarehouseFormChange} placeholder="Main Warehouse" required />
                 </div>
-                <div className="form-group-premium">
+                <div className="form-group-light">
                   <label>Type</label>
                   <select name="type" value={warehouseForm.type} onChange={handleWarehouseFormChange}>
                     <option value="storage">Storage</option>
@@ -557,42 +631,42 @@ export default function WarehousePage() {
                     <option value="manufacturing">Manufacturing</option>
                   </select>
                 </div>
-                <div className="form-group-premium">
+                <div className="form-group-light">
                   <label>Capacity</label>
                   <input type="number" name="capacity" value={warehouseForm.capacity} onChange={handleWarehouseFormChange} min="0" />
                 </div>
-                <div className="form-group-premium" style={{ gridColumn: '1/-1' }}>
+                <div className="form-group-light" style={{ gridColumn: '1/-1' }}>
                   <label>Address</label>
                   <input type="text" name="location.address" value={warehouseForm.location.address} onChange={handleWarehouseFormChange} placeholder="Street address" />
                 </div>
-                <div className="form-group-premium">
+                <div className="form-group-light">
                   <label>City</label>
                   <input type="text" name="location.city" value={warehouseForm.location.city} onChange={handleWarehouseFormChange} />
                 </div>
-                <div className="form-group-premium">
+                <div className="form-group-light">
                   <label>Country</label>
                   <input type="text" name="location.country" value={warehouseForm.location.country} onChange={handleWarehouseFormChange} />
                 </div>
-                <div className="form-group-premium">
+                <div className="form-group-light">
                   <label>Manager Name</label>
                   <input type="text" name="manager.name" value={warehouseForm.manager.name} onChange={handleWarehouseFormChange} />
                 </div>
-                <div className="form-group-premium">
+                <div className="form-group-light">
                   <label>Manager Email</label>
                   <input type="email" name="manager.email" value={warehouseForm.manager.email} onChange={handleWarehouseFormChange} />
                 </div>
-                <div className="form-group-premium">
+                <div className="form-group-light">
                   <label>Opens At</label>
                   <input type="time" name="operatingHours.open" value={warehouseForm.operatingHours.open} onChange={handleWarehouseFormChange} />
                 </div>
-                <div className="form-group-premium">
+                <div className="form-group-light">
                   <label>Closes At</label>
                   <input type="time" name="operatingHours.close" value={warehouseForm.operatingHours.close} onChange={handleWarehouseFormChange} />
                 </div>
               </div>
               <div style={{ display: 'flex', gap: '12px', marginTop: '20px' }}>
-                <button type="submit" className="action-btn-premium" style={{ flex: 1 }}>Create Warehouse</button>
-                <button type="button" onClick={() => { setShowCreateWarehouse(false); resetWarehouseForm(); }} className="action-btn-secondary" style={{ flex: 1 }}>Cancel</button>
+                <button type="submit" style={{ flex: 1, padding: '12px 20px', background: '#E85D2F', color: 'white', borderRadius: '8px', fontWeight: '600', border: 'none', cursor: 'pointer' }}>Create Warehouse</button>
+                <button type="button" onClick={() => { setShowCreateWarehouse(false); resetWarehouseForm(); }} style={{ flex: 1, padding: '12px 20px', background: '#F5F7F5', color: '#1A1C1A', borderRadius: '8px', fontWeight: '500', border: '1px solid #E2E5E0', cursor: 'pointer' }}>Cancel</button>
               </div>
             </form>
           </div>
@@ -601,23 +675,23 @@ export default function WarehousePage() {
 
       {/* Edit Warehouse Modal */}
       {editingWarehouse && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div className="glass-panel" style={{ width: '100%', maxWidth: '600px', maxHeight: '90vh', overflow: 'auto', padding: '24px' }}>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div className="dash-card" style={{ width: '100%', maxWidth: '600px', maxHeight: '90vh', overflow: 'auto', padding: '24px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <h3 style={{ color: '#fff' }}>Edit Warehouse</h3>
-              <button onClick={() => { setEditingWarehouse(null); resetWarehouseForm(); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#fff', fontSize: '20px' }}>✕</button>
+              <h3 style={{ color: '#1A1C1A', fontSize: '18px', fontWeight: '600' }}>Edit Warehouse</h3>
+              <button onClick={() => { setEditingWarehouse(null); resetWarehouseForm(); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#5A5E5A', fontSize: '20px' }}>✕</button>
             </div>
             <form onSubmit={handleUpdateWarehouse}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                <div className="form-group-premium">
+                <div className="form-group-light">
                   <label>Warehouse Code *</label>
                   <input type="text" name="code" value={warehouseForm.code} onChange={handleWarehouseFormChange} required />
                 </div>
-                <div className="form-group-premium">
+                <div className="form-group-light">
                   <label>Warehouse Name *</label>
                   <input type="text" name="name" value={warehouseForm.name} onChange={handleWarehouseFormChange} required />
                 </div>
-                <div className="form-group-premium">
+                <div className="form-group-light">
                   <label>Type</label>
                   <select name="type" value={warehouseForm.type} onChange={handleWarehouseFormChange}>
                     <option value="storage">Storage</option>
@@ -627,7 +701,7 @@ export default function WarehousePage() {
                     <option value="manufacturing">Manufacturing</option>
                   </select>
                 </div>
-                <div className="form-group-premium">
+                <div className="form-group-light">
                   <label>Status</label>
                   <select name="status" value={warehouseForm.status} onChange={handleWarehouseFormChange}>
                     <option value="active">Active</option>
@@ -635,26 +709,26 @@ export default function WarehousePage() {
                     <option value="maintenance">Maintenance</option>
                   </select>
                 </div>
-                <div className="form-group-premium">
+                <div className="form-group-light">
                   <label>Capacity</label>
                   <input type="number" name="capacity" value={warehouseForm.capacity} onChange={handleWarehouseFormChange} min="0" />
                 </div>
-                <div className="form-group-premium" style={{ gridColumn: '1/-1' }}>
+                <div className="form-group-light" style={{ gridColumn: '1/-1' }}>
                   <label>Address</label>
                   <input type="text" name="location.address" value={warehouseForm.location.address} onChange={handleWarehouseFormChange} />
                 </div>
-                <div className="form-group-premium">
+                <div className="form-group-light">
                   <label>City</label>
                   <input type="text" name="location.city" value={warehouseForm.location.city} onChange={handleWarehouseFormChange} />
                 </div>
-                <div className="form-group-premium">
+                <div className="form-group-light">
                   <label>Country</label>
                   <input type="text" name="location.country" value={warehouseForm.location.country} onChange={handleWarehouseFormChange} />
                 </div>
               </div>
               <div style={{ display: 'flex', gap: '12px', marginTop: '20px' }}>
-                <button type="submit" className="action-btn-premium" style={{ flex: 1 }}>Update Warehouse</button>
-                <button type="button" onClick={() => { setEditingWarehouse(null); resetWarehouseForm(); }} className="action-btn-secondary" style={{ flex: 1 }}>Cancel</button>
+                <button type="submit" style={{ flex: 1, padding: '12px 20px', background: '#E85D2F', color: 'white', borderRadius: '8px', fontWeight: '600', border: 'none', cursor: 'pointer' }}>Update Warehouse</button>
+                <button type="button" onClick={() => { setEditingWarehouse(null); resetWarehouseForm(); }} style={{ flex: 1, padding: '12px 20px', background: '#F5F7F5', color: '#1A1C1A', borderRadius: '8px', fontWeight: '500', border: '1px solid #E2E5E0', cursor: 'pointer' }}>Cancel</button>
               </div>
             </form>
           </div>
@@ -663,15 +737,15 @@ export default function WarehousePage() {
 
       {/* Create Transfer Modal */}
       {showCreateTransfer && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div className="glass-panel" style={{ width: '100%', maxWidth: '500px', padding: '24px' }}>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div className="dash-card" style={{ width: '100%', maxWidth: '500px', padding: '24px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <h3 style={{ color: '#fff' }}>Create Warehouse Transfer</h3>
-              <button onClick={() => { setShowCreateTransfer(false); resetTransferForm(); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#fff', fontSize: '20px' }}>✕</button>
+              <h3 style={{ color: '#1A1C1A', fontSize: '18px', fontWeight: '600' }}>Create Warehouse Transfer</h3>
+              <button onClick={() => { setShowCreateTransfer(false); resetTransferForm(); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#5A5E5A', fontSize: '20px' }}>✕</button>
             </div>
             <form onSubmit={handleCreateTransfer}>
               <div style={{ display: 'grid', gap: '16px' }}>
-                <div className="form-group-premium">
+                <div className="form-group-light">
                   <label>Inventory Item *</label>
                   <select name="inventoryItemId" value={transferForm.inventoryItemId} onChange={handleTransferFormChange} required>
                     <option value="">Select item...</option>
@@ -680,7 +754,7 @@ export default function WarehousePage() {
                     ))}
                   </select>
                 </div>
-                <div className="form-group-premium">
+                <div className="form-group-light">
                   <label>From Warehouse *</label>
                   <select name="fromWarehouseId" value={transferForm.fromWarehouseId} onChange={handleTransferFormChange} required>
                     <option value="">Select source...</option>
@@ -689,7 +763,7 @@ export default function WarehousePage() {
                     ))}
                   </select>
                 </div>
-                <div className="form-group-premium">
+                <div className="form-group-light">
                   <label>To Warehouse *</label>
                   <select name="toWarehouseId" value={transferForm.toWarehouseId} onChange={handleTransferFormChange} required>
                     <option value="">Select destination...</option>
@@ -698,11 +772,11 @@ export default function WarehousePage() {
                     ))}
                   </select>
                 </div>
-                <div className="form-group-premium">
+                <div className="form-group-light">
                   <label>Quantity *</label>
                   <input type="number" name="quantity" value={transferForm.quantity} onChange={handleTransferFormChange} min="1" required />
                 </div>
-                <div className="form-group-premium">
+                <div className="form-group-light">
                   <label>Priority</label>
                   <select name="priority" value={transferForm.priority} onChange={handleTransferFormChange}>
                     <option value="low">Low</option>
@@ -711,14 +785,14 @@ export default function WarehousePage() {
                     <option value="urgent">Urgent</option>
                   </select>
                 </div>
-                <div className="form-group-premium">
+                <div className="form-group-light">
                   <label>Reason</label>
                   <input type="text" name="reason" value={transferForm.reason} onChange={handleTransferFormChange} placeholder="e.g., Stock balancing" />
                 </div>
               </div>
               <div style={{ display: 'flex', gap: '12px', marginTop: '20px' }}>
-                <button type="submit" className="action-btn-premium" style={{ flex: 1 }}>Create Transfer</button>
-                <button type="button" onClick={() => { setShowCreateTransfer(false); resetTransferForm(); }} className="action-btn-secondary" style={{ flex: 1 }}>Cancel</button>
+                <button type="submit" style={{ flex: 1, padding: '12px 20px', background: '#E85D2F', color: 'white', borderRadius: '8px', fontWeight: '600', border: 'none', cursor: 'pointer' }}>Create Transfer</button>
+                <button type="button" onClick={() => { setShowCreateTransfer(false); resetTransferForm(); }} style={{ flex: 1, padding: '12px 20px', background: '#F5F7F5', color: '#1A1C1A', borderRadius: '8px', fontWeight: '500', border: '1px solid #E2E5E0', cursor: 'pointer' }}>Cancel</button>
               </div>
             </form>
           </div>
@@ -728,10 +802,15 @@ export default function WarehousePage() {
       <style>{`
         .spin { animation: spin 1s linear infinite; }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-        .form-group-premium label { display: block; margin-bottom: 6px; font-size: 13px; font-weight: 500; color: rgba(255,255,255,0.8); }
-        .form-group-premium input, .form-group-premium select { width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border-light); background: var(--surface-base); font-size: 14px; color: #fff; }
-        .form-group-premium input:focus, .form-group-premium select:focus { outline: none; border-color: var(--brand-primary); }
-        .action-btn-secondary { padding: 10px 20px; background: var(--surface-elevated); color: #fff; border-radius: 8px; font-weight: 600; border: 1px solid var(--border-light); cursor: pointer; }
+        .form-group-light label { display: block; margin-bottom: 6px; font-size: 13px; font-weight: 500; color: #5A5E5A; }
+        .form-group-light input, .form-group-light select { width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid #E2E5E0; background: #F5F7F5; font-size: 14px; color: #1A1C1A; }
+        .form-group-light input:focus, .form-group-light select:focus { outline: none; border-color: #E85D2F; }
+        .tab-btn-light { padding: 10px 20px; border-radius: 8px; border: 1px solid #E2E5E0; cursor: 'pointer'; font-weight: 500; display: flex; align-items: center; gap: 6px; transition: all 0.2s; }
+        .search-input-light { width: 100%; padding: 10px 10px 10px 40px; border-radius: 8px; border: 1px solid #E2E5E0; background: #F5F7F5; color: #1A1C1A; font-size: 14px; }
+        .search-input-light:focus { outline: none; border-color: #E85D2F; }
+        .select-light { padding: 10px 16px; border-radius: 8px; border: 1px solid #E2E5E0; background: #F5F7F5; color: #1A1C1A; font-size: 14px; }
+        .select-light:focus { outline: none; border-color: #E85D2F; }
+        .table-row-hover:hover { background: #F5F7F5; }
       `}</style>
     </Layout>
   );
