@@ -14,7 +14,7 @@ const alertSchema = new mongoose.Schema(
       required: true,
     },
     entityId: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: String,  // Allow both string IDs and ObjectId references
       required: true,
     },
     severity: {

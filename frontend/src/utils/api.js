@@ -45,12 +45,17 @@ export const inventoryAPI = {
   createInventoryItem: (data) => apiClient.post('/inventory', data),
 };
 
-// Alerts API calls (placeholder)
+// Alerts API calls (Kulatunga)
 export const alertAPI = {
   listAlerts: (params) => apiClient.get('/alerts', { params }),
   getAlert: (id) => apiClient.get(`/alerts/${id}`),
   acknowledgeAlert: (id) => apiClient.post(`/alerts/${id}/acknowledge`),
   resolveAlert: (id, data) => apiClient.post(`/alerts/${id}/resolve`, data),
+  getDashboard: () => apiClient.get('/alerts/dashboard'),
+  getMyAlerts: (params) => apiClient.get('/alerts/my', { params }),
+  getHistory: (params) => apiClient.get('/alerts/history/all', { params }),
+  createNewAlert: (data) => apiClient.post('/alerts', data),
+  escalateAlerts: () => apiClient.post('/alerts/escalate'),
 };
 
 // Analytics API calls (placeholder)

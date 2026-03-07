@@ -17,6 +17,12 @@ export const requestLogger = (req, res, next) => {
 // Centralized error handler
 export const errorHandler = async (err, req, res, next) => {
   console.error('Error:', err.message);
+  console.error('Stack:', err.stack);
+  console.error('Request:', {
+    method: req.method,
+    path: req.path,
+    body: req.body,
+  });
 
   // Log to audit trail if user is authenticated
   if (req.user) {
