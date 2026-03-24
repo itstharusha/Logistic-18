@@ -22,32 +22,12 @@
 import mongoose from 'mongoose';
 import Supplier from './Supplier.js';
 import Shipment from './Shipment.js';
+import InventoryItem from './InventoryItem.js';
 
 // Re-export primary domain models for convenience
-export { Supplier, Shipment };
+export { Supplier, Shipment, InventoryItem };
 
 // ── Supplementary Schemas (future modules) ────────────────────────────────────
-
-/**
- * inventoryItemSchema
- * Represents a single stock/inventory item in the system.
- * Linked to both an organisation and an optional supplier.
- * Includes a risk score propagated from the linked supplier's risk profile.
- *
- * Status: Placeholder — the Inventory module is not yet implemented.
- */
-const inventoryItemSchema = new mongoose.Schema(
-  {
-    orgId: { type: mongoose.Schema.Types.ObjectId, ref: 'Organization', required: true, index: true },
-    supplierId: { type: mongoose.Schema.Types.ObjectId, ref: 'Supplier' },
-    sku: String,        // Stock Keeping Unit code
-    riskScore: { type: Number, default: 0 },
-    riskTier: String,        // Derived from the linked supplier's risk tier
-    createdAt: { type: Date, default: Date.now },
-    updatedAt: { type: Date, default: Date.now },
-  },
-  { collection: 'inventory_items' }
-);
 
 /**
  * reportSchema
@@ -69,5 +49,4 @@ const reportSchema = new mongoose.Schema(
   { collection: 'reports' }
 );
 
-export const InventoryItem = mongoose.model('InventoryItem', inventoryItemSchema);
 export const Report = mongoose.model('Report', reportSchema);
