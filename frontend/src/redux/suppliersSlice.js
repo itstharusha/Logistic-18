@@ -155,10 +155,6 @@ const suppliersSlice = createSlice({
       .addCase(getSupplier.fulfilled, (state, action) => {
         state.detailLoading = false;
         state.selectedSupplier = action.payload.supplier;
-        // Seed riskHistory from the embedded array so the chart is ready immediately
-        if (action.payload.supplier?.riskHistory) {
-          state.riskHistory = action.payload.supplier.riskHistory;
-        }
       })
       .addCase(getSupplier.rejected, (state, action) => {
         state.detailLoading = false;
@@ -185,10 +181,6 @@ const suppliersSlice = createSlice({
         if (idx !== -1) state.suppliers[idx] = action.payload.supplier;
         if (state.selectedSupplier?._id === action.payload.supplier._id) {
           state.selectedSupplier = action.payload.supplier;
-          // Sync history so the chart reflects the new score point immediately
-          if (action.payload.supplier?.riskHistory) {
-            state.riskHistory = action.payload.supplier.riskHistory;
-          }
         }
       })
       .addCase(updateSupplier.rejected, (state, action) => {
@@ -223,10 +215,6 @@ const suppliersSlice = createSlice({
         state.selectedSupplier = action.payload.supplier;
         const idx = state.suppliers.findIndex(s => s._id === action.payload.supplier._id);
         if (idx !== -1) state.suppliers[idx] = action.payload.supplier;
-        // Update history immediately from the returned supplier — no extra fetch needed
-        if (action.payload.supplier?.riskHistory) {
-          state.riskHistory = action.payload.supplier.riskHistory;
-        }
       })
       .addCase(overrideScore.rejected, (state, action) => {
         state.loading = false;
@@ -240,10 +228,6 @@ const suppliersSlice = createSlice({
         state.selectedSupplier = action.payload.supplier;
         const idx = state.suppliers.findIndex(s => s._id === action.payload.supplier._id);
         if (idx !== -1) state.suppliers[idx] = action.payload.supplier;
-        // Update history immediately from the returned supplier — no extra fetch needed
-        if (action.payload.supplier?.riskHistory) {
-          state.riskHistory = action.payload.supplier.riskHistory;
-        }
       })
       .addCase(updateSupplierMetrics.rejected, (state, action) => {
         state.loading = false;

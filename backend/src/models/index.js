@@ -69,7 +69,5 @@ const reportSchema = new mongoose.Schema(
   { collection: 'reports' }
 );
 
-export const Supplier = mongoose.model('Supplier', supplierSchema);
-export const Shipment = mongoose.model('Shipment', shipmentSchema);
 export const InventoryItem = mongoose.model('InventoryItem', inventoryItemSchema);
 export const Report = mongoose.model('Report', reportSchema);

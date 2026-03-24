@@ -1,85 +1,44 @@
-/**
- * supplierRoutes.js — Express Router for Supplier Risk Management API
- *
- * Responsibility:
- *   Defines all HTTP routes for the supplier module and maps them to the
- *   appropriate SupplierController handler, with authentication and RBAC middleware.
- *
- *   Base path: /api/suppliers (mounted in app.js)
- *
- *   RBAC Summary:
- *   ┌──────────────────────────────────┬──────────────────────────────────────┐
- *   │ Route                            │ Allowed Roles                        │
- *   ├──────────────────────────────────┼──────────────────────────────────────┤
- *   │ GET  /                           │ All authenticated users              │
- *   │ POST /                           │ ORG_ADMIN only                       │
- *   │ POST /compare                    │ All authenticated users              │
- *   │ GET  /:id                        │ All authenticated users              │
- *   │ PUT  /:id                        │ ORG_ADMIN only                       │
- *   │ GET  /:id/history                │ All authenticated users              │
- *   │ POST /:id/override-score         │ RISK_ANALYST, ORG_ADMIN              │
- *   │ POST /:id/update-metrics         │ RISK_ANALYST, ORG_ADMIN              │
- *   │ PATCH /:id/status                │ ORG_ADMIN only                       │
- *   └──────────────────────────────────┴──────────────────────────────────────┘
- *
- *   Route ordering is important:
- *   - /compare must be registered BEFORE /:id to prevent Express from treating
- *     the literal string "compare" as a dynamic :id parameter.
- *   - Nested /:id/* routes (/:id/history etc.) are registered BEFORE the bare /:id route
- *     for the same reason.
- *
- *   Module owner: Rifshadh (Supplier Risk Module)
- */
-
 import express from 'express';
 import { authenticate, authorize } from '../middleware/auth.js';
 import { SupplierController } from '../controllers/SupplierController.js';
 
 const router = express.Router();
 
-// ── Static / Collection-Level Routes ─────────────────────────────────────────
+// ==========================================
+// SUPPLIER RISK MANAGEMENT MODULE (Rifshadh)
+// ==========================================
 
-// List all suppliers for the org — supports search, status, tier, pagination
+// ── Static / collection-level routes (no :id param) ──────────────────────────
+
+// GET  /api/suppliers         — list all suppliers (paginated, filterable)
 router.get('/', authenticate, SupplierController.listSuppliers);
 
-// Register a new supplier — restricted to ORG_ADMIN
+// POST /api/suppliers         — register new supplier (ORG_ADMIN only)
 router.post('/', authenticate, authorize(['ORG_ADMIN']), SupplierController.createSupplier);
 
-// Compare multiple suppliers side-by-side — registered before /:id to prevent param capture
+// POST /api/suppliers/compare — registered before /:id to prevent param capture
 router.post('/compare', authenticate, SupplierController.compareSuppliers);
 
-// ── Nested /:id/* Routes (specific) — must come before bare /:id ─────────────
+// ── Nested /:id/* routes (specific) — must come before bare /:id ─────────────
 
-// Get the risk score history timeline for the chart
+// GET  /api/suppliers/:id/history
 router.get('/:id/history', authenticate, SupplierController.getRiskHistory);
 
-// Manually override the supplier's risk score (analyst action with justification)
-router.post('/:id/override-score',
-    authenticate,
-    authorize(['RISK_ANALYST', 'ORG_ADMIN']),
-    SupplierController.overrideScore
-);
+// POST /api/suppliers/:id/override-score
+router.post('/:id/override-score', authenticate, authorize(['RISK_ANALYST', 'ORG_ADMIN']), SupplierController.overrideScore);
 
-// Adjust performance metrics and trigger risk score recalculation
-router.post('/:id/update-metrics',
-    authenticate,
-    authorize(['RISK_ANALYST', 'ORG_ADMIN']),
-    SupplierController.updateMetrics
-);
+// POST /api/suppliers/:id/update-metrics
+router.post('/:id/update-metrics', authenticate, authorize(['RISK_ANALYST', 'ORG_ADMIN']), SupplierController.updateMetrics);
 
-// Change the supplier's operational status (active/under_watch/high_risk/suspended)
-router.patch('/:id/status',
-    authenticate,
-    authorize(['ORG_ADMIN']),
-    SupplierController.updateStatus
-);
+// PATCH /api/suppliers/:id/status
+router.patch('/:id/status', authenticate, authorize(['ORG_ADMIN']), SupplierController.updateStatus);
 
-// ── Generic /:id Routes — registered last to avoid shadowing nested routes ────
+// ── Generic /:id routes — registered last to avoid shadowing nested routes ────
 
-// Get a supplier's full profile (including riskHistory, overrideHistory, etc.)
+// GET  /api/suppliers/:id     — get supplier detail
 router.get('/:id', authenticate, SupplierController.getSupplier);
 
-// Update supplier profile fields — triggers risk score recalculation
+// PUT  /api/suppliers/:id     — update supplier profile + recompute risk score
 router.put('/:id', authenticate, authorize(['ORG_ADMIN']), SupplierController.updateSupplier);
 
 export default router;
