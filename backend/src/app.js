@@ -10,6 +10,7 @@ import './models/index.js';
 
 // Import routes
 import authRoutes from './routes/authRoutes.js';
+import { ShipmentService } from './services/ShipmentService.js';
 import userRoutes from './routes/userRoutes.js';
 import supplierRoutes from './routes/supplierRoutes.js';
 import shipmentRoutes from './routes/shipmentRoutes.js';
@@ -89,6 +90,9 @@ const startServer = async () => {
     // Connect to MongoDB
     await connectDB();
 
+    // Start shipment delay detection cron (every 15 min)
+    ShipmentService.startPollingCron();
+
     // Start Express server
     const server = app.listen(PORT, () => {
       console.log(`✓ Logistic 18 Backend running on http://localhost:${PORT}`);
@@ -121,3 +125,4 @@ const startServer = async () => {
 startServer();
 
 export default app;
+
