@@ -56,6 +56,12 @@ export const requestLogger = (req, res, next) => {
  */
 export const errorHandler = async (err, req, res, next) => {
   console.error('Error:', err.message);
+  console.error('Stack:', err.stack);
+  console.error('Request:', {
+    method: req.method,
+    path: req.path,
+    body: req.body,
+  });
 
   // Write server errors to the audit trail when a user is authenticated
   if (req.user) {

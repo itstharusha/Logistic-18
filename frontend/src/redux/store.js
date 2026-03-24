@@ -24,6 +24,7 @@ import inventoryReducer from './inventorySlice.js';
 import warehouseReducer from './warehouseSlice.js';
 import suppliersReducer from './suppliersSlice.js';
 import shipmentsReducer from './shipmentsSlice.js';
+import alertsReducer from './alertsSlice.js';
 
 export const store = configureStore({
   reducer: {
@@ -33,5 +34,6 @@ export const store = configureStore({
     warehouse: warehouseReducer, // Manages warehouse CRUD
     suppliers: suppliersReducer, // Manages supplier CRUD + risk history
     shipments: shipmentsReducer, // Manages shipment CRUD + tracking
+    alerts: alertsReducer, // Manages alerts and notifications
   },
 });

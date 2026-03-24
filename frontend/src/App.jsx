@@ -14,6 +14,7 @@ import SuppliersPage from './pages/SuppliersPage.jsx';
 import SupplierDetailPage from './pages/SupplierDetailPage.jsx';
 import ShipmentsPage from './pages/ShipmentsPage.jsx';
 import ShipmentDetailPage from './pages/ShipmentDetailPage.jsx';
+import AlertsPage from './pages/AlertsPage.jsx';
 
 // Protected Route Component
 function ProtectedRoute({ children, requiredRoles = [] }) {
@@ -122,8 +123,17 @@ function App() {
         <Route path="/shipments" element={<ProtectedRoute><ShipmentsPage /></ProtectedRoute>} />
         <Route path="/shipments/:id" element={<ProtectedRoute><ShipmentDetailPage /></ProtectedRoute>} />
         
-        {/* Alerts and Analytics placeholder routes */}
-        <Route path="/alerts" element={<div className="temp-page">Alerts page - implemented by Kulatunga</div>} />
+        {/* Alerts route */}
+        <Route
+          path="/alerts"
+          element={
+            <ProtectedRoute>
+              <AlertsPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Analytics placeholder route */}
         <Route path="/analytics" element={<div className="temp-page">Analytics page - implemented by Senadeera</div>} />
 
         {/* 404 */}

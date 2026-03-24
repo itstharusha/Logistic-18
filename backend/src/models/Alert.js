@@ -35,7 +35,7 @@ const alertSchema = new mongoose.Schema(
 
     // The MongoDB _id of the triggering entity (supplier, shipment, or inventory item)
     entityId: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: String,  // Allow both string IDs and ObjectId references
       required: true,
     },
 
