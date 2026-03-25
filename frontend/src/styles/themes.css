@@ -1,0 +1,531 @@
+/* ============================================================
+   THEME OVERRIDES
+   Scoped to [data-theme="night"] and [data-theme="day"].
+   The default theme removes data-theme entirely, so none of
+   these rules apply and the existing UI is 100% unchanged.
+   ============================================================ */
+
+/* ── NIGHT THEME ─────────────────────────────────────────── */
+
+[data-theme="night"] {
+  /* Surfaces — deep dark */
+  --surface-deep:    #060806;
+  --surface-dark:    #0a0c0a;
+  --surface-mid:     #0f120f;
+  --surface-card:    rgba(255, 255, 255, 0.05);
+  --surface-card-alt: rgba(255, 255, 255, 0.08);
+
+  /* Text — all light */
+  --text-primary:    #e8ece8;
+  --text-secondary:  #a8b0a8;
+  --text-tertiary:   #606860;
+  --text-inverse:    #e8ece8;
+  --text-inverse-dim: #a8b0a8;
+
+  /* Borders — subtle white glows */
+  --border-light:    rgba(255, 255, 255, 0.10);
+  --border-medium:   rgba(255, 255, 255, 0.15);
+  --border-dark:     rgba(255, 255, 255, 0.06);
+
+  /* Shadows — deeper for dark glass */
+  --shadow-sm:      0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md:      0 4px 12px rgba(0, 0, 0, 0.5);
+  --shadow-lg:      0 10px 24px rgba(0, 0, 0, 0.6);
+  --shadow-premium: 0 20px 40px rgba(0, 0, 0, 0.7);
+
+  /* Nav tab variables */
+  --nav-tab-color:        rgba(255, 255, 255, 0.45);
+  --nav-tab-active-bg:    rgba(255, 255, 255, 0.12);
+  --nav-tab-active-color: #e8ece8;
+}
+
+/* Nav bar — frosted glass */
+[data-theme="night"] .topnav {
+  background: rgba(8, 10, 8, 0.80);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom-color: rgba(255, 255, 255, 0.07);
+}
+
+/* Glass cards / panels */
+[data-theme="night"] .dash-card,
+[data-theme="night"] .glass-panel,
+[data-theme="night"] .table-section {
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+/* Table header */
+[data-theme="night"] .premium-table thead tr {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+[data-theme="night"] .premium-table thead th {
+  color: var(--text-secondary);
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="night"] .premium-table tbody tr {
+  border-bottom-color: rgba(255, 255, 255, 0.05);
+}
+
+[data-theme="night"] .premium-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+/* Forms — no white backgrounds */
+[data-theme="night"] input,
+[data-theme="night"] select,
+[data-theme="night"] textarea {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  color: var(--text-primary) !important;
+}
+
+[data-theme="night"] input::placeholder,
+[data-theme="night"] textarea::placeholder {
+  color: var(--text-tertiary) !important;
+}
+
+[data-theme="night"] input:focus,
+[data-theme="night"] select:focus,
+[data-theme="night"] textarea:focus {
+  background: rgba(255, 255, 255, 0.09) !important;
+  border-color: var(--brand-primary) !important;
+  box-shadow: 0 0 0 3px rgba(232, 93, 47, 0.15) !important;
+}
+
+[data-theme="night"] select option {
+  background: #141614;
+  color: var(--text-primary);
+}
+
+/* Input wrappers */
+[data-theme="night"] .input-wrapper {
+  background: transparent;
+}
+
+/* Modal */
+[data-theme="night"] .modal-panel {
+  background: rgba(12, 14, 12, 0.92);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+}
+
+[data-theme="night"] .modal-overlay {
+  background: rgba(0, 0, 0, 0.75);
+}
+
+/* Dropdown */
+[data-theme="night"] .nav-user-dropdown,
+[data-theme="night"] .nav-theme-dropdown {
+  background: rgba(14, 16, 14, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-color: rgba(255, 255, 255, 0.10);
+}
+
+[data-theme="night"] .dropdown-item {
+  color: var(--text-primary);
+}
+
+[data-theme="night"] .dropdown-item:hover {
+  background: rgba(255, 255, 255, 0.07);
+}
+
+/* Role chip / badges */
+[data-theme="night"] .role-chip {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-secondary);
+}
+
+/* Supplier status pills — keep readable on dark */
+[data-theme="night"] .supplier-status-pill,
+[data-theme="night"] .risk-tier-chip {
+  border: 1px solid rgba(255, 255, 255, 0.10);
+}
+
+/* Metrics mini cards */
+[data-theme="night"] .metric-mini-card {
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+/* Shimmer rows */
+[data-theme="night"] .shimmer-row {
+  background: linear-gradient(90deg,
+    rgba(255,255,255,0.03) 25%,
+    rgba(255,255,255,0.07) 50%,
+    rgba(255,255,255,0.03) 75%
+  );
+}
+
+/* Error / success cards */
+[data-theme="night"] .error-card {
+  background: rgba(199, 37, 62, 0.15);
+  border-color: rgba(199, 37, 62, 0.4);
+}
+
+[data-theme="night"] .success-card {
+  background: rgba(45, 184, 122, 0.12);
+  border-color: rgba(45, 184, 122, 0.35);
+}
+
+/* Filter tab buttons */
+[data-theme="night"] .filter-tab {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-secondary);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="night"] .filter-tab.active,
+[data-theme="night"] .filter-tab:hover {
+  background: rgba(232, 93, 47, 0.15);
+  border-color: rgba(232, 93, 47, 0.35);
+  color: var(--brand-primary);
+}
+
+/* Score bar track */
+[data-theme="night"] .score-bar-track {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* Stat card text — override hardcoded dark values */
+[data-theme="night"] .metric-value {
+  color: #e8ece8;
+}
+
+[data-theme="night"] .metric-value small {
+  color: #a8b0a8;
+}
+
+[data-theme="night"] .metric-label {
+  color: #a8b0a8;
+}
+
+[data-theme="night"] .card-title {
+  color: #e8ece8;
+}
+
+[data-theme="night"] .card-subtitle {
+  color: #606860;
+}
+
+[data-theme="night"] .card-expand-btn {
+  color: #a8b0a8;
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+[data-theme="night"] .card-expand-btn:hover {
+  background: rgba(255, 255, 255, 0.10);
+  color: #e8ece8;
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+/* Page header text */
+[data-theme="night"] .page-header-premium h1 {
+  color: #e8ece8;
+}
+
+/* Action buttons — var(--text-primary) becomes near-white in night mode,
+   making these buttons a blinding white slab. Override with brand orange style. */
+[data-theme="night"] .action-btn-premium {
+  background: rgba(232, 93, 47, 0.18);
+  color: #e8ece8;
+  border: 1px solid rgba(232, 93, 47, 0.35);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+[data-theme="night"] .action-btn-premium:hover {
+  background: var(--brand-primary);
+  border-color: var(--brand-primary);
+  color: #ffffff;
+  box-shadow: 0 4px 16px rgba(232, 93, 47, 0.35);
+}
+
+/* ── DAY THEME ──────────────────────────────────────────── */
+
+[data-theme="day"] {
+  /* Surfaces — bright and airy */
+  --surface-deep:    #edf0ec;
+  --surface-dark:    #ffffff;
+  --surface-mid:     #f5f7f4;
+  --surface-card:    rgba(255, 255, 255, 0.72);
+  --surface-card-alt: rgba(248, 250, 247, 0.80);
+
+  /* Text — all dark */
+  --text-primary:    #1a1c1a;
+  --text-secondary:  #5a5e5a;
+  --text-tertiary:   #8a8e8a;
+  --text-inverse:    #1a1c1a;
+  --text-inverse-dim: #5a5e5a;
+
+  /* Borders — soft gray */
+  --border-light:    #dde0da;
+  --border-medium:   #c8ccc5;
+  --border-dark:     #e2e5e0;
+
+  /* Shadows — soft and light */
+  --shadow-sm:      0 1px 3px rgba(0, 0, 0, 0.06);
+  --shadow-md:      0 4px 12px rgba(0, 0, 0, 0.08);
+  --shadow-lg:      0 10px 24px rgba(0, 0, 0, 0.10);
+  --shadow-premium: 0 20px 40px rgba(0, 0, 0, 0.12);
+
+  /* Nav tab variables */
+  --nav-tab-color:        #6a6e6a;
+  --nav-tab-active-bg:    #1a1c1a;
+  --nav-tab-active-color: #f2f4f0;
+}
+
+/* Nav bar — clean white */
+[data-theme="day"] .topnav {
+  background: #ffffff;
+  border-bottom: 1px solid #e2e5e0;
+  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="day"] .nav-brand {
+  color: #1a1c1a;
+}
+
+[data-theme="day"] .nav-icon-btn {
+  color: #3a3e3a;
+}
+
+[data-theme="day"] .nav-icon-btn:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+/* Glass cards / panels on light bg */
+[data-theme="day"] .dash-card,
+[data-theme="day"] .glass-panel,
+[data-theme="day"] .table-section {
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.90);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.07), inset 0 1px 0 rgba(255, 255, 255, 0.95);
+}
+
+/* Table */
+[data-theme="day"] .premium-table thead tr {
+  background: rgba(240, 243, 238, 0.85);
+}
+
+[data-theme="day"] .premium-table thead th {
+  color: var(--text-secondary);
+  border-bottom-color: #e2e5e0;
+}
+
+[data-theme="day"] .premium-table tbody tr {
+  border-bottom-color: rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="day"] .premium-table tbody tr:hover {
+  background: rgba(232, 93, 47, 0.04);
+}
+
+/* Forms — light glass */
+[data-theme="day"] input,
+[data-theme="day"] select,
+[data-theme="day"] textarea {
+  background: rgba(255, 255, 255, 0.85) !important;
+  border-color: #d8dbd6 !important;
+  color: #1a1c1a !important;
+}
+
+[data-theme="day"] input::placeholder,
+[data-theme="day"] textarea::placeholder {
+  color: #9a9e9a !important;
+}
+
+[data-theme="day"] input:focus,
+[data-theme="day"] select:focus,
+[data-theme="day"] textarea:focus {
+  background: rgba(255, 255, 255, 0.95) !important;
+  border-color: var(--brand-primary) !important;
+  box-shadow: 0 0 0 3px rgba(232, 93, 47, 0.12) !important;
+}
+
+/* Modal */
+[data-theme="day"] .modal-panel {
+  background: rgba(255, 255, 255, 0.90);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.95);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+}
+
+[data-theme="day"] .modal-overlay {
+  background: rgba(0, 0, 0, 0.35);
+}
+
+/* Dropdown */
+[data-theme="day"] .nav-user-dropdown,
+[data-theme="day"] .nav-theme-dropdown {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid #e2e5e0;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+}
+
+[data-theme="day"] .dropdown-item {
+  color: #1a1c1a;
+}
+
+[data-theme="day"] .dropdown-item:hover {
+  background: rgba(232, 93, 47, 0.06);
+}
+
+/* Role chip */
+[data-theme="day"] .role-chip {
+  background: rgba(0, 0, 0, 0.06);
+  color: var(--text-secondary);
+}
+
+/* Metrics mini cards */
+[data-theme="day"] .metric-mini-card {
+  background: rgba(255, 255, 255, 0.70);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.90);
+}
+
+/* Shimmer rows */
+[data-theme="day"] .shimmer-row {
+  background: linear-gradient(90deg,
+    rgba(0,0,0,0.04) 25%,
+    rgba(0,0,0,0.08) 50%,
+    rgba(0,0,0,0.04) 75%
+  );
+}
+
+/* Error / success cards */
+[data-theme="day"] .error-card {
+  background: rgba(199, 37, 62, 0.08);
+  border-color: rgba(199, 37, 62, 0.30);
+}
+
+[data-theme="day"] .success-card {
+  background: rgba(45, 184, 122, 0.08);
+  border-color: rgba(45, 184, 122, 0.30);
+}
+
+/* Filter tabs */
+[data-theme="day"] .filter-tab {
+  background: rgba(255, 255, 255, 0.70);
+  color: var(--text-secondary);
+  border-color: #dde0da;
+}
+
+[data-theme="day"] .filter-tab.active,
+[data-theme="day"] .filter-tab:hover {
+  background: rgba(232, 93, 47, 0.10);
+  border-color: rgba(232, 93, 47, 0.30);
+  color: var(--brand-primary);
+}
+
+/* Score bar track */
+[data-theme="day"] .score-bar-track {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+/* Page header h1 — override hardcoded #ffffff.
+   (.dashboard-hero keeps its own dark gradient so .hero-title stays white.) */
+[data-theme="day"] .page-header-premium h1 {
+  color: #1a1c1a;
+}
+
+/* Stat card text — already visible in day mode (dark on white glass) */
+[data-theme="day"] .metric-value {
+  color: #1a1c1a;
+}
+
+[data-theme="day"] .metric-label {
+  color: #5a5e5a;
+}
+
+[data-theme="day"] .card-title {
+  color: #1a1c1a;
+}
+
+[data-theme="day"] .card-expand-btn {
+  color: #3a3e3a;
+  border-color: #d8dbd6;
+}
+
+/* ── SHARED THEME TOGGLE BUTTON STYLES ─────────────────── */
+
+.nav-theme-menu {
+  position: relative;
+}
+
+.nav-theme-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 160px;
+  border-radius: 10px;
+  overflow: hidden;
+  z-index: 102;
+  /* default (dark) styles — overridden per theme above */
+  background: var(--surface-card);
+  border: 1px solid var(--border-light);
+  box-shadow: var(--shadow-lg);
+}
+
+.theme-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 16px;
+  background: none;
+  border: none;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: background var(--duration-fast);
+  text-align: left;
+  font-family: var(--font-body);
+}
+
+.theme-option:hover {
+  background: var(--surface-card-alt);
+}
+
+[data-theme="night"] .theme-option:hover {
+  background: rgba(255, 255, 255, 0.07);
+}
+
+[data-theme="day"] .theme-option:hover {
+  background: rgba(232, 93, 47, 0.06);
+}
+
+.theme-option.active {
+  color: var(--brand-primary);
+  font-weight: 600;
+}
+
+.theme-option.active svg {
+  color: var(--brand-primary);
+}
+
+.theme-option-label {
+  flex: 1;
+}
+
+.theme-option-check {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--brand-primary);
+  flex-shrink: 0;
+}
