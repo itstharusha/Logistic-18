@@ -9,19 +9,23 @@ import RegisterPage from './pages/RegisterPage.jsx';
 import DashboardPage from './pages/DashboardPage.jsx';
 import UsersPage from './pages/UsersPage.jsx';
 
+// Analytics Pages (YOUR MODULE)
+import AnalyticsDashboardPage from './pages/Analytics/AnalyticsDashboardPage.jsx';
+import KPIPage from './pages/Analytics/KPI-page.jsx';
+import ReportsPage from './pages/Analytics/ReportsPage.jsx';
+
 // Protected Route Component
 function ProtectedRoute({ children, requiredRoles = [] }) {
-  const { user, isInitialized } = useSelector((state) => state.auth);
-  const accessToken = localStorage.getItem('accessToken');
+  const { user, accessToken, isInitialized } = useSelector((state) => state.auth);
 
-  if (!isInitialized) return null; // Wait for auth check
+  if (!isInitialized) return null;
 
-  if (!accessToken || !user) {
-    return <Navigate to="/login" />;
+  if (!accessToken) {
+    return <Navigate to="/login" replace />;
   }
 
-  if (requiredRoles.length > 0 && !requiredRoles.includes(user.role)) {
-    return <Navigate to="/" />;
+  if (requiredRoles.length > 0 && user && !requiredRoles.includes(user.role)) {
+    return <Navigate to="/" replace />;
   }
 
   return children;
@@ -32,14 +36,10 @@ function App() {
   const { isInitialized, accessToken } = useSelector((state) => state.auth);
 
   useEffect(() => {
-    // Verify session on app load if token exists
-    if (accessToken) {
+    if (accessToken && !isInitialized) {
       dispatch(getMe());
-    } else {
-      // No token, finish initialization immediately
-      dispatch({ type: 'auth/getMe/rejected' });
     }
-  }, [dispatch, accessToken]);
+  }, [dispatch, accessToken, isInitialized]);
 
   if (accessToken && !isInitialized) {
     return (
@@ -57,7 +57,7 @@ function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
 
-        {/* Protected Routes */}
+        {/* Main Dashboard */}
         <Route
           path="/"
           element={
@@ -67,6 +67,7 @@ function App() {
           }
         />
 
+        {/* Users Management */}
         <Route
           path="/users"
           element={
@@ -76,15 +77,42 @@ function App() {
           }
         />
 
-        {/* Placeholder routes */}
+        {/* Other modules (group members) */}
         <Route path="/suppliers" element={<div className="temp-page">Suppliers page - implemented by Rifshadh</div>} />
         <Route path="/shipments" element={<div className="temp-page">Shipments page - implemented by Umayanthi</div>} />
         <Route path="/inventory" element={<div className="temp-page">Inventory page - implemented by Wijemanna</div>} />
         <Route path="/alerts" element={<div className="temp-page">Alerts page - implemented by Kulatunga</div>} />
-        <Route path="/analytics" element={<div className="temp-page">Analytics page - implemented by Senadeera</div>} />
+
+        {/* ANALYTICS MODULE (YOUR PART) */}
+        <Route
+          path="/analytics"
+          element={
+            <ProtectedRoute>
+              <AnalyticsDashboardPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/analytics/kpi"
+          element={
+            <ProtectedRoute>
+              <KPIPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/reports"
+          element={
+            <ProtectedRoute>
+              <ReportsPage />
+            </ProtectedRoute>
+          }
+        />
 
         {/* 404 */}
-        <Route path="*" element={<Navigate to="/" />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>
   );
