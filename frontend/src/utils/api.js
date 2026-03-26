@@ -42,8 +42,15 @@ export const shipmentAPI = {
 // Inventory API calls (placeholder)
 export const inventoryAPI = {
   listInventory: (params) => apiClient.get('/inventory', { params }),
+  getDashboard: () => apiClient.get('/inventory/dashboard'),
+  getReorderList: () => apiClient.get('/inventory/reorder-list'),
   getInventoryItem: (id) => apiClient.get(`/inventory/${id}`),
   createInventoryItem: (data) => apiClient.post('/inventory', data),
+  updateInventoryItem: (id, data) => apiClient.put(`/inventory/${id}`, data),
+  updateStock: (id, data) => apiClient.patch(`/inventory/${id}/stock`, data),
+  updatePendingOrder: (id, data) => apiClient.patch(`/inventory/${id}/pending-order`, data),
+  getForecast: (id) => apiClient.get(`/inventory/${id}/forecast`),
+  deleteInventoryItem: (id) => apiClient.delete(`/inventory/${id}`),
 };
 
 // Alerts API calls (Kulatunga)
@@ -183,4 +190,27 @@ export const analyticsAPI = {
         generatedAt: new Date().toISOString(),
       },
     }),
+};
+
+// Warehouse API calls (Wijemanna's module)
+export const warehouseAPI = {
+  listWarehouses: (params) => apiClient.get('/warehouses', { params }),
+  getActiveWarehouses: () => apiClient.get('/warehouses/active'),
+  getWarehouseStats: () => apiClient.get('/warehouses/stats'),
+  getWarehouse: (warehouseId) => apiClient.get(`/warehouses/${warehouseId}`),
+  getWarehouseWithInventory: (warehouseId) => apiClient.get(`/warehouses/${warehouseId}/inventory`),
+  createWarehouse: (data) => apiClient.post('/warehouses', data),
+  updateWarehouse: (warehouseId, data) => apiClient.put(`/warehouses/${warehouseId}`, data),
+  setDefaultWarehouse: (warehouseId) => apiClient.post(`/warehouses/${warehouseId}/set-default`),
+  deleteWarehouse: (warehouseId) => apiClient.delete(`/warehouses/${warehouseId}`),
+};
+
+// Warehouse Transfer API calls (Wijemanna's module)
+export const transferAPI = {
+  listTransfers: (params) => apiClient.get('/warehouse-transfers', { params }),
+  getTransferStats: () => apiClient.get('/warehouse-transfers/stats'),
+  createTransfer: (data) => apiClient.post('/warehouse-transfers', data),
+  approveTransfer: (transferId) => apiClient.post(`/warehouse-transfers/${transferId}/approve`),
+  completeTransfer: (transferId) => apiClient.post(`/warehouse-transfers/${transferId}/complete`),
+  cancelTransfer: (transferId, reason) => apiClient.post(`/warehouse-transfers/${transferId}/cancel`, { reason }),
 };
