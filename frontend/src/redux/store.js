@@ -18,6 +18,7 @@
  */
 
 import { configureStore } from '@reduxjs/toolkit';
+
 import authReducer from './authSlice.js';
 import usersReducer from './usersSlice.js';
 import inventoryReducer from './inventorySlice.js';
@@ -25,6 +26,9 @@ import warehouseReducer from './warehouseSlice.js';
 import suppliersReducer from './suppliersSlice.js';
 import shipmentsReducer from './shipmentsSlice.js';
 import alertsReducer from './alertsSlice.js';
+
+// ✅ ADD THIS
+import analyticsReducer from './analyticsSlice.js';
 
 export const store = configureStore({
   reducer: {
@@ -35,5 +39,6 @@ export const store = configureStore({
     suppliers: suppliersReducer, // Manages supplier CRUD + risk history
     shipments: shipmentsReducer, // Manages shipment CRUD + tracking
     alerts: alertsReducer, // Manages alerts and notifications
+    analytics: analyticsReducer, // Manages analytics and KPI data
   },
 });

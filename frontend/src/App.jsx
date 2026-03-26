@@ -16,12 +16,17 @@ import ShipmentsPage from './pages/ShipmentsPage.jsx';
 import ShipmentDetailPage from './pages/ShipmentDetailPage.jsx';
 import AlertsPage from './pages/AlertsPage.jsx';
 
+// Analytics Pages (Senadeera's module)
+import AnalyticsDashboardPage from './pages/Analytics/AnalyticsDashboardPage.jsx';
+import KPIPage from './pages/Analytics/KPI-page.jsx';
+import ReportsPage from './pages/Analytics/ReportsPage.jsx';
+
 // Protected Route Component
 function ProtectedRoute({ children, requiredRoles = [] }) {
   const { user, isInitialized } = useSelector((state) => state.auth);
   const accessToken = localStorage.getItem('accessToken');
 
-  if (!isInitialized) return null; // Wait for auth check
+  if (!isInitialized) return null;
 
   if (!accessToken || !user) {
     return <Navigate to="/login" />;
@@ -39,11 +44,9 @@ function App() {
   const { isInitialized, accessToken } = useSelector((state) => state.auth);
 
   useEffect(() => {
-    // Verify session on app load if token exists
     if (accessToken) {
       dispatch(getMe());
     } else {
-      // No token, finish initialization immediately
       dispatch({ type: 'auth/getMe/rejected' });
     }
   }, [dispatch, accessToken]);
@@ -133,8 +136,33 @@ function App() {
           }
         />
 
-        {/* Analytics placeholder route */}
-        <Route path="/analytics" element={<div className="temp-page">Analytics page - implemented by Senadeera</div>} />
+        {/* Analytics Routes (Senadeera's module) */}
+        <Route
+          path="/analytics"
+          element={
+            <ProtectedRoute>
+              <AnalyticsDashboardPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/analytics/kpi"
+          element={
+            <ProtectedRoute>
+              <KPIPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/reports"
+          element={
+            <ProtectedRoute>
+              <ReportsPage />
+            </ProtectedRoute>
+          }
+        />
 
         {/* 404 */}
         <Route path="*" element={<Navigate to="/" />} />
