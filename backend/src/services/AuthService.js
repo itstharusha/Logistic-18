@@ -1,5 +1,6 @@
 import { UserRepository } from '../repositories/UserRepository.js';
 import AuditLog from '../models/AuditLog.js';
+import Organisation from '../models/Organisation.js';
 import {
   generateAccessToken,
   generateRefreshToken,
@@ -16,9 +17,20 @@ export class AuthService {
       throw new ConflictError('User with this email already exists');
     }
 
-    // Create new user
+    // Create a new organization for the user
+    // Use the username part of the email as the org name (e.g., "john.doe" from "john.doe@example.com")
+    const emailUsername = userData.email.split('@')[0];
+    const orgName = `${emailUsername}-org-${Date.now()}`;
+
+    const organisation = await Organisation.create({
+      name: orgName,
+      planTier: 'STARTER',
+    });
+
+    // Create new user with the auto-created organization
     const user = await UserRepository.create({
       ...userData,
+      orgId: organisation._id,
       passwordHash: userData.password, // Will be hashed by User model's pre-save hook
     });
 

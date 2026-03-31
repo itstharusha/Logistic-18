@@ -64,7 +64,30 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    // User timezone for activity display
+    timezone: {
+      type: String,
+      default: 'UTC',
+    },
 
+    // Current shift status
+    shiftStatus: {
+      type: String,
+      enum: ['ON_SHIFT', 'OFF_DUTY'],
+      default: 'OFF_DUTY',
+    },
+
+    // Gamification & KPI score
+    systemImpactScore: {
+      type: Number,
+      default: 0,
+    },
+
+    // To track real-time or online status
+    lastActiveAt: {
+      type: Date,
+      default: Date.now,
+    },
     // The current valid refresh token (rotated on each use) — excluded by default
     refreshToken: {
       type: String,

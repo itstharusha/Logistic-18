@@ -66,9 +66,15 @@
   padding: var(--space-8) 0;
   display: flex;
   justify-content: space-between;
-  align-items: flex-end;
+  align-items: center;
   margin-bottom: var(--space-6);
   border-bottom: 1px solid var(--border-light);
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.header-content {
+  flex: 1;
 }
 
 .page-header-premium h1 {
@@ -86,7 +92,9 @@
 
 .header-actions {
   display: flex;
-  gap: var(--space-3);
+  gap: 10px;
+  align-items: center;
+  z-index: 10;
 }
 
 .action-btn-premium {
@@ -99,6 +107,40 @@
   border-radius: 12px;
   font-weight: 600;
   transition: all 0.2s ease;
+}
+
+.action-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 6px;
+  font-weight: 500;
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+  position: relative;
+  z-index: 11;
+}
+
+.action-btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.action-btn-secondary span {
+  display: inline;
+}
+
+.action-btn-secondary svg {
+  stroke-width: 2;
+  flex-shrink: 0;
 }
 
 .hero-datetime {
@@ -1890,3 +1932,36 @@
     grid-template-columns: 1fr;
   }
 }
+
+.bulk-actions-bar { margin-bottom: 20px; padding: 16px; background: rgba(232, 93, 47, 0.1); border-radius: 8px; display: flex; gap: 12px; align-items: center; border: 1px solid rgba(232, 93, 47, 0.3); } .bulk-actions-text { flex: 1; color: #EAEAEA; font-weight: 500; } .bulk-action-admin { background: rgba(232, 93, 47, 0.2) !important; color: #E85D2F !important; } .bulk-action-analyst { background: rgba(16, 185, 129, 0.2) !important; color: #10b981 !important; } .bulk-action-activate { background: rgba(45, 184, 122, 0.2) !important; color: #2DB87A !important; } .bulk-action-deactivate { background: rgba(239, 68, 68, 0.2) !important; color: #ef4444 !important; }
+
+
+.kanban-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; padding: 20px; } .kanban-card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 16px; cursor: pointer; transition: all 0.2s; } .kanban-card.selected { box-shadow: 0 0 0 2px #E85D2F; opacity: 1; } .kanban-card:not(.selected) { opacity: 0.9; } .kanban-card:hover { background: rgba(255,255,255,0.1); } .kanban-card-header { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 12px; } .kanban-card-info { flex: 1; } .kanban-card-name { font-weight: 600; color: #EAEAEA; margin-bottom: 2px; } .kanban-card-email { font-size: 12px; color: var(--text-secondary); } .kanban-card-tags { margin-bottom: 12px; } .role-chip-kanban { display: inline-flex; align-items: center; gap: 4px; background: rgba(232, 93, 47, 0.2); color: #E85D2F; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 500; cursor: pointer; } .status-pill-kanban { display: inline-block; margin-left: 8px; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 500; } .kanban-card-actions { display: flex; gap: 8px; }
+
+
+.empty-canvas-search { padding: var(--space-12) 0; } .btn-ghost-margin { margin-top: var(--space-4); }
+
+
+.metric-icon-primary { background: rgba(232, 93, 47, 0.1); color: var(--brand-primary); border: none; } .metric-icon-success { background: rgba(45, 184, 122, 0.1); color: var(--risk-low); border: none; } .metric-icon-info { background: rgba(59, 130, 246, 0.1); color: #3b82f6; border: none; }
+
+
+.glass-panel-margin { margin-bottom: var(--space-6); }
+
+
+.page-header-flex { display: flex; justify-content: space-between; }
+
+
+.header-actions-flex { display: flex; gap: 10px; }
+
+
+.cursor-pointer { cursor: pointer; } .table-th-checkbox { width: 40px; }
+
+.role-info-icon {
+    margin-left: 4px;
+    opacity: 0.6;
+}
+.kanban-user-email {
+    color: var(--text-secondary);
+    font-size: 13px;
+}
+

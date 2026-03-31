@@ -120,6 +120,94 @@ export class UserService {
     return user;
   }
 
+  // Bulk assign role
+  static async bulkAssignRole(userIds, orgId, newRole, assignedByUserId) {
+    const results = { success: [], failed: [] };
+    for (const userId of userIds) {
+      try {
+        await this.assignRole(userId, orgId, newRole, assignedByUserId);
+        results.success.push(userId);
+      } catch (err) {
+        results.failed.push({ userId, reason: err.message });
+      }
+    }
+    return results;
+  }
+
+  // Bulk deactivate users
+  static async bulkDeactivateUsers(userIds, orgId, deactivatedByUserId) {
+    const results = { success: [], failed: [] };
+    for (const userId of userIds) {
+      try {
+        await this.deactivateUser(userId, orgId, deactivatedByUserId);
+        results.success.push(userId);
+      } catch (err) {
+        results.failed.push({ userId, reason: err.message });
+      }
+    }
+    return results;
+  }
+
+  // Bulk activate users
+  static async bulkActivateUsers(userIds, orgId, activatedByUserId) {
+    const results = { success: [], failed: [] };
+    for (const userId of userIds) {
+      try {
+        await this.activateUser(userId, orgId, activatedByUserId);
+        results.success.push(userId);
+      } catch (err) {
+        results.failed.push({ userId, reason: err.message });
+      }
+    }
+    return results;
+  }
+
+  // Create user (admin creates with password)
+  static async createUser(userData, createdByUserId) {
+    // Check if user already exists
+    const existingUser = await UserRepository.findByEmail(userData.email);
+    if (existingUser) {
+      throw new Error('User with this email already exists');
+    }
+
+    if (!userData.password || userData.password.length < 6) {
+      throw new Error('Password must be at least 6 characters long');
+    }
+
+    // Create user with provided password
+    const user = await UserRepository.create({
+      name: userData.name,
+      email: userData.email,
+      role: userData.role,
+      orgId: userData.orgId,
+      passwordHash: userData.password, // In production, this should be hashed
+      isActive: true,
+      timezone: 'UTC',
+      shiftStatus: 'OFF_DUTY',
+      systemImpactScore: 0,
+      lastActiveAt: new Date(),
+    });
+
+    // Log audit (don't fail if audit log fails)
+    try {
+      await AuditLog.create({
+        orgId: userData.orgId,
+        userId: createdByUserId,
+        action: 'USER_CREATED',
+        entityType: 'USER',
+        entityId: user._id,
+        newValue: { email: user.email, role: user.role, name: user.name },
+      });
+    } catch (auditError) {
+      console.warn('Failed to create audit log for user creation:', auditError);
+    }
+
+    return {
+      user,
+      message: 'User created successfully',
+    };
+  }
+
   // Invite user (create with temporary password)
   static async inviteUser(userData, invitedByUserId) {
     // Check if user already exists
@@ -135,15 +223,19 @@ export class UserService {
       passwordHash: temporaryPassword,
     });
 
-    // Log audit
-    await AuditLog.create({
-      orgId: userData.orgId,
-      userId: invitedByUserId,
-      action: 'USER_INVITED',
-      entityType: 'USER',
-      entityId: user._id,
-      newValue: { email: user.email, role: user.role },
-    });
+    // Log audit (don't fail if audit log fails)
+    try {
+      await AuditLog.create({
+        orgId: userData.orgId,
+        userId: invitedByUserId,
+        action: 'USER_INVITED',
+        entityType: 'USER',
+        entityId: user._id,
+        newValue: { email: user.email, role: user.role },
+      });
+    } catch (auditError) {
+      console.warn('Failed to create audit log for user invitation:', auditError);
+    }
 
     // Return temporary password to be sent via email
     return {

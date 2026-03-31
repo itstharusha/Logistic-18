@@ -12,6 +12,7 @@ import {
   deleteInventoryItem, getForecast, clearMessage, clearError
 } from '../redux/inventorySlice.js';
 import { getActiveWarehouses } from '../redux/warehouseSlice.js';
+import { listSuppliers } from '../redux/suppliersSlice.js';
 import Layout from '../components/Layout.jsx';
 import '../styles/pages.css';
 
@@ -74,6 +75,7 @@ export default function InventoryPage() {
   const dispatch = useDispatch();
   const { items, total, dashboard, reorderList, warehouses, loading, error, message, forecast } = useSelector((state) => state.inventory);
   const { activeWarehouses } = useSelector((state) => state.warehouse);
+  const { suppliers } = useSelector((state) => state.suppliers);
   const user = useSelector((state) => state.auth.user);
 
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -119,6 +121,7 @@ export default function InventoryPage() {
     dispatch(getDashboard());
     dispatch(getWarehouses());
     dispatch(getActiveWarehouses());
+    dispatch(listSuppliers({ limit: 100 }));
     dispatch(listInventory({ limit: 20, skip: 0 }));
   }, [dispatch]);
 
@@ -505,8 +508,13 @@ export default function InventoryPage() {
                 </select>
               </div>
               <div className="form-group-light">
-                <label>Supplier ID (Optional)</label>
-                <input type="text" name="supplierId" value={formData.supplierId} onChange={handleFormChange} placeholder="Supplier ObjectId" />
+                <label>Supplier (Optional)</label>
+                <select name="supplierId" value={formData.supplierId} onChange={handleFormChange}>
+                  <option value="">-- No Supplier --</option>
+                  {suppliers && suppliers.map(s => (
+                    <option key={s._id} value={s._id}>{s.name} ({s.status})</option>
+                  ))}
+                </select>
               </div>
               <div className="form-group-light">
                 <label>Current Stock *</label>
@@ -697,8 +705,13 @@ export default function InventoryPage() {
                   <input type="text" name="productName" value={formData.productName} onChange={handleFormChange} required />
                 </div>
                 <div className="form-group-light">
-                  <label>Warehouse ID</label>
-                  <input type="text" name="warehouseId" value={formData.warehouseId} onChange={handleFormChange} required />
+                  <label>Warehouse</label>
+                <select name="warehouseId" value={formData.warehouseId} onChange={handleFormChange} required>
+                  <option value="">-- Select Warehouse --</option>
+                  {activeWarehouses && activeWarehouses.map(w => (
+                    <option key={w._id} value={w._id}>{w.name} ({w.location?.country})</option>
+                  ))}
+                </select>
                 </div>
                 <div className="form-group-light">
                   <label>Current Stock</label>

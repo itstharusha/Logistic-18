@@ -88,118 +88,6 @@ function timeAgo(dateStr) {
     return `${days}d ago`;
 }
 
-/* ─── Mock data for demo (when API is not connected) ─── */
-const MOCK_STATS = {
-    total: 47, open: 12, acknowledged: 8, resolved: 23, escalated: 4,
-    low: 10, medium: 15, high: 14, critical: 8,
-};
-
-const MOCK_ALERTS = [
-    {
-        _id: '1', entityType: 'supplier', severity: 'critical', status: 'open',
-        title: 'Supplier Alpha — Financial Risk Score Exceeded 85',
-        description: 'Financial health score dropped to 23.4, well below the critical threshold of 30. Immediate review needed.',
-        mitigationRecommendation: 'Review supplier payment terms and diversify supply chain exposure.',
-        assignedTo: { name: 'Risk Analyst', email: 'risk@logistic18.com', role: 'RISK_ANALYST' },
-        createdAt: new Date(Date.now() - 25 * 60000).toISOString(),
-    },
-    {
-        _id: '2', entityType: 'shipment', severity: 'high', status: 'open',
-        title: 'Shipment #SH-042 — ETA Deviation Exceeded 18 Hours',
-        description: 'FedEx carrier report shows 18.4 hour delay on Route CMBO→SGPR. Weather disruption flagged.',
-        mitigationRecommendation: 'Contact carrier for reroute options. Notify downstream inventory team.',
-        assignedTo: { name: 'Logistics Op', email: 'logistics@logistic18.com', role: 'LOGISTICS_OPERATOR' },
-        createdAt: new Date(Date.now() - 2 * 3600000).toISOString(),
-    },
-    {
-        _id: '3', entityType: 'inventory', severity: 'high', status: 'escalated',
-        title: 'SKU-881 Critical Stock Depletion — Below Safety Stock',
-        description: 'Current stock at 24 units. Reorder point is 156 units. Safety stock is 89 units. Critical production item.',
-        mitigationRecommendation: 'Trigger emergency reorder. Consider secondary supplier activation.',
-        assignedTo: { name: 'Inv Manager', email: 'inventory@logistic18.com', role: 'INVENTORY_MANAGER' },
-        escalatedAt: new Date(Date.now() - 45 * 60000).toISOString(),
-        createdAt: new Date(Date.now() - 5 * 3600000).toISOString(),
-    },
-    {
-        _id: '4', entityType: 'supplier', severity: 'medium', status: 'acknowledged',
-        title: 'Supplier Beta — Geopolitical Risk Flag Activated',
-        description: 'Country-level risk assessment updated. Supplier operating from elevated risk zone.',
-        mitigationRecommendation: 'Monitor situation weekly. Prepare alternative supplier shortlist.',
-        assignedTo: { name: 'Risk Analyst', email: 'risk@logistic18.com', role: 'RISK_ANALYST' },
-        createdAt: new Date(Date.now() - 8 * 3600000).toISOString(),
-    },
-    {
-        _id: '5', entityType: 'shipment', severity: 'medium', status: 'open',
-        title: 'Shipment #SH-089 — Tracking Gap Detected',
-        description: 'No tracking updates for 12+ hours on DHL carrier. Last known location: Dubai Hub.',
-        mitigationRecommendation: 'Contact DHL support. Verify shipment integrity.',
-        assignedTo: { name: 'Logistics Op', email: 'logistics@logistic18.com', role: 'LOGISTICS_OPERATOR' },
-        createdAt: new Date(Date.now() - 6 * 3600000).toISOString(),
-    },
-    {
-        _id: '6', entityType: 'inventory', severity: 'low', status: 'open',
-        title: 'SKU-344 Approaching Reorder Point',
-        description: 'Stock at 210 units with reorder point of 180. Estimated 6 days until depletion at current demand rate.',
-        mitigationRecommendation: 'Schedule standard reorder. No urgent action required.',
-        assignedTo: { name: 'Inv Manager', email: 'inventory@logistic18.com', role: 'INVENTORY_MANAGER' },
-        createdAt: new Date(Date.now() - 12 * 3600000).toISOString(),
-    },
-    {
-        _id: '7', entityType: 'supplier', severity: 'critical', status: 'open',
-        title: 'Supplier Gamma — Delivery Performance Critical Failure',
-        description: 'On-time delivery rate dropped to 42%. Defect rate increased to 18.6%. Multiple dispute incidents logged.',
-        mitigationRecommendation: 'Initiate supplier review meeting. Consider suspending all new orders until resolved.',
-        assignedTo: { name: 'Risk Analyst', email: 'risk@logistic18.com', role: 'RISK_ANALYST' },
-        createdAt: new Date(Date.now() - 30 * 60000).toISOString(),
-    },
-    {
-        _id: '8', entityType: 'shipment', severity: 'low', status: 'resolved',
-        title: 'Shipment #SH-035 — Minor Delay Resolved',
-        description: 'UPS carrier confirmed 3.2 hour delay resolved. Shipment delivered to destination.',
-        mitigationRecommendation: 'No further action required.',
-        assignedTo: { name: 'Logistics Op', email: 'logistics@logistic18.com', role: 'LOGISTICS_OPERATOR' },
-        resolvedBy: { name: 'Logistics Op' },
-        resolvedAt: new Date(Date.now() - 2 * 3600000).toISOString(),
-        resolutionNote: 'Delay caused by port congestion. Shipment cleared and delivered successfully.',
-        createdAt: new Date(Date.now() - 24 * 3600000).toISOString(),
-    },
-];
-
-const MOCK_TREND = [
-    { _id: { date: '2026-02-26', severity: 'critical' }, count: 2 },
-    { _id: { date: '2026-02-26', severity: 'high' }, count: 3 },
-    { _id: { date: '2026-02-26', severity: 'medium' }, count: 4 },
-    { _id: { date: '2026-02-26', severity: 'low' }, count: 2 },
-    { _id: { date: '2026-02-27', severity: 'critical' }, count: 1 },
-    { _id: { date: '2026-02-27', severity: 'high' }, count: 5 },
-    { _id: { date: '2026-02-27', severity: 'medium' }, count: 3 },
-    { _id: { date: '2026-02-27', severity: 'low' }, count: 4 },
-    { _id: { date: '2026-02-28', severity: 'critical' }, count: 3 },
-    { _id: { date: '2026-02-28', severity: 'high' }, count: 2 },
-    { _id: { date: '2026-02-28', severity: 'medium' }, count: 6 },
-    { _id: { date: '2026-02-28', severity: 'low' }, count: 1 },
-    { _id: { date: '2026-03-01', severity: 'critical' }, count: 1 },
-    { _id: { date: '2026-03-01', severity: 'high' }, count: 4 },
-    { _id: { date: '2026-03-01', severity: 'medium' }, count: 2 },
-    { _id: { date: '2026-03-01', severity: 'low' }, count: 3 },
-    { _id: { date: '2026-03-02', severity: 'critical' }, count: 2 },
-    { _id: { date: '2026-03-02', severity: 'high' }, count: 3 },
-    { _id: { date: '2026-03-02', severity: 'medium' }, count: 5 },
-    { _id: { date: '2026-03-02', severity: 'low' }, count: 2 },
-    { _id: { date: '2026-03-03', severity: 'critical' }, count: 1 },
-    { _id: { date: '2026-03-03', severity: 'high' }, count: 2 },
-    { _id: { date: '2026-03-03', severity: 'medium' }, count: 3 },
-    { _id: { date: '2026-03-03', severity: 'low' }, count: 1 },
-    { _id: { date: '2026-03-04', severity: 'critical' }, count: 2 },
-    { _id: { date: '2026-03-04', severity: 'high' }, count: 3 },
-    { _id: { date: '2026-03-04', severity: 'medium' }, count: 2 },
-    { _id: { date: '2026-03-04', severity: 'low' }, count: 1 },
-];
-
-/* ═══════════════════════════════════════════
-   ALERTS PAGE COMPONENT
-   ═══════════════════════════════════════════ */
-
 export default function AlertsPage() {
     const dispatch = useDispatch();
     const user = useSelector((state) => state.auth.user);
@@ -212,15 +100,14 @@ export default function AlertsPage() {
         activeFilter,
     } = useSelector((state) => state.alerts);
 
-    const trend = dashboard?.trend || MOCK_TREND;
+    const trend = dashboard?.trend || [];
 
-    // Use Redux alerts directly, fallback to MOCK_ALERTS if empty
-    const alerts = storeAlerts && storeAlerts.length > 0 ? storeAlerts : MOCK_ALERTS;
+    const alerts = storeAlerts || [];
 
     // Calculate stats dynamically from current alerts
     const calculateStats = (alertsList) => {
         if (!alertsList || alertsList.length === 0) {
-            return MOCK_STATS;
+            return {total:0, open:0, acknowledged:0, resolved:0, escalated:0, low:0, medium:0, high:0, critical:0};
         }
         return {
             total: alertsList.length,
@@ -351,7 +238,7 @@ export default function AlertsPage() {
     };
 
     // Build chart data from trend (with safety checks)
-    const validTrend = Array.isArray(trend) && trend.length > 0 ? trend : MOCK_TREND;
+    const validTrend = Array.isArray(trend) ? trend : [];
     
     const chartLabels = [...new Set(validTrend.map(t => t._id?.date || t.date))].map(d => {
         const date = new Date(d);

@@ -30,6 +30,7 @@ export class AuthController {
     res.json({
       message: 'Login successful',
       accessToken: result.accessToken,
+      refreshToken: result.refreshToken,
       user: result.user,
     });
   });
@@ -57,6 +58,7 @@ export class AuthController {
     res.json({
       message: 'Token refreshed successfully',
       accessToken: result.accessToken,
+      refreshToken: result.refreshToken,
     });
   });
 

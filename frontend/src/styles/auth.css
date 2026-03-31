@@ -96,7 +96,6 @@
   padding: var(--space-4);
   pointer-events: auto;
   /* Re-enable for form */
-  --font-display: var(--font-logo);
   --font-body: var(--font-auth-body);
 }
 

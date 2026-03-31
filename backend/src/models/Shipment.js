@@ -119,6 +119,15 @@ const shipmentSchema = new mongoose.Schema(
     // Computed risk
     riskScore:    { type: Number, default: 0 },
     riskTier:     { type: String, enum: ['low', 'medium', 'high', 'critical'], default: 'low' },
+    riskExplanation: { type: String, default: '' },
+    shapValues: [
+      {
+        feature: String,
+        value: Number,
+        impact: Number,
+      },
+    ],
+    modelVersion: { type: String, default: '1.0' },
     lastScoredAt: { type: Date, default: Date.now },
 
     // History arrays

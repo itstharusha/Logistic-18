@@ -17,6 +17,7 @@ import {
 
 import TrendChart from '../../components/TrendChart.jsx';
 import KPICard from '../../components/KPICard.jsx';
+import Layout from '../../components/Layout.jsx';
 
 import {
   fetchKPI,
@@ -42,40 +43,6 @@ const DAY_OPTIONS = [
   { value: 90, label: '90D' },
 ];
 
-function generateMockTrend(days, metricType) {
-  const points = Math.min(days, 12);
-  return Array.from({ length: points }, (_, i) => {
-    const d = new Date();
-    d.setDate(d.getDate() - (points - 1 - i) * Math.ceil(days / points));
-    const label = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-    const baseVal = metricType === 'risk' ? 60 : metricType === 'alerts' ? 20 : 10;
-    const noise = Math.round((Math.random() - 0.5) * baseVal * 0.4);
-    return { date: label, value: Math.max(1, baseVal + noise) };
-  });
-}
-
-function buildMockKPI(type) {
-  const bases = {
-    risk: { current: 72, previous: 76, avg: 71, peak: 88, low: 58, unit: '' },
-    alerts: { current: 38, previous: 42, avg: 35, peak: 61, low: 18, unit: '' },
-    shipments: { current: 14, previous: 11, avg: 12, peak: 22, low: 6, unit: '' },
-    inventory: { current: 23, previous: 20, avg: 21, peak: 35, low: 12, unit: '' },
-  };
-  return bases[type] || bases.risk;
-}
-
-function StatBox({ label, value, unit = '' }) {
-  return (
-    <div className="kp-stat-box glass-card">
-      <span className="kp-stat-label">{label}</span>
-      <span className="kp-stat-value">
-        {value !== undefined ? value.toLocaleString() : '—'}
-        {unit && <span className="kp-stat-unit">{unit}</span>}
-      </span>
-    </div>
-  );
-}
-
 export default function KPIPage() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -86,7 +53,7 @@ export default function KPIPage() {
 
   const [metric, setMetric] = useState('risk');
   const [days, setDays] = useState(30);
-  const [usingMock, setUsingMock] = useState(false);
+  
 
   const activeMetric = useMemo(
     () => METRIC_OPTIONS.find((m) => m.value === metric) || METRIC_OPTIONS[0],
@@ -96,9 +63,9 @@ export default function KPIPage() {
   const load = useCallback(() => {
     dispatch(fetchKPI({ type: metric, days })).then((action) => {
       if (fetchKPI.rejected.match(action)) {
-        setUsingMock(true);
+        
       } else {
-        setUsingMock(false);
+        
       }
     });
   }, [dispatch, metric, days]);
@@ -110,12 +77,12 @@ export default function KPIPage() {
 
   const chartData = useMemo(() => {
     if (kpiData?.trend?.length) return kpiData.trend;
-    return generateMockTrend(days, metric);
+    return Array.isArray(kpiData?.trend) ? kpiData.trend : [];
   }, [kpiData, days, metric]);
 
   const stats = useMemo(() => {
     if (kpiData?.stats) return kpiData.stats;
-    return buildMockKPI(metric);
+    return kpiData?.metrics || { current: 0, previous: 0, avg: 0, peak: 0, low: 0, unit: "" };
   }, [kpiData, metric]);
 
   const delta = useMemo(() => {
@@ -126,7 +93,7 @@ export default function KPIPage() {
   const barColors = ['#E85D2F', '#F5A623', '#2DB87A', '#C7253E', '#E85D2F'];
 
   return (
-    <div className="kp-root">
+    <Layout>
       <div className="kp-page">
         <header className="kp-header">
           <div className="kp-header-left">
@@ -155,10 +122,10 @@ export default function KPIPage() {
           </div>
         </header>
 
-        {(usingMock || apiError) && (
-          <div className={`kp-banner ${apiError && !usingMock ? 'kp-banner-error' : 'kp-banner-warn'}`}>
+        {apiError && (
+          <div className="kp-banner kp-banner-error">
             <AlertCircle size={14} />
-            {usingMock ? 'Showing mock data — backend unavailable' : apiError}
+            {apiError}
           </div>
         )}
 
@@ -226,6 +193,6 @@ export default function KPIPage() {
           />
         </div>
       </div>
-    </div>
+    </Layout>
   );
 }

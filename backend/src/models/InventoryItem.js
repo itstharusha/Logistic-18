@@ -98,6 +98,10 @@ const inventoryItemSchema = new mongoose.Schema(
       type: String,
       default: '',
     },
+    modelVersion: {
+      type: String,
+      default: '1.0',
+    },
     // Demand forecast fields
     forecastDemand30: {
       type: Number,

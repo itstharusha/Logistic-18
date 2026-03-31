@@ -121,6 +121,8 @@ const alertsSlice = createSlice({
         error: null,
         actionLoading: false,
         actionSuccess: null,
+        // Notification dropdown state
+        showNotificationDropdown: false,
         // Filters
         activeFilter: 'all', // all, mine, open, escalated
         activeSeverity: null,
@@ -144,6 +146,16 @@ const alertsSlice = createSlice({
         },
         clearSelectedAlert: (state) => {
             state.selectedAlert = null;
+        },
+        // Notification dropdown actions
+        toggleNotificationDropdown: (state) => {
+            state.showNotificationDropdown = !state.showNotificationDropdown;
+        },
+        openNotificationDropdown: (state) => {
+            state.showNotificationDropdown = true;
+        },
+        closeNotificationDropdown: (state) => {
+            state.showNotificationDropdown = false;
         },
     },
     extraReducers: (builder) => {
@@ -290,6 +302,13 @@ export const {
     clearActionSuccess,
     clearError,
     clearSelectedAlert,
+    toggleNotificationDropdown,
+    openNotificationDropdown,
+    closeNotificationDropdown,
 } = alertsSlice.actions;
+
+// Selectors
+export const selectNotificationDropdownOpen = (state) => state.alerts.showNotificationDropdown;
+export const selectAlerts = (state) => state.alerts.alerts;
 
 export default alertsSlice.reducer;

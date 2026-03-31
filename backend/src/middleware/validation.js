@@ -22,13 +22,12 @@ import joi from 'joi';
  * The password pattern requires at least one uppercase, one lowercase, one digit.
  */
 export const schemas = {
-  // User registration — all fields required
+  // User registration — orgId is auto-created by backend
   register: joi.object({
     name: joi.string().min(2).max(100).required(),
     email: joi.string().email().required(),
     password: joi.string().min(8).max(50).required()
       .pattern(/(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9])/), // password strength
-    orgId: joi.string().required(), // Must reference an existing organisation
   }),
 
   // User login — only email + password needed

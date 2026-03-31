@@ -1,11 +1,28 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import { X, AlertTriangle, Send } from 'lucide-react';
 import '../styles/modals.css';
+import { listSuppliers } from '../redux/suppliersSlice';
+import { listInventory } from '../redux/inventorySlice';
+import { listShipments } from '../redux/shipmentsSlice';
 
 const SEVERITY_OPTIONS = ['low', 'medium', 'high', 'critical'];
 const ENTITY_TYPE_OPTIONS = ['supplier', 'shipment', 'inventory'];
 
 export default function CreateAlertModal({ isOpen, onClose, onSubmit, isLoading }) {
+    const dispatch = useDispatch();
+    const { suppliers } = useSelector((state) => state.suppliers);
+    const { items: inventoryItems } = useSelector((state) => state.inventory);
+    const { shipments } = useSelector((state) => state.shipments);
+
+    useEffect(() => {
+        if (isOpen) {
+            // Load required entities when modal opens
+            dispatch(listSuppliers({ limit: 100 }));
+            dispatch(listInventory({ limit: 100 }));
+            dispatch(listShipments({ limit: 100 }));
+        }
+    }, [isOpen, dispatch]);
     const [formData, setFormData] = useState({
         entityType: 'supplier',
         entityId: '',
@@ -19,10 +36,13 @@ export default function CreateAlertModal({ isOpen, onClose, onSubmit, isLoading 
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setFormData(prev => ({
-            ...prev,
-            [name]: value,
-        }));
+        setFormData(prev => {
+            const nextData = { ...prev, [name]: value };
+            if (name === 'entityType') {
+                nextData.entityId = ''; // Reset entityId when type changes
+            }
+            return nextData;
+        });
         // Clear error for this field
         if (errors[name]) {
             setErrors(prev => ({
@@ -82,6 +102,21 @@ export default function CreateAlertModal({ isOpen, onClose, onSubmit, isLoading 
         setErrors({});
     };
 
+    const getEntityOptions = () => {
+        switch (formData.entityType) {
+            case 'supplier':
+                return suppliers?.map(s => ({ value: s._id, label: s.name || s._id })) || [];
+            case 'inventory':
+                return inventoryItems?.map(i => ({ value: i._id, label: i.sku || i.name || i.productName || i._id })) || [];
+            case 'shipment':
+                return shipments?.map(s => ({ value: s._id, label: s.trackingNumber || s.shipmentId || s._id })) || [];
+            default:
+                return [];
+        }
+    };
+
+    const entityOptions = getEntityOptions();
+
     if (!isOpen) return null;
 
     return (
@@ -126,19 +161,24 @@ export default function CreateAlertModal({ isOpen, onClose, onSubmit, isLoading 
                     {/* Entity ID */}
                     <div className="form-group">
                         <label htmlFor="entityId">
-                            Entity ID
+                            Entity Selection
                             <span className="form-required">*</span>
                         </label>
-                        <input
-                            type="text"
+                        <select
                             id="entityId"
                             name="entityId"
-                            placeholder="e.g., 507f1f77bcf86cd799439011 or SUP-001"
                             value={formData.entityId}
                             onChange={handleChange}
                             disabled={isLoading}
                             className={errors.entityId ? 'form-control error' : 'form-control'}
-                        />
+                        >
+                            <option value="">Select a {formData.entityType}</option>
+                            {entityOptions.map(option => (
+                                <option key={option.value} value={option.value}>
+                                    {option.label}
+                                </option>
+                            ))}
+                        </select>
                         {errors.entityId && <span className="form-error">{errors.entityId}</span>}
                     </div>
 

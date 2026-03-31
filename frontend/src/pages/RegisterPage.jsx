@@ -14,7 +14,6 @@ export default function RegisterPage() {
     email: '',
     password: '',
     confirmPassword: '',
-    orgId: '',
   });
   const [passwordValidation, setPasswordValidation] = useState({
     length: false,
@@ -158,20 +157,6 @@ export default function RegisterPage() {
                 value={formData.confirmPassword}
                 onChange={handleChange}
                 placeholder="••••••••"
-                required
-                disabled={loading}
-              />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="orgId">Organization ID</label>
-              <input
-                id="orgId"
-                name="orgId"
-                type="text"
-                value={formData.orgId}
-                onChange={handleChange}
-                placeholder="Your organization ID"
                 required
                 disabled={loading}
               />

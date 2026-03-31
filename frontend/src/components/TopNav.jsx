@@ -16,11 +16,19 @@
  *   Logout dispatches the Redux `logout` action and redirects to /login.
  */
 
-import React, { useState } from 'react';
-import { Bell, LogOut, User, Settings } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Bell, LogOut, User } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
 import { logout } from '../redux/authSlice.js';
+import {
+  toggleNotificationDropdown,
+  closeNotificationDropdown,
+  selectNotificationDropdownOpen,
+  selectAlerts,
+} from '../redux/alertsSlice.js';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
+import NotificationDropdown from './NotificationDropdown';
+import UserProfileDrawer from './UsersPage/UserProfileDrawer';
 import '../styles/layout.css';
 
 /**
@@ -36,11 +44,40 @@ export default function TopNav() {
   // Current authenticated user from Redux auth state
   const user = useSelector((state) => state.auth.user);
 
+  // Notification state from Redux
+  const notificationDropdownOpen = useSelector(selectNotificationDropdownOpen);
+  const alerts = useSelector(selectAlerts);
+
   // Controls whether the user dropdown menu is visible
   const [showUserMenu, setShowUserMenu] = useState(false);
 
+  // Controls whether the user profile drawer is visible
+  const [showProfileDrawer, setShowProfileDrawer] = useState(false);
+
   // Tracks per-tab magnetic transform offsets for the hover animation
   const [magnetic, setMagnetic] = useState({});
+
+  // Ref for detecting outside clicks
+  const notificationRef = useRef(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (
+        notificationRef.current &&
+        !notificationRef.current.contains(e.target)
+      ) {
+        dispatch(closeNotificationDropdown());
+      }
+    };
+
+    if (notificationDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
+    }
+  }, [notificationDropdownOpen, dispatch]);
 
   /**
    * isActive
@@ -126,10 +163,28 @@ export default function TopNav() {
       <div className="nav-actions">
 
         {/* Notification Bell with badge showing unread count */}
-        <button className="nav-icon-btn" title="Notifications" aria-label="Notifications" aria-describedby="notification-badge">
-          <Bell size={20} strokeWidth={1.8} />
-          <span id="notification-badge" className="notification-badge" aria-live="polite" aria-atomic="true">3</span>
-        </button>
+        <div ref={notificationRef} style={{ position: 'relative' }}>
+          <button
+            className="nav-icon-btn"
+            title="Notifications"
+            aria-label="Notifications"
+            aria-describedby="notification-badge"
+            onClick={() => dispatch(toggleNotificationDropdown())}
+          >
+            <Bell size={20} strokeWidth={1.8} />
+            {alerts && alerts.length > 0 && (
+              <span
+                id="notification-badge"
+                className="notification-badge"
+                aria-live="polite"
+                aria-atomic="true"
+              >
+                {alerts.length}
+              </span>
+            )}
+          </button>
+          {notificationDropdownOpen && <NotificationDropdown />}
+        </div>
 
         {/* User Avatar and Dropdown Menu */}
         <div className="nav-user-menu">
@@ -147,12 +202,12 @@ export default function TopNav() {
 
           {/* Dropdown — shown when avatar is clicked */}
           <div className="nav-user-dropdown" style={{ display: showUserMenu ? 'block' : 'none' }}>
-            <Link to="/profile" className="dropdown-item">
+            <button
+              onClick={() => { setShowProfileDrawer(true); setShowUserMenu(false); }}
+              className="dropdown-item"
+            >
               <User size={18} /> Profile
-            </Link>
-            <Link to="/settings" className="dropdown-item">
-              <Settings size={18} /> Settings
-            </Link>
+            </button>
             <button
               onClick={() => { setShowUserMenu(false); handleLogout(); }}
               className="dropdown-item logout"
@@ -163,6 +218,14 @@ export default function TopNav() {
         </div>
 
       </div>
+
+      {/* ── User Profile Drawer ────────────────────── */}
+      {showProfileDrawer && (
+        <UserProfileDrawer
+          user={user}
+          onClose={() => setShowProfileDrawer(false)}
+        />
+      )}
     </nav>
   );
 }

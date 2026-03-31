@@ -199,10 +199,10 @@ class AnalyticsService {
       },
       { $unwind: { path: '$supplierInfo', preserveNullAndEmptyArrays: true } },
       {
-        // Calculate daysOfCover based on currentStock and averageDailyDemand (mocking properties safely if absent since schema originally omitted them)
+        // Calculate daysOfCover based on true currentStock and averageDailyDemand
         $addFields: {
-           currentStock: { $ifNull: ['$currentStock', { $floor: { $add: [{ $multiply: [{ $rand: {} }, 100] }, 1] } }] },
-           averageDailyDemand: { $ifNull: ['$averageDailyDemand', { $floor: { $add: [{ $multiply: [{ $rand: {} }, 10] }, 1] } }] }
+           currentStock: { $ifNull: ['$currentStock', 0] },
+           averageDailyDemand: { $ifNull: ['$averageDailyDemand', 1] }
         }
       },
       {
@@ -307,12 +307,7 @@ class AnalyticsService {
       ]);
       trend = data.map(d => ({ date: d._id, value: d.value }));
     } else {
-      // Mock trend for risk, inventory gracefully
-      for (let i = parseInt(days) || 30; i >= 0; i--) {
-         const d = new Date();
-         d.setDate(d.getDate() - i);
-         trend.push({ date: d.toISOString().split('T')[0], value: Math.floor(Math.random() * 100) });
-      }
+      /* no historical data tracking natively yet */
     }
 
     if (trend.length > 0) {

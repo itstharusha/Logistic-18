@@ -80,7 +80,13 @@ apiClient.interceptors.response.use(
           const response = await axios.post('/api/auth/refresh', { refreshToken });
 
           accessToken = response.data.accessToken;
-          localStorage.setItem('accessToken', accessToken); // Store the new token
+          const newRefreshToken = response.data.refreshToken;
+          
+          localStorage.setItem('accessToken', accessToken);
+          if (newRefreshToken) {
+            refreshToken = newRefreshToken;
+            localStorage.setItem('refreshToken', newRefreshToken);
+          }
 
           // Retry the original failed request with the new access token
           originalRequest.headers.Authorization = `Bearer ${accessToken}`;

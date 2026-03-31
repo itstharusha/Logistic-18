@@ -14,6 +14,17 @@ router.get('/me', UserController.getUser);
 // List all users in organization (ORG_ADMIN only)
 router.get('/', authorize(['ORG_ADMIN']), UserController.listUsers);
 
+// Bulk operations (ORG_ADMIN only)
+router.post('/bulk/assign-role', authorize(['ORG_ADMIN']), UserController.bulkAssignRole);
+router.post('/bulk/deactivate', authorize(['ORG_ADMIN']), UserController.bulkDeactivateUsers);
+router.post('/bulk/activate', authorize(['ORG_ADMIN']), UserController.bulkActivateUsers);
+
+// Create user in organization (ORG_ADMIN only)
+router.post('/create', authorize(['ORG_ADMIN']), UserController.createUser);
+
+// Invite user to organization (ORG_ADMIN only)
+router.post('/invite', authorize(['ORG_ADMIN']), UserController.inviteUser);
+
 // Get specific user
 router.get('/:userId', UserController.getUser);
 
@@ -28,9 +39,6 @@ router.post('/:userId/deactivate', authorize(['ORG_ADMIN']), UserController.deac
 
 // Activate user (ORG_ADMIN only)
 router.post('/:userId/activate', authorize(['ORG_ADMIN']), UserController.activateUser);
-
-// Invite user to organization (ORG_ADMIN only)
-router.post('/invite', authorize(['ORG_ADMIN']), UserController.inviteUser);
 
 // Get user activity log (ORG_ADMIN only)
 router.get('/:userId/activity-log', authorize(['ORG_ADMIN']), UserController.getUserActivityLog);

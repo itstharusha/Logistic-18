@@ -16,6 +16,7 @@ import { useNavigate } from 'react-router-dom';
 // Components
 import ReportForm from '../../components/ReportForm.jsx';
 import ReportTable from '../../components/ReportTable.jsx';
+import Layout from '../../components/Layout.jsx';
 
 // Redux actions
 import { generateReport, downloadReport } from '../../redux/analyticsSlice.js';
@@ -49,7 +50,7 @@ export default function ReportsPage() {
   );
 
   return (
-    <div className="rp-root">
+    <Layout>
       <div className="rp-page">
 
         {/* HEADER */}
@@ -171,6 +172,6 @@ export default function ReportsPage() {
 
         </div>
       </div>
-    </div>
+    </Layout>
   );
 }
