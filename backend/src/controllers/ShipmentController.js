@@ -53,7 +53,7 @@ export class ShipmentController {
   static createShipment = asyncHandler(async (req, res) => {
     const shipment = await ShipmentService.createShipment(
       req.user.orgId,
-      req.body,
+      req.validatedBody || req.body,
       req.user.userId
     );
 
@@ -85,7 +85,7 @@ export class ShipmentController {
     const shipment = await ShipmentService.updateShipment(
       req.user.orgId,
       req.params.shipmentId,
-      req.body,
+      req.validatedBody || req.body,
       req.user.userId
     );
 
@@ -103,7 +103,7 @@ export class ShipmentController {
    * and avgDelayDays metrics may be auto-updated by the service layer.
    */
   static updateStatus = asyncHandler(async (req, res) => {
-    const { status, notes } = req.body;
+    const { status, notes } = req.validatedBody || req.body;
 
     const shipment = await ShipmentService.updateStatus(
       req.user.orgId,

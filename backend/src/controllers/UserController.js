@@ -116,7 +116,7 @@ export class UserController {
 
   // POST /api/users/create
   static createUser = asyncHandler(async (req, res) => {
-    const { name, email, role, password } = req.body;
+    const { name, email, role, password } = req.validatedBody || req.body;
 
     const result = await UserService.createUser(
       {
@@ -138,7 +138,7 @@ export class UserController {
 
   // POST /api/users/invite
   static inviteUser = asyncHandler(async (req, res) => {
-    const { name, email, role } = req.body;
+    const { name, email, role } = req.validatedBody || req.body;
 
     const result = await UserService.inviteUser(
       {

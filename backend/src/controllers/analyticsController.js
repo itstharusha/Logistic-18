@@ -34,12 +34,8 @@ export const getAlertSummary = asyncHandler(async (req, res) => {
 });
 
 export const generateReport = asyncHandler(async (req, res) => {
-  const { type, format, module, severity, include, dateRange } = req.body;
+  const { type, format, module, severity, include, dateRange } = req.validatedBody || req.body;
   const orgId = req.user.orgId;
-
-  if (!type || !format || !module) {
-    return res.status(400).json({ error: 'type, format, and module are required in the request body' });
-  }
 
   const newReport = await Report.create({
     orgId,

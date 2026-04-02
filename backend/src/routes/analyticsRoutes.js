@@ -1,5 +1,6 @@
 import express from 'express';
 import { authenticate, authorize } from '../middleware/auth.js';
+import { validate } from '../middleware/validation.js';
 import * as analyticsController from '../controllers/analyticsController.js';
 
 const router = express.Router();
@@ -15,7 +16,7 @@ router.get('/shipments/delays', authenticate, analyticsController.getShipmentDel
 router.get('/inventory/risk', authenticate, analyticsController.getInventoryRisk);
 router.get('/alerts/summary', authenticate, analyticsController.getAlertSummary);
 
-router.post('/generate', authenticate, analyticsController.generateReport);
+router.post('/generate', authenticate, validate('generateReport'), analyticsController.generateReport);
 
 router.get('/:reportId/download', authenticate, analyticsController.downloadReport);
 
