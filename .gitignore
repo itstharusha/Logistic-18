@@ -1,3 +1,11 @@
+# Nested duplicate checkout (local only; not part of this repo)
+Logistic-18/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
 # Dependencies
 node_modules/
 .pnp
