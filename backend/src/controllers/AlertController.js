@@ -97,7 +97,7 @@ export class AlertController {
     static async createAlert(req, res) {
         try {
             const { orgId } = req.user;
-            const { entityType, entityId, severity, title, description, mitigationRecommendation } = req.body;
+            const { entityType, entityId, severity, title, description, mitigationRecommendation } = req.validatedBody || req.body;
 
             if (!entityType || !entityId || !title) {
                 return res.status(400).json({ error: 'entityType, entityId, and title are required' });
@@ -160,7 +160,7 @@ export class AlertController {
         try {
             const { orgId, userId } = req.user;
             const { alertId } = req.params;
-            const { resolutionNote } = req.body;
+            const { resolutionNote } = req.validatedBody || req.body;
 
             const alert = await AlertService.resolveAlert(alertId, orgId, userId, resolutionNote);
             res.json({ alert, message: 'Alert resolved successfully' });

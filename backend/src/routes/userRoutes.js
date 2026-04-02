@@ -20,10 +20,10 @@ router.post('/bulk/deactivate', authorize(['ORG_ADMIN']), UserController.bulkDea
 router.post('/bulk/activate', authorize(['ORG_ADMIN']), UserController.bulkActivateUsers);
 
 // Create user in organization (ORG_ADMIN only)
-router.post('/create', authorize(['ORG_ADMIN']), UserController.createUser);
+router.post('/create', authorize(['ORG_ADMIN']), validate('createUser'), UserController.createUser);
 
 // Invite user to organization (ORG_ADMIN only)
-router.post('/invite', authorize(['ORG_ADMIN']), UserController.inviteUser);
+router.post('/invite', authorize(['ORG_ADMIN']), validate('inviteUser'), UserController.inviteUser);
 
 // Get specific user
 router.get('/:userId', UserController.getUser);

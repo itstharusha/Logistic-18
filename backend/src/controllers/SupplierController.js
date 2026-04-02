@@ -21,7 +21,7 @@ export class SupplierController {
   static createSupplier = asyncHandler(async (req, res) => {
     const supplier = await SupplierService.createSupplier(
       req.user.orgId,
-      req.body,
+      req.validatedBody || req.body,
       req.user.userId
     );
 
@@ -39,7 +39,7 @@ export class SupplierController {
     const supplier = await SupplierService.updateSupplier(
       req.user.orgId,
       req.params.id,
-      req.body,
+      req.validatedBody || req.body,
       req.user.userId
     );
 
@@ -48,7 +48,7 @@ export class SupplierController {
 
   // POST /api/suppliers/compare
   static compareSuppliers = asyncHandler(async (req, res) => {
-    const { ids } = req.body;
+    const { ids } = req.validatedBody || req.body;
     const suppliers = await SupplierService.compareSuppliers(req.user.orgId, ids);
     res.json({ suppliers });
   });
@@ -61,7 +61,7 @@ export class SupplierController {
 
   // POST /api/suppliers/:id/override-score
   static overrideScore = asyncHandler(async (req, res) => {
-    const { newScore, justification } = req.body;
+    const { newScore, justification } = req.validatedBody || req.body;
 
     const supplier = await SupplierService.overrideScore(
       req.user.orgId,
@@ -80,7 +80,7 @@ export class SupplierController {
       onTimeDeliveryRate, defectRate, disputeFrequency,
       avgDelayDays, financialScore, yearsInBusiness, contractValue,
       reason, source, shipmentId,
-    } = req.body;
+    } = req.validatedBody || req.body;
 
     const supplier = await SupplierService.updateMetrics(
       req.user.orgId,
@@ -94,7 +94,7 @@ export class SupplierController {
 
   // PATCH /api/suppliers/:id/status
   static updateStatus = asyncHandler(async (req, res) => {
-    const { status } = req.body;
+    const { status } = req.validatedBody || req.body;
 
     const supplier = await SupplierService.updateStatus(
       req.user.orgId,
