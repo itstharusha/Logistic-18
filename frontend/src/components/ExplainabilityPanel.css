@@ -40,7 +40,7 @@
 
 .explainability-subtitle {
   font-size: 13px;
-  color: #6b7280;
+  color: #374151;
   margin: 0;
   font-style: italic;
 }
@@ -130,7 +130,7 @@
 }
 
 .detail-label {
-  color: #6b7280;
+  color: #374151;
   font-weight: 500;
 }
 
@@ -254,3 +254,4 @@
     font-size: 12px;
   }
 }
+

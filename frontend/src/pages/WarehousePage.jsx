@@ -407,10 +407,10 @@ export default function WarehousePage() {
 
       {/* Tabs */}
       <div style={{ display: 'flex', gap: '8px', marginBottom: '20px' }}>
-        <button onClick={() => setActiveTab('warehouses')} className="tab-btn-light" style={{ background: activeTab === 'warehouses' ? '#1A1C1A' : 'white', color: activeTab === 'warehouses' ? 'white' : '#1A1C1A' }}>
+        <button onClick={() => setActiveTab('warehouses')} className="tab-btn-light" style={{ background: activeTab === 'warehouses' ? 'var(--text-primary)' : 'var(--surface-card)', color: activeTab === 'warehouses' ? 'var(--surface-card)' : 'var(--text-primary)' }}>
           <Warehouse size={16} style={{ marginRight: '6px' }} /> Warehouses
         </button>
-        <button onClick={() => setActiveTab('transfers')} className="tab-btn-light" style={{ background: activeTab === 'transfers' ? '#1A1C1A' : 'white', color: activeTab === 'transfers' ? 'white' : '#1A1C1A' }}>
+        <button onClick={() => setActiveTab('transfers')} className="tab-btn-light" style={{ background: activeTab === 'transfers' ? 'var(--text-primary)' : 'var(--surface-card)', color: activeTab === 'transfers' ? 'var(--surface-card)' : 'var(--text-primary)' }}>
           <ArrowRightLeft size={16} style={{ marginRight: '6px' }} /> Transfers
         </button>
       </div>
@@ -421,7 +421,7 @@ export default function WarehousePage() {
           {/* Search & Filter */}
           <div className="dash-card" style={{ padding: '16px', marginBottom: '20px', display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
             <div style={{ position: 'relative', flex: 1, minWidth: '200px' }}>
-              <Search size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#9A9E9A' }} />
+              <Search size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-tertiary)' }} />
               <input type="text" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Search warehouses..." className="search-input-light" />
             </div>
             <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className="select-light">
@@ -434,9 +434,9 @@ export default function WarehousePage() {
 
           {/* Warehouses Grid */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '20px' }}>
-            {loading && <div style={{ padding: '40px', textAlign: 'center', color: '#9A9E9A', gridColumn: '1/-1' }}><RefreshCw size={24} className="spin" /> Loading...</div>}
+            {loading && <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-tertiary)', gridColumn: '1/-1' }}><RefreshCw size={24} className="spin" /> Loading...</div>}
             {!loading && filteredWarehouses.length === 0 && (
-              <div className="dash-card" style={{ padding: '40px', textAlign: 'center', color: '#9A9E9A', gridColumn: '1/-1' }}>
+              <div className="dash-card" style={{ padding: '40px', textAlign: 'center', color: 'var(--text-tertiary)', gridColumn: '1/-1' }}>
                 No warehouses found. Create your first warehouse to get started.
               </div>
             )}
@@ -445,32 +445,32 @@ export default function WarehousePage() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                      <h3 style={{ fontSize: '18px', fontWeight: '700', color: '#1A1C1A' }}>{warehouse.name}</h3>
+                      <h3 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--text-primary)' }}>{warehouse.name}</h3>
                       {warehouse.isDefault && <Star size={16} style={{ color: '#F59E0B', fill: '#F59E0B' }} />}
                     </div>
-                    <p style={{ fontSize: '14px', color: '#5A5E5A', fontFamily: 'monospace' }}>{warehouse.code}</p>
+                    <p style={{ fontSize: '14px', color: 'var(--text-secondary)', fontFamily: 'monospace' }}>{warehouse.code}</p>
                   </div>
                   <StatusBadge status={warehouse.status} />
                 </div>
 
                 <div style={{ display: 'grid', gap: '12px', marginBottom: '16px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', color: '#5A5E5A' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', color: 'var(--text-secondary)' }}>
                     <Package size={16} style={{ color: '#E85D2F' }} />
-                    <span>Type: <strong style={{ color: '#1A1C1A', textTransform: 'capitalize' }}>{warehouse.type}</strong></span>
+                    <span>Type: <strong style={{ color: 'var(--text-primary)', textTransform: 'capitalize' }}>{warehouse.type}</strong></span>
                   </div>
                   {warehouse.location?.city && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', color: '#5A5E5A' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', color: 'var(--text-secondary)' }}>
                       <MapPin size={16} style={{ color: '#E85D2F' }} />
                       <span>{warehouse.location.city}{warehouse.location.country ? `, ${warehouse.location.country}` : ''}</span>
                     </div>
                   )}
                   {warehouse.manager?.name && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', color: '#5A5E5A' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', color: 'var(--text-secondary)' }}>
                       <Users size={16} style={{ color: '#E85D2F' }} />
                       <span>{warehouse.manager.name}</span>
                     </div>
                   )}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', color: '#5A5E5A' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', color: 'var(--text-secondary)' }}>
                     <Clock size={16} style={{ color: '#E85D2F' }} />
                     <span>{warehouse.operatingHours?.open || '08:00'} - {warehouse.operatingHours?.close || '18:00'}</span>
                   </div>
@@ -479,10 +479,10 @@ export default function WarehousePage() {
                 {warehouse.capacity > 0 && (
                   <div style={{ marginBottom: '16px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '4px' }}>
-                      <span style={{ color: '#9A9E9A' }}>Capacity</span>
-                      <span style={{ color: '#5A5E5A' }}>{warehouse.currentUtilization || 0} / {warehouse.capacity}</span>
+                      <span style={{ color: 'var(--text-tertiary)' }}>Capacity</span>
+                      <span style={{ color: 'var(--text-secondary)' }}>{warehouse.currentUtilization || 0} / {warehouse.capacity}</span>
                     </div>
-                    <div style={{ height: '6px', background: '#E2E5E0', borderRadius: '3px', overflow: 'hidden' }}>
+                    <div style={{ height: '6px', background: 'var(--border-light)', borderRadius: '3px', overflow: 'hidden' }}>
                       <div style={{ height: '100%', width: `${warehouse.utilizationPercent || 0}%`, background: warehouse.utilizationPercent > 90 ? '#EF4444' : warehouse.utilizationPercent > 70 ? '#F59E0B' : '#2DB87A', borderRadius: '3px', transition: 'width 0.3s' }}></div>
                     </div>
                   </div>
@@ -490,11 +490,11 @@ export default function WarehousePage() {
 
                 {canEdit && (
                   <div style={{ display: 'flex', gap: '8px', paddingTop: '12px', borderTop: '1px solid #E2E5E0' }}>
-                    <button onClick={() => startEditWarehouse(warehouse)} style={{ flex: 1, padding: '8px', borderRadius: '6px', border: '1px solid #E2E5E0', background: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', fontSize: '13px', color: '#1A1C1A' }}>
+                    <button onClick={() => startEditWarehouse(warehouse)} style={{ flex: 1, padding: '8px', borderRadius: '6px', border: '1px solid #E2E5E0', background: 'var(--surface-card)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', fontSize: '13px', color: 'var(--text-primary)' }}>
                       <Edit2 size={14} /> Edit
                     </button>
                     {!warehouse.isDefault && (
-                      <button onClick={() => handleSetDefault(warehouse._id)} style={{ flex: 1, padding: '8px', borderRadius: '6px', border: '1px solid #E2E5E0', background: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', fontSize: '13px', color: '#1A1C1A' }}>
+                      <button onClick={() => handleSetDefault(warehouse._id)} style={{ flex: 1, padding: '8px', borderRadius: '6px', border: '1px solid #E2E5E0', background: 'var(--surface-card)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', fontSize: '13px', color: 'var(--text-primary)' }}>
                         <Star size={14} /> Set Default
                       </button>
                     )}
@@ -515,19 +515,19 @@ export default function WarehousePage() {
           {/* Transfer Stats Card */}
           {transferStats && (
             <div className="dash-card" style={{ padding: '16px', marginBottom: '20px', display: 'flex', gap: '24px', flexWrap: 'wrap' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#1A1C1A' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-primary)' }}>
                 <span style={{ width: '12px', height: '12px', borderRadius: '3px', background: '#F59E0B' }}></span>
                 <span>Pending: <strong>{transferStats.pending}</strong></span>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#1A1C1A' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-primary)' }}>
                 <span style={{ width: '12px', height: '12px', borderRadius: '3px', background: '#3B82F6' }}></span>
                 <span>In Transit: <strong>{transferStats.inTransit}</strong></span>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#1A1C1A' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-primary)' }}>
                 <span style={{ width: '12px', height: '12px', borderRadius: '3px', background: '#2DB87A' }}></span>
                 <span>Completed: <strong>{transferStats.completed}</strong></span>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#1A1C1A' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-primary)' }}>
                 <span style={{ width: '12px', height: '12px', borderRadius: '3px', background: '#EF4444' }}></span>
                 <span>Cancelled: <strong>{transferStats.cancelled}</strong></span>
               </div>
@@ -551,47 +551,47 @@ export default function WarehousePage() {
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
                   <tr style={{ borderBottom: '1px solid #E2E5E0' }}>
-                    <th style={{ padding: '14px 16px', textAlign: 'left', fontWeight: '600', color: '#5A5E5A', fontSize: '13px' }}>Transfer #</th>
-                    <th style={{ padding: '14px 16px', textAlign: 'left', fontWeight: '600', color: '#5A5E5A', fontSize: '13px' }}>Item</th>
-                    <th style={{ padding: '14px 16px', textAlign: 'left', fontWeight: '600', color: '#5A5E5A', fontSize: '13px' }}>From</th>
-                    <th style={{ padding: '14px 16px', textAlign: 'left', fontWeight: '600', color: '#5A5E5A', fontSize: '13px' }}>To</th>
-                    <th style={{ padding: '14px 16px', textAlign: 'right', fontWeight: '600', color: '#5A5E5A', fontSize: '13px' }}>Qty</th>
-                    <th style={{ padding: '14px 16px', textAlign: 'center', fontWeight: '600', color: '#5A5E5A', fontSize: '13px' }}>Priority</th>
-                    <th style={{ padding: '14px 16px', textAlign: 'center', fontWeight: '600', color: '#5A5E5A', fontSize: '13px' }}>Status</th>
-                    <th style={{ padding: '14px 16px', textAlign: 'center', fontWeight: '600', color: '#5A5E5A', fontSize: '13px' }}>Actions</th>
+                    <th style={{ padding: '14px 16px', textAlign: 'left', fontWeight: '600', color: 'var(--text-secondary)', fontSize: '13px' }}>Transfer #</th>
+                    <th style={{ padding: '14px 16px', textAlign: 'left', fontWeight: '600', color: 'var(--text-secondary)', fontSize: '13px' }}>Item</th>
+                    <th style={{ padding: '14px 16px', textAlign: 'left', fontWeight: '600', color: 'var(--text-secondary)', fontSize: '13px' }}>From</th>
+                    <th style={{ padding: '14px 16px', textAlign: 'left', fontWeight: '600', color: 'var(--text-secondary)', fontSize: '13px' }}>To</th>
+                    <th style={{ padding: '14px 16px', textAlign: 'right', fontWeight: '600', color: 'var(--text-secondary)', fontSize: '13px' }}>Qty</th>
+                    <th style={{ padding: '14px 16px', textAlign: 'center', fontWeight: '600', color: 'var(--text-secondary)', fontSize: '13px' }}>Priority</th>
+                    <th style={{ padding: '14px 16px', textAlign: 'center', fontWeight: '600', color: 'var(--text-secondary)', fontSize: '13px' }}>Status</th>
+                    <th style={{ padding: '14px 16px', textAlign: 'center', fontWeight: '600', color: 'var(--text-secondary)', fontSize: '13px' }}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {loading && (
-                    <tr><td colSpan="8" style={{ padding: '40px', textAlign: 'center', color: '#9A9E9A' }}><RefreshCw size={24} className="spin" /></td></tr>
+                    <tr><td colSpan="8" style={{ padding: '40px', textAlign: 'center', color: 'var(--text-tertiary)' }}><RefreshCw size={24} className="spin" /></td></tr>
                   )}
                   {!loading && filteredTransfers.length === 0 && (
-                    <tr><td colSpan="8" style={{ padding: '40px', textAlign: 'center', color: '#9A9E9A' }}>No transfers found</td></tr>
+                    <tr><td colSpan="8" style={{ padding: '40px', textAlign: 'center', color: 'var(--text-tertiary)' }}>No transfers found</td></tr>
                   )}
                   {filteredTransfers.map((transfer) => (
                     <tr key={transfer._id} className="table-row-hover" style={{ borderBottom: '1px solid #E2E5E0' }}>
-                      <td style={{ padding: '14px 16px', fontFamily: 'monospace', fontSize: '13px', color: '#1A1C1A' }}>{transfer.transferNumber}</td>
-                      <td style={{ padding: '14px 16px', color: '#1A1C1A' }}>
+                      <td style={{ padding: '14px 16px', fontFamily: 'monospace', fontSize: '13px', color: 'var(--text-primary)' }}>{transfer.transferNumber}</td>
+                      <td style={{ padding: '14px 16px', color: 'var(--text-primary)' }}>
                         <div style={{ fontWeight: '500' }}>{transfer.inventoryItemId?.sku}</div>
-                        <div style={{ fontSize: '12px', color: '#9A9E9A' }}>{transfer.inventoryItemId?.productName}</div>
+                        <div style={{ fontSize: '12px', color: 'var(--text-tertiary)' }}>{transfer.inventoryItemId?.productName}</div>
                       </td>
-                      <td style={{ padding: '14px 16px', color: '#1A1C1A' }}>{transfer.fromWarehouseId?.code || transfer.fromWarehouseId}</td>
-                      <td style={{ padding: '14px 16px', color: '#1A1C1A' }}>{transfer.toWarehouseId?.code || transfer.toWarehouseId}</td>
-                      <td style={{ padding: '14px 16px', textAlign: 'right', fontWeight: '600', color: '#1A1C1A' }}>{transfer.quantity}</td>
+                      <td style={{ padding: '14px 16px', color: 'var(--text-primary)' }}>{transfer.fromWarehouseId?.code || transfer.fromWarehouseId}</td>
+                      <td style={{ padding: '14px 16px', color: 'var(--text-primary)' }}>{transfer.toWarehouseId?.code || transfer.toWarehouseId}</td>
+                      <td style={{ padding: '14px 16px', textAlign: 'right', fontWeight: '600', color: 'var(--text-primary)' }}>{transfer.quantity}</td>
                       <td style={{ padding: '14px 16px', textAlign: 'center' }}><PriorityBadge priority={transfer.priority} /></td>
                       <td style={{ padding: '14px 16px', textAlign: 'center' }}><TransferStatusBadge status={transfer.status} /></td>
                       <td style={{ padding: '14px 16px', textAlign: 'center' }}>
                         {canEdit && transfer.status === 'pending' && (
                           <div style={{ display: 'flex', gap: '4px', justifyContent: 'center' }}>
-                            <button onClick={() => handleApproveTransfer(transfer._id)} style={{ padding: '6px 12px', borderRadius: '4px', background: '#2DB87A', color: 'white', border: 'none', cursor: 'pointer', fontSize: '12px', fontWeight: '500' }}>Approve</button>
-                            <button onClick={() => handleCancelTransfer(transfer._id)} style={{ padding: '6px 12px', borderRadius: '4px', background: '#EF4444', color: 'white', border: 'none', cursor: 'pointer', fontSize: '12px', fontWeight: '500' }}>Cancel</button>
+                            <button onClick={() => handleApproveTransfer(transfer._id)} style={{ padding: '6px 12px', borderRadius: '4px', background: '#2DB87A', color: 'var(--surface-card)', border: 'none', cursor: 'pointer', fontSize: '12px', fontWeight: '500' }}>Approve</button>
+                            <button onClick={() => handleCancelTransfer(transfer._id)} style={{ padding: '6px 12px', borderRadius: '4px', background: '#EF4444', color: 'var(--surface-card)', border: 'none', cursor: 'pointer', fontSize: '12px', fontWeight: '500' }}>Cancel</button>
                           </div>
                         )}
                         {canEdit && transfer.status === 'in-transit' && (
-                          <button onClick={() => handleCompleteTransfer(transfer._id)} style={{ padding: '6px 12px', borderRadius: '4px', background: '#3B82F6', color: 'white', border: 'none', cursor: 'pointer', fontSize: '12px', fontWeight: '500' }}>Complete</button>
+                          <button onClick={() => handleCompleteTransfer(transfer._id)} style={{ padding: '6px 12px', borderRadius: '4px', background: '#3B82F6', color: 'var(--surface-card)', border: 'none', cursor: 'pointer', fontSize: '12px', fontWeight: '500' }}>Complete</button>
                         )}
                         {(transfer.status === 'completed' || transfer.status === 'cancelled') && (
-                          <span style={{ fontSize: '12px', color: '#9A9E9A' }}>—</span>
+                          <span style={{ fontSize: '12px', color: 'var(--text-tertiary)' }}>—</span>
                         )}
                       </td>
                     </tr>
@@ -608,8 +608,8 @@ export default function WarehousePage() {
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
           <div className="dash-card" style={{ width: '100%', maxWidth: '600px', maxHeight: '90vh', overflow: 'auto', padding: '24px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <h3 style={{ color: '#1A1C1A', fontSize: '18px', fontWeight: '600' }}>Create New Warehouse</h3>
-              <button onClick={() => { setShowCreateWarehouse(false); resetWarehouseForm(); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#5A5E5A', fontSize: '20px' }}>✕</button>
+              <h3 style={{ color: 'var(--text-primary)', fontSize: '18px', fontWeight: '600' }}>Create New Warehouse</h3>
+              <button onClick={() => { setShowCreateWarehouse(false); resetWarehouseForm(); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', fontSize: '20px' }}>✕</button>
             </div>
             <form onSubmit={handleCreateWarehouse}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
@@ -665,8 +665,8 @@ export default function WarehousePage() {
                 </div>
               </div>
               <div style={{ display: 'flex', gap: '12px', marginTop: '20px' }}>
-                <button type="submit" style={{ flex: 1, padding: '12px 20px', background: '#E85D2F', color: 'white', borderRadius: '8px', fontWeight: '600', border: 'none', cursor: 'pointer' }}>Create Warehouse</button>
-                <button type="button" onClick={() => { setShowCreateWarehouse(false); resetWarehouseForm(); }} style={{ flex: 1, padding: '12px 20px', background: '#F5F7F5', color: '#1A1C1A', borderRadius: '8px', fontWeight: '500', border: '1px solid #E2E5E0', cursor: 'pointer' }}>Cancel</button>
+                <button type="submit" style={{ flex: 1, padding: '12px 20px', background: '#E85D2F', color: 'var(--surface-card)', borderRadius: '8px', fontWeight: '600', border: 'none', cursor: 'pointer' }}>Create Warehouse</button>
+                <button type="button" onClick={() => { setShowCreateWarehouse(false); resetWarehouseForm(); }} style={{ flex: 1, padding: '12px 20px', background: 'var(--surface-card-alt)', color: 'var(--text-primary)', borderRadius: '8px', fontWeight: '500', border: '1px solid #E2E5E0', cursor: 'pointer' }}>Cancel</button>
               </div>
             </form>
           </div>
@@ -678,8 +678,8 @@ export default function WarehousePage() {
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
           <div className="dash-card" style={{ width: '100%', maxWidth: '600px', maxHeight: '90vh', overflow: 'auto', padding: '24px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <h3 style={{ color: '#1A1C1A', fontSize: '18px', fontWeight: '600' }}>Edit Warehouse</h3>
-              <button onClick={() => { setEditingWarehouse(null); resetWarehouseForm(); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#5A5E5A', fontSize: '20px' }}>✕</button>
+              <h3 style={{ color: 'var(--text-primary)', fontSize: '18px', fontWeight: '600' }}>Edit Warehouse</h3>
+              <button onClick={() => { setEditingWarehouse(null); resetWarehouseForm(); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', fontSize: '20px' }}>✕</button>
             </div>
             <form onSubmit={handleUpdateWarehouse}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
@@ -727,8 +727,8 @@ export default function WarehousePage() {
                 </div>
               </div>
               <div style={{ display: 'flex', gap: '12px', marginTop: '20px' }}>
-                <button type="submit" style={{ flex: 1, padding: '12px 20px', background: '#E85D2F', color: 'white', borderRadius: '8px', fontWeight: '600', border: 'none', cursor: 'pointer' }}>Update Warehouse</button>
-                <button type="button" onClick={() => { setEditingWarehouse(null); resetWarehouseForm(); }} style={{ flex: 1, padding: '12px 20px', background: '#F5F7F5', color: '#1A1C1A', borderRadius: '8px', fontWeight: '500', border: '1px solid #E2E5E0', cursor: 'pointer' }}>Cancel</button>
+                <button type="submit" style={{ flex: 1, padding: '12px 20px', background: '#E85D2F', color: 'var(--surface-card)', borderRadius: '8px', fontWeight: '600', border: 'none', cursor: 'pointer' }}>Update Warehouse</button>
+                <button type="button" onClick={() => { setEditingWarehouse(null); resetWarehouseForm(); }} style={{ flex: 1, padding: '12px 20px', background: 'var(--surface-card-alt)', color: 'var(--text-primary)', borderRadius: '8px', fontWeight: '500', border: '1px solid #E2E5E0', cursor: 'pointer' }}>Cancel</button>
               </div>
             </form>
           </div>
@@ -740,8 +740,8 @@ export default function WarehousePage() {
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
           <div className="dash-card" style={{ width: '100%', maxWidth: '500px', padding: '24px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <h3 style={{ color: '#1A1C1A', fontSize: '18px', fontWeight: '600' }}>Create Warehouse Transfer</h3>
-              <button onClick={() => { setShowCreateTransfer(false); resetTransferForm(); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#5A5E5A', fontSize: '20px' }}>✕</button>
+              <h3 style={{ color: 'var(--text-primary)', fontSize: '18px', fontWeight: '600' }}>Create Warehouse Transfer</h3>
+              <button onClick={() => { setShowCreateTransfer(false); resetTransferForm(); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', fontSize: '20px' }}>✕</button>
             </div>
             <form onSubmit={handleCreateTransfer}>
               <div style={{ display: 'grid', gap: '16px' }}>
@@ -791,8 +791,8 @@ export default function WarehousePage() {
                 </div>
               </div>
               <div style={{ display: 'flex', gap: '12px', marginTop: '20px' }}>
-                <button type="submit" style={{ flex: 1, padding: '12px 20px', background: '#E85D2F', color: 'white', borderRadius: '8px', fontWeight: '600', border: 'none', cursor: 'pointer' }}>Create Transfer</button>
-                <button type="button" onClick={() => { setShowCreateTransfer(false); resetTransferForm(); }} style={{ flex: 1, padding: '12px 20px', background: '#F5F7F5', color: '#1A1C1A', borderRadius: '8px', fontWeight: '500', border: '1px solid #E2E5E0', cursor: 'pointer' }}>Cancel</button>
+                <button type="submit" style={{ flex: 1, padding: '12px 20px', background: '#E85D2F', color: 'var(--surface-card)', borderRadius: '8px', fontWeight: '600', border: 'none', cursor: 'pointer' }}>Create Transfer</button>
+                <button type="button" onClick={() => { setShowCreateTransfer(false); resetTransferForm(); }} style={{ flex: 1, padding: '12px 20px', background: 'var(--surface-card-alt)', color: 'var(--text-primary)', borderRadius: '8px', fontWeight: '500', border: '1px solid #E2E5E0', cursor: 'pointer' }}>Cancel</button>
               </div>
             </form>
           </div>
@@ -815,3 +815,5 @@ export default function WarehousePage() {
     </Layout>
   );
 }
+
+

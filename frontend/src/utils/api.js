@@ -76,9 +76,14 @@ export const analyticsAPI = {
 // Warehouse API calls
 export const warehouseAPI = {
   listWarehouses: (params) => apiClient.get('/inventory/warehouses', { params }),
+  getActiveWarehouses: () => apiClient.get('/inventory/warehouses/active'),
+  getWarehouseStats: () => apiClient.get('/inventory/warehouses/stats'),
   getWarehouse: (warehouseId) => apiClient.get(`/inventory/warehouses/${warehouseId}`),
   createWarehouse: (data) => apiClient.post('/inventory/warehouses', data),
   updateWarehouse: (warehouseId, data) => apiClient.put(`/inventory/warehouses/${warehouseId}`, data),
+  getWarehouseWithInventory: (warehouseId) => apiClient.get(`/inventory/warehouses/${warehouseId}/inventory`),
+  setDefaultWarehouse: (warehouseId) => apiClient.patch(`/inventory/warehouses/${warehouseId}/default`),
+  deleteWarehouse: (warehouseId) => apiClient.delete(`/inventory/warehouses/${warehouseId}`)
 };
 
 // Warehouse Transfer API calls (Wijemanna's module)

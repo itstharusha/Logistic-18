@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import './ExplainabilityPanel.css';
 
 /**
@@ -42,20 +42,20 @@ export function ExplainabilityPanel({ features = [], recommendations = [], domai
   const getImpactBadge = (impact) => {
     switch (impact?.toLowerCase()) {
       case 'high':
-        return '🔴 High';
+        return 'ðŸ”´ High';
       case 'medium':
-        return '🟠 Medium';
+        return 'ðŸŸ  Medium';
       case 'low':
-        return '🔵 Low';
+        return 'ðŸ”µ Low';
       default:
-        return '⚪ Unknown';
+        return 'âšª Unknown';
     }
   };
 
   return (
     <div className="explainability-panel">
       <div className="explainability-header">
-        <h3>🔍 Model Explainability (SHAP Analysis)</h3>
+        <h3>ðŸ” Model Explainability (SHAP Analysis)</h3>
         <p className="explainability-subtitle">
           These are the top features influencing the risk prediction for this {domain}
         </p>
@@ -78,13 +78,13 @@ export function ExplainabilityPanel({ features = [], recommendations = [], domai
       </div>
 
       {/* Recommendations */}
-      {recommendat​ions && recommendations.length > 0 && (
+      {recommendations && recommendations.length > 0 && (
         <div className="recommendations-section">
-          <h4>💡 Recommendations</h4>
+          <h4>ðŸ’¡ Recommendations</h4>
           <div className="recommendations-list">
             {recommendations.map((rec, idx) => (
               <div key={idx} className="recommendation-item">
-                <span className="recommendation-icon">✓</span>
+                <span className="recommendation-icon">âœ“</span>
                 <span className="recommendation-text">{rec}</span>
               </div>
             ))}

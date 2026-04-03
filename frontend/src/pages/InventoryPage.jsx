@@ -377,7 +377,7 @@ export default function InventoryPage() {
             </div>
             {/* Risk Progress Bar */}
             {dashboard.summary?.totalItems > 0 && (
-              <div style={{ height: '8px', background: '#E2E5E0', borderRadius: '4px', overflow: 'hidden', display: 'flex' }}>
+              <div style={{ height: '8px', background: 'var(--border-light)', borderRadius: '4px', overflow: 'hidden', display: 'flex' }}>
                 <div style={{ width: `${(dashboard.riskDistribution?.low / dashboard.summary.totalItems) * 100}%`, background: '#2DB87A' }}></div>
                 <div style={{ width: `${(dashboard.riskDistribution?.medium / dashboard.summary.totalItems) * 100}%`, background: '#F59E0B' }}></div>
                 <div style={{ width: `${(dashboard.riskDistribution?.high / dashboard.summary.totalItems) * 100}%`, background: '#F97316' }}></div>
@@ -448,30 +448,30 @@ export default function InventoryPage() {
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '16px' }}>
             {dashboard.itemsByWarehouse.map((wh) => (
-              <div key={wh.warehouseId} style={{ padding: '16px', background: '#F5F7F5', borderRadius: '12px', border: '1px solid #E2E5E0' }}>
+              <div key={wh.warehouseId} style={{ padding: '16px', background: 'var(--surface-card-alt)', borderRadius: '12px', border: '1px solid #E2E5E0' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
                   <div>
-                    <div style={{ fontWeight: '700', fontSize: '14px', color: '#1A1C1A' }}>{wh.warehouseCode || 'Unknown'}</div>
-                    <div style={{ fontSize: '12px', color: '#5A5E5A' }}>{wh.warehouseName || 'N/A'}</div>
+                    <div style={{ fontWeight: '700', fontSize: '14px', color: 'var(--text-primary)' }}>{wh.warehouseCode || 'Unknown'}</div>
+                    <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{wh.warehouseName || 'N/A'}</div>
                   </div>
                   <span style={{ fontSize: '10px', padding: '3px 8px', borderRadius: '4px', background: 'rgba(139, 92, 246, 0.1)', color: '#8B5CF6', textTransform: 'capitalize', fontWeight: '600' }}>{wh.warehouseType || 'storage'}</span>
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', fontSize: '13px' }}>
                   <div>
-                    <div style={{ color: '#9A9E9A', fontSize: '11px' }}>Items</div>
-                    <div style={{ fontWeight: '600', color: '#1A1C1A' }}>{wh.totalItems}</div>
+                    <div style={{ color: 'var(--text-tertiary)', fontSize: '11px' }}>Items</div>
+                    <div style={{ fontWeight: '600', color: 'var(--text-primary)' }}>{wh.totalItems}</div>
                   </div>
                   <div>
-                    <div style={{ color: '#9A9E9A', fontSize: '11px' }}>Stock</div>
-                    <div style={{ fontWeight: '600', color: '#1A1C1A' }}>{wh.totalStock?.toLocaleString()}</div>
+                    <div style={{ color: 'var(--text-tertiary)', fontSize: '11px' }}>Stock</div>
+                    <div style={{ fontWeight: '600', color: 'var(--text-primary)' }}>{wh.totalStock?.toLocaleString()}</div>
                   </div>
                   <div>
-                    <div style={{ color: '#9A9E9A', fontSize: '11px' }}>Critical</div>
-                    <div style={{ fontWeight: '600', color: wh.criticalItems > 0 ? '#EF4444' : '#1A1C1A' }}>{wh.criticalItems}</div>
+                    <div style={{ color: 'var(--text-tertiary)', fontSize: '11px' }}>Critical</div>
+                    <div style={{ fontWeight: '600', color: wh.criticalItems > 0 ? '#EF4444' : 'var(--text-primary)' }}>{wh.criticalItems}</div>
                   </div>
                   <div>
-                    <div style={{ color: '#9A9E9A', fontSize: '11px' }}>Reorder</div>
-                    <div style={{ fontWeight: '600', color: wh.belowReorder > 0 ? '#F59E0B' : '#1A1C1A' }}>{wh.belowReorder}</div>
+                    <div style={{ color: 'var(--text-tertiary)', fontSize: '11px' }}>Reorder</div>
+                    <div style={{ fontWeight: '600', color: wh.belowReorder > 0 ? '#F59E0B' : 'var(--text-primary)' }}>{wh.belowReorder}</div>
                   </div>
                 </div>
               </div>
@@ -535,11 +535,11 @@ export default function InventoryPage() {
               </div>
               <div className="form-group-light" style={{ display: 'flex', alignItems: 'center', gap: '8px', paddingTop: '24px' }}>
                 <input type="checkbox" name="isCriticalItem" checked={formData.isCriticalItem} onChange={handleFormChange} id="critical-check" />
-                <label htmlFor="critical-check" style={{ margin: 0, color: '#1A1C1A' }}>Critical Item</label>
+                <label htmlFor="critical-check" style={{ margin: 0, color: 'var(--text-primary)' }}>Critical Item</label>
               </div>
             </div>
             <div style={{ marginTop: '20px', display: 'flex', gap: '12px' }}>
-              <button type="submit" className="hero-btn hero-btn--light" style={{ background: '#E85D2F', color: 'white' }}>Create Item</button>
+              <button type="submit" className="hero-btn hero-btn--light" style={{ background: '#E85D2F', color: 'var(--surface-card)' }}>Create Item</button>
               <button type="button" onClick={() => setShowCreateForm(false)} className="hero-btn hero-btn--dark">Cancel</button>
             </div>
           </form>
@@ -548,13 +548,13 @@ export default function InventoryPage() {
 
       {/* Tabs */}
       <div style={{ display: 'flex', gap: '8px', marginBottom: '20px' }}>
-        <button onClick={() => handleTabChange('all')} className="tab-btn-light" style={{ background: activeTab === 'all' ? '#1A1C1A' : 'white' , color: activeTab === 'all' ? 'white' : '#1A1C1A' }}>
+        <button onClick={() => handleTabChange('all')} className="tab-btn-light" style={{ background: activeTab === 'all' ? 'var(--text-primary)' : 'var(--surface-card)' , color: activeTab === 'all' ? 'var(--surface-card)' : 'var(--text-primary)' }}>
           <Archive size={16} style={{ marginRight: '6px' }} /> All Items
         </button>
-        <button onClick={() => handleTabChange('reorder')} className="tab-btn-light" style={{ background: activeTab === 'reorder' ? '#1A1C1A' : 'white', color: activeTab === 'reorder' ? 'white' : '#1A1C1A' }}>
+        <button onClick={() => handleTabChange('reorder')} className="tab-btn-light" style={{ background: activeTab === 'reorder' ? 'var(--text-primary)' : 'var(--surface-card)', color: activeTab === 'reorder' ? 'var(--surface-card)' : 'var(--text-primary)' }}>
           <ShoppingCart size={16} style={{ marginRight: '6px' }} /> Reorder List
         </button>
-        <button onClick={() => handleTabChange('critical')} className="tab-btn-light" style={{ background: activeTab === 'critical' ? '#1A1C1A' : 'white', color: activeTab === 'critical' ? 'white' : '#1A1C1A' }}>
+        <button onClick={() => handleTabChange('critical')} className="tab-btn-light" style={{ background: activeTab === 'critical' ? 'var(--text-primary)' : 'var(--surface-card)', color: activeTab === 'critical' ? 'var(--surface-card)' : 'var(--text-primary)' }}>
           <AlertTriangle size={16} style={{ marginRight: '6px' }} /> Critical Items
         </button>
       </div>
@@ -564,7 +564,7 @@ export default function InventoryPage() {
         <div className="dash-card" style={{ padding: '16px', marginBottom: '20px', display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
           <form onSubmit={handleSearch} style={{ display: 'flex', gap: '8px', flex: 1, minWidth: '250px' }}>
             <div style={{ position: 'relative', flex: 1 }}>
-              <Search size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#9A9E9A' }} />
+              <Search size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-tertiary)' }} />
               <input type="text" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Search by SKU or product name..." className="search-input-light" />
             </div>
             <button type="submit" className="hero-btn hero-btn--light" style={{ borderRadius: '8px', padding: '10px 16px' }}>Search</button>
@@ -589,86 +589,95 @@ export default function InventoryPage() {
       )}
 
       {/* Inventory Table */}
-      <div className="dash-card">
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+      <div className="dash-card table-section">
+        <div className="users-table-canvas">
+          <table className="premium-table">
             <thead>
-              <tr style={{ borderBottom: '1px solid #E2E5E0' }}>
-                <th style={{ padding: '14px 16px', textAlign: 'left', fontWeight: '600', color: '#5A5E5A', fontSize: '13px' }}>SKU</th>
-                <th style={{ padding: '14px 16px', textAlign: 'left', fontWeight: '600', color: '#5A5E5A', fontSize: '13px' }}>Product</th>
-                <th style={{ padding: '14px 16px', textAlign: 'left', fontWeight: '600', color: '#5A5E5A', fontSize: '13px' }}>Warehouse</th>
-                <th style={{ padding: '14px 16px', textAlign: 'right', fontWeight: '600', color: '#5A5E5A', fontSize: '13px' }}>Stock</th>
-                <th style={{ padding: '14px 16px', textAlign: 'right', fontWeight: '600', color: '#5A5E5A', fontSize: '13px' }}>Reorder Pt</th>
-                <th style={{ padding: '14px 16px', textAlign: 'center', fontWeight: '600', color: '#5A5E5A', fontSize: '13px' }}>Risk</th>
-                <th style={{ padding: '14px 16px', textAlign: 'center', fontWeight: '600', color: '#5A5E5A', fontSize: '13px' }}>Critical</th>
-                <th style={{ padding: '14px 16px', textAlign: 'center', fontWeight: '600', color: '#5A5E5A', fontSize: '13px' }}>Actions</th>
+              <tr>
+                <th>SKU</th>
+                <th>Product</th>
+                <th>Warehouse</th>
+                <th>Stock</th>
+                <th>Reorder Pt</th>
+                <th>Risk</th>
+                <th>Critical</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
               {loading && (
                 <tr>
-                  <td colSpan="8" style={{ padding: '40px', textAlign: 'center', color: '#9A9E9A' }}>
+                  <td colSpan="8" style={{ padding: '40px', textAlign: 'center' }}>
                     <RefreshCw size={24} className="spin" /> Loading...
                   </td>
                 </tr>
               )}
               {!loading && displayItems.length === 0 && (
                 <tr>
-                  <td colSpan="8" style={{ padding: '40px', textAlign: 'center', color: '#9A9E9A' }}>
+                  <td colSpan="8" style={{ padding: '40px', textAlign: 'center' }}>
                     No inventory items found
                   </td>
                 </tr>
               )}
               {!loading && displayItems.map((item) => (
-                <tr key={item._id} style={{ borderBottom: '1px solid #E2E5E0' }} className="table-row-hover">
-                  <td style={{ padding: '14px 16px', fontWeight: '600', color: '#1A1C1A' }}>{item.sku}</td>
-                  <td style={{ padding: '14px 16px', color: '#1A1C1A' }}>{item.productName}</td>
-                  <td style={{ padding: '14px 16px', color: '#1A1C1A' }}>
-                    {item.warehouseId?.code || item.warehouseId || '—'}
-                    {item.warehouseId?.name && <span style={{ fontSize: '12px', color: '#9A9E9A', display: 'block' }}>{item.warehouseId.name}</span>}
+                <tr key={item._id}>
+                  <td>
+                    <span style={{ fontWeight: '600' }}>{item.sku}</span>
                   </td>
-                  <td style={{ padding: '14px 16px', textAlign: 'right' }}>
+                  <td>
+                    <div className="user-identity" style={{ cursor: 'pointer' }} onClick={() => handleViewForecast(item._id)}>
+                      <div className="user-avatar supplier-avatar" style={{ background: 'rgba(99, 102, 241, 0.15)', color: '#6366f1' }}>
+                        <Package size={16} />
+                      </div>
+                      <div className="user-info">
+                        <span className="user-name supplier-name-link">{item.productName}</span>
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <span style={{ fontSize: '13px' }}>{item.warehouseId?.name || '—'}</span>
+                  </td>
+                  <td style={{ textAlign: 'right' }}>
                     {stockUpdateId === item._id ? (
                       <div style={{ display: 'flex', gap: '4px', justifyContent: 'flex-end' }}>
                         <input type="number" value={stockValue} onChange={(e) => setStockValue(Number(e.target.value))} min="0" style={{ width: '80px', padding: '4px 8px', borderRadius: '4px', border: '1px solid var(--border-light)' }} />
-                        <button onClick={() => handleStockUpdate(item._id)} style={{ padding: '4px 8px', borderRadius: '4px', background: '#2DB87A', color: 'white', border: 'none', cursor: 'pointer' }}>✓</button>
-                        <button onClick={() => setStockUpdateId(null)} style={{ padding: '4px 8px', borderRadius: '4px', background: 'var(--surface-elevated)', border: 'none', cursor: 'pointer' }}>✕</button>
+                        <button onClick={() => handleStockUpdate(item._id)} style={{ padding: '4px 8px', borderRadius: '4px', background: '#2DB87A', color: 'white', border: 'none', cursor: 'pointer', fontSize: '12px' }}>✓</button>
+                        <button onClick={() => setStockUpdateId(null)} style={{ padding: '4px 8px', borderRadius: '4px', background: 'var(--surface-card-alt)', border: 'none', cursor: 'pointer', fontSize: '12px' }}>✕</button>
                       </div>
                     ) : (
-                      <span style={{ color: item.currentStock <= item.reorderPoint ? '#EF4444' : '#1A1C1A', fontWeight: item.currentStock <= item.reorderPoint ? '600' : '400' }}>
-                        {item.currentStock}
-                        {item.currentStock <= item.reorderPoint && (
-                          <TrendingDown size={14} style={{ marginLeft: '4px', color: '#EF4444' }} />
-                        )}
+                      <span style={{ color: item.currentStock <= item.reorderPoint ? '#EF4444' : 'var(--text-primary)', fontWeight: item.currentStock <= item.reorderPoint ? '600' : '400', fontSize: '13px' }}>
+                        {item.currentStock?.toLocaleString() || '0'}
                       </span>
                     )}
                   </td>
-                  <td style={{ padding: '14px 16px', textAlign: 'right', color: '#1A1C1A' }}>{item.reorderPoint}</td>
-                  <td style={{ padding: '14px 16px', textAlign: 'center' }}>
+                  <td style={{ textAlign: 'right', fontSize: '13px' }}>
+                    {item.reorderPoint?.toLocaleString() || '0'}
+                  </td>
+                  <td style={{ textAlign: 'center' }}>
                     <RiskBadge tier={item.riskTier} score={item.riskScore} />
                   </td>
-                  <td style={{ padding: '14px 16px', textAlign: 'center' }}>
+                  <td style={{ textAlign: 'center' }}>
                     {item.isCriticalItem ? (
-                      <span style={{ color: '#F59E0B' }}>★</span>
+                      <span style={{ color: '#F59E0B', fontSize: '16px' }}>★</span>
                     ) : (
-                      <span style={{ color: '#9A9E9A' }}>—</span>
+                      <span style={{ color: 'var(--text-tertiary)' }}>—</span>
                     )}
                   </td>
-                  <td style={{ padding: '14px 16px', textAlign: 'center' }}>
-                    <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
-                      <button onClick={() => handleViewForecast(item._id)} title="View Forecast" style={{ padding: '6px', borderRadius: '6px', background: '#F5F7F5', border: '1px solid #E2E5E0', cursor: 'pointer', color: '#1A1C1A' }}>
+                  <td>
+                    <div className="row-actions">
+                      <button onClick={() => handleViewForecast(item._id)} title="View Forecast" className="icon-btn-premium">
                         <BarChart3 size={16} />
                       </button>
                       {canEdit && (
                         <>
-                          <button onClick={() => { setStockUpdateId(item._id); setStockValue(item.currentStock); }} title="Update Stock" style={{ padding: '6px', borderRadius: '6px', background: '#F5F7F5', border: '1px solid #E2E5E0', cursor: 'pointer', color: '#1A1C1A' }}>
+                          <button onClick={() => { setStockUpdateId(item._id); setStockValue(item.currentStock); }} title="Update Stock" className="icon-btn-premium">
                             <RefreshCw size={16} />
                           </button>
-                          <button onClick={() => handleEditClick(item)} title="Edit" style={{ padding: '6px', borderRadius: '6px', background: '#F5F7F5', border: '1px solid #E2E5E0', cursor: 'pointer', color: '#1A1C1A' }}>
+                          <button onClick={() => handleEditClick(item)} title="Edit" className="icon-btn-premium">
                             <Edit2 size={16} />
                           </button>
                           {user?.role === 'ORG_ADMIN' && (
-                            <button onClick={() => handleDelete(item._id)} title="Delete" style={{ padding: '6px', borderRadius: '6px', background: 'rgba(239, 68, 68, 0.1)', border: 'none', cursor: 'pointer', color: '#EF4444' }}>
+                            <button onClick={() => handleDelete(item._id)} title="Delete" className="icon-btn-premium" style={{ color: '#EF4444' }}>
                               <Trash2 size={16} />
                             </button>
                           )}
@@ -684,7 +693,7 @@ export default function InventoryPage() {
 
         {/* Pagination info */}
         <div style={{ padding: '16px', borderTop: '1px solid #E2E5E0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ color: '#9A9E9A' }}>
+          <span style={{ color: 'var(--text-tertiary)' }}>
             Showing {displayItems.length} of {activeTab === 'reorder' ? reorderList.length : total} items
           </span>
         </div>
@@ -694,7 +703,7 @@ export default function InventoryPage() {
       {editingItemId && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
           <div className="dash-card" style={{ width: '100%', maxWidth: '600px', maxHeight: '90vh', overflow: 'auto', padding: '24px' }}>
-            <h3 style={{ marginBottom: '20px', color: '#1A1C1A', fontWeight: '700', fontSize: '18px' }}>Edit Inventory Item</h3>
+            <h3 style={{ marginBottom: '20px', color: 'var(--text-primary)', fontWeight: '700', fontSize: '18px' }}>Edit Inventory Item</h3>
             <form onSubmit={handleEditSubmit}>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px' }}>
                 <div className="form-group-light">
@@ -732,12 +741,12 @@ export default function InventoryPage() {
                 </div>
                 <div className="form-group-light" style={{ display: 'flex', alignItems: 'center', gap: '8px', paddingTop: '24px' }}>
                   <input type="checkbox" name="isCriticalItem" checked={formData.isCriticalItem} onChange={handleFormChange} id="edit-critical" />
-                  <label htmlFor="edit-critical" style={{ margin: 0, color: '#1A1C1A' }}>Critical Item</label>
+                  <label htmlFor="edit-critical" style={{ margin: 0, color: 'var(--text-primary)' }}>Critical Item</label>
                 </div>
               </div>
               <div style={{ marginTop: '20px', display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
                 <button type="button" onClick={() => setEditingItemId(null)} className="hero-btn hero-btn--dark">Cancel</button>
-                <button type="submit" className="hero-btn hero-btn--light" style={{ background: '#E85D2F', color: 'white' }}>Save Changes</button>
+                <button type="submit" className="hero-btn hero-btn--light" style={{ background: '#E85D2F', color: 'var(--surface-card)' }}>Save Changes</button>
               </div>
             </form>
           </div>
@@ -749,49 +758,49 @@ export default function InventoryPage() {
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
           <div className="dash-card" style={{ width: '100%', maxWidth: '500px', padding: '24px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <h3 style={{ color: '#1A1C1A', fontWeight: '700' }}>Demand Forecast</h3>
-              <button onClick={() => setViewingForecast(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#1A1C1A', fontSize: '18px' }}>✕</button>
+              <h3 style={{ color: 'var(--text-primary)', fontWeight: '700' }}>Demand Forecast</h3>
+              <button onClick={() => setViewingForecast(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-primary)', fontSize: '18px' }}>✕</button>
             </div>
             <div style={{ marginBottom: '16px' }}>
-              <p style={{ fontSize: '18px', fontWeight: '600', color: '#1A1C1A' }}>{forecast.sku} - {forecast.productName}</p>
+              <p style={{ fontSize: '18px', fontWeight: '600', color: 'var(--text-primary)' }}>{forecast.sku} - {forecast.productName}</p>
             </div>
             <div style={{ display: 'grid', gap: '12px' }}>
-              <div style={{ padding: '12px', background: '#F5F7F5', borderRadius: '8px', display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: '#5A5E5A' }}>Current Stock:</span>
-                <strong style={{ color: '#1A1C1A' }}>{forecast.currentStock}</strong>
+              <div style={{ padding: '12px', background: 'var(--surface-card-alt)', borderRadius: '8px', display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: 'var(--text-secondary)' }}>Current Stock:</span>
+                <strong style={{ color: 'var(--text-primary)' }}>{forecast.currentStock}</strong>
               </div>
-              <div style={{ padding: '12px', background: '#F5F7F5', borderRadius: '8px', display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: '#5A5E5A' }}>Daily Demand:</span>
-                <strong style={{ color: '#1A1C1A' }}>{forecast.averageDailyDemand}</strong>
+              <div style={{ padding: '12px', background: 'var(--surface-card-alt)', borderRadius: '8px', display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: 'var(--text-secondary)' }}>Daily Demand:</span>
+                <strong style={{ color: 'var(--text-primary)' }}>{forecast.averageDailyDemand}</strong>
               </div>
-              <div style={{ padding: '12px', background: '#F5F7F5', borderRadius: '8px', display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: '#5A5E5A' }}>Days Until Stockout:</span>
+              <div style={{ padding: '12px', background: 'var(--surface-card-alt)', borderRadius: '8px', display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: 'var(--text-secondary)' }}>Days Until Stockout:</span>
                 <strong style={{ color: forecast.daysUntilStockout < forecast.leadTimeDays ? '#EF4444' : '#2DB87A' }}>
                   {forecast.daysUntilStockout || '∞'}
                 </strong>
               </div>
-              <div style={{ padding: '12px', background: '#F5F7F5', borderRadius: '8px', display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: '#5A5E5A' }}>Reorder Point:</span>
-                <strong style={{ color: '#1A1C1A' }}>{forecast.reorderPoint}</strong>
+              <div style={{ padding: '12px', background: 'var(--surface-card-alt)', borderRadius: '8px', display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: 'var(--text-secondary)' }}>Reorder Point:</span>
+                <strong style={{ color: 'var(--text-primary)' }}>{forecast.reorderPoint}</strong>
               </div>
-              <div style={{ padding: '12px', background: '#F5F7F5', borderRadius: '8px', display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: '#5A5E5A' }}>Safety Stock:</span>
-                <strong style={{ color: '#1A1C1A' }}>{forecast.safetyStock}</strong>
+              <div style={{ padding: '12px', background: 'var(--surface-card-alt)', borderRadius: '8px', display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: 'var(--text-secondary)' }}>Safety Stock:</span>
+                <strong style={{ color: 'var(--text-primary)' }}>{forecast.safetyStock}</strong>
               </div>
             </div>
             <div style={{ marginTop: '20px' }}>
-              <h4 style={{ marginBottom: '12px', color: '#1A1C1A' }}>Demand Forecast</h4>
+              <h4 style={{ marginBottom: '12px', color: 'var(--text-primary)' }}>Demand Forecast</h4>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
                 <div style={{ padding: '16px', background: 'rgba(59, 130, 246, 0.1)', borderRadius: '8px', textAlign: 'center' }}>
-                  <p style={{ fontSize: '12px', color: '#5A5E5A' }}>30 Days</p>
+                  <p style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>30 Days</p>
                   <p style={{ fontSize: '20px', fontWeight: '700', color: '#3B82F6' }}>{forecast.forecast?.demand30Days}</p>
                 </div>
                 <div style={{ padding: '16px', background: 'rgba(139, 92, 246, 0.1)', borderRadius: '8px', textAlign: 'center' }}>
-                  <p style={{ fontSize: '12px', color: '#5A5E5A' }}>60 Days</p>
+                  <p style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>60 Days</p>
                   <p style={{ fontSize: '20px', fontWeight: '700', color: '#8B5CF6' }}>{forecast.forecast?.demand60Days}</p>
                 </div>
                 <div style={{ padding: '16px', background: 'rgba(236, 72, 153, 0.1)', borderRadius: '8px', textAlign: 'center' }}>
-                  <p style={{ fontSize: '12px', color: '#5A5E5A' }}>90 Days</p>
+                  <p style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>90 Days</p>
                   <p style={{ fontSize: '20px', fontWeight: '700', color: '#EC4899' }}>{forecast.forecast?.demand90Days}</p>
                 </div>
               </div>
@@ -803,14 +812,14 @@ export default function InventoryPage() {
               </div>
             )}
             <div style={{ marginTop: '20px' }}>
-              <h4 style={{ marginBottom: '12px', color: '#1A1C1A' }}>Risk Assessment</h4>
-              <div style={{ padding: '12px', background: '#F5F7F5', borderRadius: '8px' }}>
+              <h4 style={{ marginBottom: '12px', color: 'var(--text-primary)' }}>Risk Assessment</h4>
+              <div style={{ padding: '12px', background: 'var(--surface-card-alt)', borderRadius: '8px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                  <span style={{ color: '#5A5E5A' }}>Risk Score:</span>
+                  <span style={{ color: 'var(--text-secondary)' }}>Risk Score:</span>
                   <RiskBadge tier={forecast.riskAssessment?.riskTier} score={forecast.riskAssessment?.riskScore} />
                 </div>
                 {forecast.riskAssessment?.riskExplanation && (
-                  <p style={{ fontSize: '13px', color: '#5A5E5A', marginTop: '8px' }}>
+                  <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '8px' }}>
                     {forecast.riskAssessment.riskExplanation}
                   </p>
                 )}
@@ -845,7 +854,7 @@ export default function InventoryPage() {
           margin-bottom: 6px;
           font-size: 13px;
           font-weight: 500;
-          color: #5A5E5A;
+          color: #3A3E3A;
         }
         .form-group-light input,
         .form-group-light select {
@@ -901,3 +910,5 @@ export default function InventoryPage() {
     </Layout>
   );
 }
+
+
