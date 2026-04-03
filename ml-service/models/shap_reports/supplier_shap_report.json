@@ -1,0 +1,192 @@
+{
+  "domain": "supplier",
+  "total_samples_analyzed": 10000,
+  "feature_importance": [
+    {
+      "Feature": "onTimeDeliveryRate",
+      "Mean |SHAP|": 10.862852096557617,
+      "Rank": 1
+    },
+    {
+      "Feature": "averageDelayDays",
+      "Mean |SHAP|": 8.492688179016113,
+      "Rank": 10
+    },
+    {
+      "Feature": "totalShipments",
+      "Mean |SHAP|": 5.833695411682129,
+      "Rank": 3
+    },
+    {
+      "Feature": "geopoliticalRiskFlag",
+      "Mean |SHAP|": 3.170973539352417,
+      "Rank": 2
+    },
+    {
+      "Feature": "financialScore",
+      "Mean |SHAP|": 2.111571788787842,
+      "Rank": 7
+    },
+    {
+      "Feature": "defectRate",
+      "Mean |SHAP|": 1.8563646078109741,
+      "Rank": 6
+    },
+    {
+      "Feature": "categoryRisk",
+      "Mean |SHAP|": 0.9496756792068481,
+      "Rank": 8
+    },
+    {
+      "Feature": "disputeFrequency",
+      "Mean |SHAP|": 0.877493143081665,
+      "Rank": 5
+    },
+    {
+      "Feature": "activeShipmentCount",
+      "Mean |SHAP|": 0.24865683913230896,
+      "Rank": 9
+    },
+    {
+      "Feature": "daysSinceLastShip",
+      "Mean |SHAP|": 0.23654209077358246,
+      "Rank": 4
+    }
+  ],
+  "top_5_features": [
+    "onTimeDeliveryRate",
+    "averageDelayDays",
+    "totalShipments",
+    "geopoliticalRiskFlag",
+    "financialScore"
+  ],
+  "sample_explanations": [
+    {
+      "sample_index": 0,
+      "risk_score": 1271.7198486328125,
+      "risk_tier": "critical",
+      "top_3_features": [
+        {
+          "feature": "totalShipments",
+          "shap_value": -8.830716133117676,
+          "feature_value": 51.0,
+          "impact": "high"
+        },
+        {
+          "feature": "onTimeDeliveryRate",
+          "shap_value": 7.484340190887451,
+          "feature_value": 45.91,
+          "impact": "high"
+        },
+        {
+          "feature": "averageDelayDays",
+          "shap_value": 6.898810863494873,
+          "feature_value": 10.18,
+          "impact": "high"
+        }
+      ]
+    },
+    {
+      "sample_index": 2500,
+      "risk_score": 851.34130859375,
+      "risk_tier": "critical",
+      "top_3_features": [
+        {
+          "feature": "onTimeDeliveryRate",
+          "shap_value": -6.422451972961426,
+          "feature_value": 60.46,
+          "impact": "high"
+        },
+        {
+          "feature": "geopoliticalRiskFlag",
+          "shap_value": 6.03212833404541,
+          "feature_value": 1.0,
+          "impact": "high"
+        },
+        {
+          "feature": "averageDelayDays",
+          "shap_value": -4.535308837890625,
+          "feature_value": 6.29,
+          "impact": "high"
+        }
+      ]
+    },
+    {
+      "sample_index": 5000,
+      "risk_score": 1838.9232177734375,
+      "risk_tier": "critical",
+      "top_3_features": [
+        {
+          "feature": "onTimeDeliveryRate",
+          "shap_value": 13.327823638916016,
+          "feature_value": 6.96,
+          "impact": "high"
+        },
+        {
+          "feature": "averageDelayDays",
+          "shap_value": 11.225744247436523,
+          "feature_value": 18.65,
+          "impact": "high"
+        },
+        {
+          "feature": "totalShipments",
+          "shap_value": 8.310545921325684,
+          "feature_value": 6.0,
+          "impact": "high"
+        }
+      ]
+    },
+    {
+      "sample_index": 7500,
+      "risk_score": 1761.2816162109375,
+      "risk_tier": "critical",
+      "top_3_features": [
+        {
+          "feature": "onTimeDeliveryRate",
+          "shap_value": 12.058719635009766,
+          "feature_value": 14.54,
+          "impact": "high"
+        },
+        {
+          "feature": "averageDelayDays",
+          "shap_value": 10.46528148651123,
+          "feature_value": 17.52,
+          "impact": "high"
+        },
+        {
+          "feature": "totalShipments",
+          "shap_value": 7.744829177856445,
+          "feature_value": 7.0,
+          "impact": "high"
+        }
+      ]
+    },
+    {
+      "sample_index": 9999,
+      "risk_score": 1211.8116455078125,
+      "risk_tier": "critical",
+      "top_3_features": [
+        {
+          "feature": "totalShipments",
+          "shap_value": -8.8128662109375,
+          "feature_value": 19.0,
+          "impact": "high"
+        },
+        {
+          "feature": "onTimeDeliveryRate",
+          "shap_value": 6.1171793937683105,
+          "feature_value": 52.28,
+          "impact": "high"
+        },
+        {
+          "feature": "averageDelayDays",
+          "shap_value": 5.5685648918151855,
+          "feature_value": 8.5,
+          "impact": "high"
+        }
+      ]
+    }
+  ],
+  "explainer_type": "TreeExplainer",
+  "model_type": "XGBRegressor"
+}

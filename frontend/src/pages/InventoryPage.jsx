@@ -14,6 +14,7 @@ import {
 import { getActiveWarehouses } from '../redux/warehouseSlice.js';
 import { listSuppliers } from '../redux/suppliersSlice.js';
 import Layout from '../components/Layout.jsx';
+import ExplainabilityPanel from '../components/ExplainabilityPanel.jsx';
 import '../styles/pages.css';
 
 /* ─── Animated Counter Hook ─── */
@@ -815,6 +816,17 @@ export default function InventoryPage() {
                 )}
               </div>
             </div>
+
+            {/* SHAP Explainability */}
+            {forecast.shapValues && forecast.shapValues.length > 0 && (
+              <div style={{ marginTop: '20px' }}>
+                <ExplainabilityPanel 
+                  features={forecast.shapValues} 
+                  recommendations={forecast.recommendations || []}
+                  domain="inventory"
+                />
+              </div>
+            )}
           </div>
         </div>
       )}

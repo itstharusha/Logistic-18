@@ -19,6 +19,7 @@ import {
   updateSupplierStatus, updateSupplierMetrics, clearError, clearMessage, clearSelectedSupplier
 } from '../redux/suppliersSlice.js';
 import Layout from '../components/Layout.jsx';
+import ExplainabilityPanel from '../components/ExplainabilityPanel.jsx';
 import '../styles/pages.css';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler);
@@ -639,6 +640,17 @@ export default function SupplierDetailPage() {
           <MetricCard icon={ShieldAlert} label="Dispute Frequency" value={supplier?.disputeFrequency} unit=" /period" color="#C7253E" delay="0.45s" />
         </div>
       </div>
+
+      {/* ── SHAP Explainability Panel ── */}
+      {supplier?.shapValues && supplier.shapValues.length > 0 && (
+        <div style={{ '--delay': '0.5s' }}>
+          <ExplainabilityPanel 
+            features={supplier.shapValues} 
+            recommendations={supplier.recommendations || []}
+            domain="supplier"
+          />
+        </div>
+      )}
 
       {/* ── Risk History Chart ── */}
       <div className="dash-card anim-card" style={{ '--delay': '0.45s', marginBottom: 'var(--space-6)' }}>

@@ -4,6 +4,9 @@ import { SupplierRepository } from '../repositories/SupplierRepository.js';
 import { UserRepository } from '../repositories/UserRepository.js';
 import AuditLog from '../models/AuditLog.js';
 import { NotFoundError, ValidationError, ConflictError } from '../utils/errors.js';
+import axios from 'axios';
+
+const ML_SERVICE_URL = process.env.ML_SERVICE_URL || 'http://localhost:8000';
 
 // Valid state machine transitions
 const VALID_TRANSITIONS = {
@@ -109,6 +112,23 @@ export class ShipmentService {
     }
   }
 
+  static async predictRiskScore(shipment) {
+    try {
+      const response = await axios.post(`${ML_SERVICE_URL}/predict/shipment`, shipment, {
+        timeout: 5000 // 5 second timeout per NFR
+      });
+      return {
+        riskScore: response.data.riskScore,
+        riskTier: response.data.riskTier,
+        recommendations: response.data.recommendations || [],
+        shapValues: response.data.shapValues || []
+      };
+    } catch (error) {
+      console.warn(`[ML Service Fallback] Shipment prediction failed: ${error.message}. Using rule-based.`);
+      return this.computeRiskScore(shipment);
+    }
+  }
+
   static async listShipments(orgId, options = {}) {
     return ShipmentRepository.findAll(orgId, options);
   }
@@ -134,12 +154,14 @@ export class ShipmentService {
       delaySeverity,
       status: 'registered',
     };
-    const { riskScore, riskTier } = this.computeRiskScore(shipmentData);
+    const { riskScore, riskTier, recommendations, shapValues } = await this.predictRiskScore(shipmentData);
 
     const shipment = await ShipmentRepository.create({
       ...shipmentData,
       riskScore,
       riskTier,
+      recommendations,
+      shapValues,
       lastScoredAt: now,
       riskHistory: [{ riskScore, riskTier, scoredAt: now }],
       trackingEvents: [{
@@ -179,7 +201,7 @@ export class ShipmentService {
     const { delayHours, delaySeverity } = this.computeDelay(merged.estimatedDelivery);
     merged.delayHours    = delayHours;
     merged.delaySeverity = delaySeverity;
-    const { riskScore, riskTier } = this.computeRiskScore(merged);
+    const { riskScore, riskTier, recommendations, shapValues } = await this.predictRiskScore(merged);
 
     const updated = await ShipmentRepository.update(orgId, shipmentId, {
       ...data,
@@ -187,6 +209,8 @@ export class ShipmentService {
       delaySeverity,
       riskScore,
       riskTier,
+      recommendations,
+      shapValues,
       lastScoredAt: new Date(),
     });
 
@@ -235,9 +259,11 @@ export class ShipmentService {
 
     // Recompute risk with new status
     const merged = { ...shipment.toObject(), ...updates };
-    const { riskScore, riskTier } = this.computeRiskScore(merged);
+    const { riskScore, riskTier, recommendations, shapValues } = await this.predictRiskScore(merged);
     updates.riskScore    = riskScore;
     updates.riskTier     = riskTier;
+    updates.recommendations = recommendations;
+    updates.shapValues   = shapValues;
     updates.lastScoredAt = now;
 
     const statusEntry = {
@@ -305,7 +331,7 @@ export class ShipmentService {
         const { delayHours, delaySeverity } = this.computeDelay(shipment.estimatedDelivery);
 
         if (delayHours >= 2 && shipment.status === 'in_transit') {
-          const { riskScore, riskTier } = this.computeRiskScore({
+          const { riskScore, riskTier, recommendations, shapValues } = await this.predictRiskScore({
             ...shipment.toObject(),
             status: 'delayed',
             delayHours,
@@ -318,6 +344,8 @@ export class ShipmentService {
             delaySeverity,
             riskScore,
             riskTier,
+            recommendations,
+            shapValues,
             lastScoredAt: now,
             lastPolledAt: now,
           });
@@ -331,7 +359,7 @@ export class ShipmentService {
           });
         } else if (delayHours > 0 && ['delayed', 'rerouted'].includes(shipment.status)) {
           // Update delay metrics even if already delayed
-          const { riskScore, riskTier } = this.computeRiskScore({
+          const { riskScore, riskTier, recommendations, shapValues } = await this.predictRiskScore({
             ...shipment.toObject(),
             delayHours,
             delaySeverity,
@@ -342,6 +370,8 @@ export class ShipmentService {
             delaySeverity,
             riskScore,
             riskTier,
+            recommendations,
+            shapValues,
             lastScoredAt: now,
             lastPolledAt: now,
           });

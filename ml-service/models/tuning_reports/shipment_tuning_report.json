@@ -1,0 +1,15 @@
+{
+  "domain": "shipment",
+  "best_parameters": {
+    "learning_rate": 0.2,
+    "max_depth": 5,
+    "n_estimators": 150,
+    "subsample": 0.6
+  },
+  "best_cv_r2_score": 0.9996247426347509,
+  "validation_r2": 0.9996225596304249,
+  "validation_rmse": 0.6003273960569171,
+  "validation_mae": 0.4014721436786651,
+  "total_grid_combinations": 81,
+  "cv_folds": 5
+}

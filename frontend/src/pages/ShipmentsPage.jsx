@@ -11,6 +11,7 @@ import {
   updateShipmentStatus, clearMessage, clearError,
 } from '../redux/shipmentsSlice.js';
 import Layout from '../components/Layout.jsx';
+import ExplainabilityPanel from '../components/ExplainabilityPanel.jsx';
 import '../styles/pages.css';
 
 const CARRIERS = [

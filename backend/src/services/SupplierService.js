@@ -1,7 +1,11 @@
 import { SupplierRepository } from '../repositories/SupplierRepository.js';
+import { ShipmentRepository } from '../repositories/ShipmentRepository.js';
 import { UserRepository } from '../repositories/UserRepository.js';
 import AuditLog from '../models/AuditLog.js';
 import { NotFoundError, ValidationError } from '../utils/errors.js';
+import axios from 'axios';
+
+const ML_SERVICE_URL = process.env.ML_SERVICE_URL || 'http://localhost:8000';
 
 export class SupplierService {
   /**
@@ -45,6 +49,156 @@ export class SupplierService {
     return { riskScore, riskTier };
   }
 
+  /**
+   * PHASE 1: Enrich supplier data with missing ML features
+   * 
+   * Maps database fields to ML model feature names and calculates missing values
+   * - Fixes naming mismatches (avgDelayDays → averageDelayDays)
+   * - Encodes categorical fields (categoryRisk: enum → numeric 0-3)
+   * - Calculates missing fields from Shipment collection
+   * 
+   * @param {Object} supplier - Raw supplier from database
+   * @param {String} supplierId - Supplier's MongoDB _id for lookups
+   * @returns {Promise<Object>} Enriched supplier with all ML features
+   */
+  static async enrichSupplierData(supplier, supplierId) {
+    const enriched = { ...supplier };
+    const startTime = Date.now();
+    
+    // STEP 1: Fix field name mismatches
+    if (supplier.avgDelayDays !== undefined) {
+      enriched.averageDelayDays = supplier.avgDelayDays;
+      delete enriched.avgDelayDays;
+      console.log(`[enrichSupplierData] Mapped avgDelayDays → averageDelayDays: ${supplier.avgDelayDays}`);
+    } else if (supplier.averageDelayDays === undefined) {
+      enriched.averageDelayDays = 0;
+      console.log(`[enrichSupplierData] Set averageDelayDays = 0 (missing)`);
+    }
+
+    // STEP 2: Encode categoryRisk from category enum to numeric
+    // Mapping: raw_materials(0), components(1), finished_goods(2), services(3)
+    if (supplier.category && typeof supplier.category === 'string') {
+      const categoryMap = {
+        'raw_materials': 0,
+        'components': 1,
+        'finished_goods': 2,
+        'services': 3
+      };
+      const normalized = supplier.category.toLowerCase().trim();
+      enriched.categoryRisk = categoryMap[normalized] ?? 1; // Default to 1 if unknown
+      console.log(`[enrichSupplierData] Encoded category "${supplier.category}" → categoryRisk: ${enriched.categoryRisk}`);
+    } else {
+      enriched.categoryRisk = enriched.categoryRisk ?? 1;
+      console.log(`[enrichSupplierData] Using categoryRisk: ${enriched.categoryRisk}`);
+    }
+
+    // STEP 3: Calculate missing shipment-based features
+    if (supplierId) {
+      try {
+        // Get total shipment count
+        const totalShipments = await ShipmentRepository.countBySupplier(supplierId);
+        enriched.totalShipments = totalShipments;
+        console.log(`[enrichSupplierData] totalShipments (from DB): ${totalShipments}`);
+
+        // Get active shipment count
+        const activeShipmentCount = await ShipmentRepository.countBySupplierAndStatus(supplierId);
+        enriched.activeShipmentCount = activeShipmentCount;
+        console.log(`[enrichSupplierData] activeShipmentCount (from DB): ${activeShipmentCount}`);
+
+        // Get days since last shipment
+        const lastShipmentDate = await ShipmentRepository.getLastShipmentDate(supplierId);
+        if (lastShipmentDate) {
+          const now = new Date();
+          const daysSince = Math.floor((now - lastShipmentDate) / (1000 * 60 * 60 * 24));
+          enriched.daysSinceLastShip = daysSince;
+          console.log(`[enrichSupplierData] daysSinceLastShip: ${daysSince} (last shipment: ${lastShipmentDate.toISOString()})`);
+        } else {
+          enriched.daysSinceLastShip = 0;
+          console.log(`[enrichSupplierData] daysSinceLastShip: 0 (no shipments found)`);
+        }
+      } catch (error) {
+        console.error(`[enrichSupplierData] Error enriching from shipments:`, error.message);
+        // Set defaults if calculation fails
+        enriched.totalShipments = enriched.totalShipments ?? 0;
+        enriched.activeShipmentCount = enriched.activeShipmentCount ?? 0;
+        enriched.daysSinceLastShip = enriched.daysSinceLastShip ?? 0;
+      }
+    } else {
+      // No supplierId available (new supplier), use defaults
+      enriched.totalShipments = enriched.totalShipments ?? 0;
+      enriched.activeShipmentCount = enriched.activeShipmentCount ?? 0;
+      enriched.daysSinceLastShip = enriched.daysSinceLastShip ?? 0;
+      console.log(`[enrichSupplierData] No supplierId provided, using default values for shipment features`);
+    }
+
+    // STEP 4: Ensure all ML features have numeric values
+    const requiredNumericFields = [
+      'onTimeDeliveryRate', 'financialScore', 'defectRate', 'disputeFrequency',
+      'geopoliticalRiskFlag', 'totalShipments', 'averageDelayDays',
+      'daysSinceLastShip', 'activeShipmentCount', 'categoryRisk'
+    ];
+    
+    for (const field of requiredNumericFields) {
+      if (enriched[field] === undefined || enriched[field] === null) {
+        enriched[field] = 0;
+      } else {
+        enriched[field] = Number(enriched[field]) || 0;
+      }
+    }
+
+    const enrichmentTime = Date.now() - startTime;
+    console.log(`[enrichSupplierData] ✅ Enrichment complete in ${enrichmentTime}ms`);
+    console.log(`[enrichSupplierData] Final features:`, {
+      onTimeDeliveryRate: enriched.onTimeDeliveryRate,
+      averageDelayDays: enriched.averageDelayDays,
+      defectRate: enriched.defectRate,
+      financialScore: enriched.financialScore,
+      geopoliticalRiskFlag: enriched.geopoliticalRiskFlag,
+      totalShipments: enriched.totalShipments,
+      daysSinceLastShip: enriched.daysSinceLastShip,
+      activeShipmentCount: enriched.activeShipmentCount,
+      categoryRisk: enriched.categoryRisk,
+      disputeFrequency: enriched.disputeFrequency
+    });
+
+    return enriched;
+  }
+
+  /**
+   * Predict supplier risk score using ML service
+   * PHASE 1: Now enriches supplier data before prediction
+   * 
+   * @param {Object} supplier - Raw supplier data from database
+   * @param {String} supplierId - Supplier's MongoDB _id (optional, for enrichment)
+   * @returns {Promise<Object>} {riskScore, riskTier, recommendations, shapValues}
+   */
+  static async predictRiskScore(supplier, supplierId = null) {
+    try {
+      // PHASE 1: Enrich supplier with missing ML features
+      const enrichedSupplier = await this.enrichSupplierData(supplier, supplierId);
+      
+      console.log(`[predictRiskScore] Calling ML service at ${ML_SERVICE_URL}/predict/supplier`);
+      const startTime = Date.now();
+      
+      const response = await axios.post(`${ML_SERVICE_URL}/predict/supplier`, enrichedSupplier, {
+        timeout: 5000 // 5 second timeout per NFR
+      });
+      
+      const predictionTime = Date.now() - startTime;
+      console.log(`[predictRiskScore] ML service returned in ${predictionTime}ms: riskScore=${response.data.riskScore}, riskTier=${response.data.riskTier}`);
+
+      return {
+        riskScore: response.data.riskScore,
+        riskTier: response.data.riskTier,
+        recommendations: response.data.recommendations || [],
+        shapValues: response.data.shapValues || []
+      };
+    } catch (error) {
+      console.warn(`[predictRiskScore] ML Service failed: ${error.message}. Using rule-based fallback scoring.`);
+      return this.computeRiskScore(supplier);
+    }
+  }
+
   static async listSuppliers(orgId, options = {}) {
     return SupplierRepository.findAll(orgId, options);
   }
@@ -56,7 +210,7 @@ export class SupplierService {
   }
 
   static async createSupplier(orgId, data, userId) {
-    const { riskScore, riskTier } = this.computeRiskScore(data);
+    const { riskScore, riskTier, recommendations, shapValues } = await this.predictRiskScore(data, null);
     const now = new Date();
 
     const supplier = await SupplierRepository.create({
@@ -64,6 +218,8 @@ export class SupplierService {
       orgId,
       riskScore,
       riskTier,
+      recommendations,
+      shapValues,
       lastScoredAt: now,
       riskHistory: [{ riskScore, riskTier, scoredAt: now }],
     });
@@ -86,12 +242,15 @@ export class SupplierService {
 
     // Merge existing with incoming data for score recomputation
     const merged = { ...existing.toObject(), ...data };
-    const { riskScore, riskTier } = this.computeRiskScore(merged);
+    // PHASE 1: Pass supplierId to enrichSupplierData
+    const { riskScore, riskTier, recommendations, shapValues } = await this.predictRiskScore(merged, supplierId);
 
     const updated = await SupplierRepository.update(orgId, supplierId, {
       ...data,
       riskScore,
       riskTier,
+      recommendations,
+      shapValues,
       lastScoredAt: new Date(),
     });
 
@@ -219,9 +378,11 @@ export class SupplierService {
 
     // Recompute risk score with updated metrics
     const merged = { ...supplier.toObject(), ...metricUpdates };
-    const { riskScore, riskTier } = this.computeRiskScore(merged);
+    const { riskScore, riskTier, recommendations, shapValues } = await this.predictRiskScore(merged, supplierId);
     metricUpdates.riskScore = riskScore;
     metricUpdates.riskTier = riskTier;
+    metricUpdates.recommendations = recommendations;
+    metricUpdates.shapValues = shapValues;
     metricUpdates.lastScoredAt = new Date();
 
     const adjustmentEntry = {

@@ -1,0 +1,15 @@
+{
+  "domain": "supplier",
+  "best_parameters": {
+    "learning_rate": 0.2,
+    "max_depth": 5,
+    "n_estimators": 150,
+    "subsample": 0.6
+  },
+  "best_cv_r2_score": 0.999686879971817,
+  "validation_r2": 0.9997295414570575,
+  "validation_rmse": 0.4960952894809894,
+  "validation_mae": 0.3704909994506836,
+  "total_grid_combinations": 81,
+  "cv_folds": 5
+}

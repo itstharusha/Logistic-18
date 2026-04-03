@@ -123,4 +123,51 @@ export class ShipmentRepository {
       status: { $in: ['registered', 'in_transit', 'delayed', 'rerouted'] },
     });
   }
+
+  /**
+   * Count all shipments for a supplier (for ML feature: totalShipments)
+   */
+  static async countBySupplier(supplierId) {
+    if (!supplierId) return 0;
+    try {
+      return await Shipment.countDocuments({ supplierId });
+    } catch (error) {
+      console.error(`[ShipmentRepository] Error counting shipments for supplier ${supplierId}:`, error.message);
+      return 0;
+    }
+  }
+
+  /**
+   * Count active shipments for a supplier (for ML feature: activeShipmentCount)
+   * Active = not yet delivered or closed
+   */
+  static async countBySupplierAndStatus(supplierId, statusArray = ['registered', 'in_transit', 'delayed', 'rerouted']) {
+    if (!supplierId) return 0;
+    try {
+      return await Shipment.countDocuments({
+        supplierId,
+        status: { $in: statusArray },
+      });
+    } catch (error) {
+      console.error(`[ShipmentRepository] Error counting active shipments for supplier ${supplierId}:`, error.message);
+      return 0;
+    }
+  }
+
+  /**
+   * Get the date of the most recent shipment for a supplier
+   * Returns null if no shipments found
+   */
+  static async getLastShipmentDate(supplierId) {
+    if (!supplierId) return null;
+    try {
+      const result = await Shipment.findOne({ supplierId })
+        .sort({ createdAt: -1 })
+        .select('createdAt');
+      return result?.createdAt || null;
+    } catch (error) {
+      console.error(`[ShipmentRepository] Error getting last shipment date for supplier ${supplierId}:`, error.message);
+      return null;
+    }
+  }
 }
