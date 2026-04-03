@@ -113,7 +113,7 @@
 
 .alerts-hero-subtitle {
     font-size: 14px;
-    color: rgba(255, 255, 255, 0.55);
+    color: rgba(255, 255, 255, 0.85);
     max-width: 420px;
     line-height: 1.5;
 }
@@ -145,7 +145,7 @@
 }
 
 .hero-stat-open {
-    color: #D48A00;
+    color: #F5B623;
 }
 
 .hero-stat-escalated {
@@ -159,7 +159,7 @@
 .hero-stat-label {
     font-family: var(--font-body);
     font-size: 12px;
-    color: rgba(255, 255, 255, 0.50);
+    color: rgba(255, 255, 255, 0.85);
     font-weight: 500;
 }
 
@@ -291,7 +291,7 @@
 
 .stat-icon-ack {
     background: rgba(212, 138, 0, 0.10);
-    color: #D48A00;
+    color: #F5B623;
 }
 
 .stat-icon-escalated {
@@ -915,7 +915,7 @@
 }
 
 .action-btn-ack:hover {
-    background: #D48A00;
+    background: #F5B623;
     transform: translateY(-1px);
 }
 
@@ -1190,3 +1190,5 @@
         margin: 16px;
     }
 }
+
+

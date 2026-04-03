@@ -163,7 +163,7 @@
 
 .hero-date {
   font-size: 13px;
-  color: rgba(255, 255, 255, 0.7);
+  color: rgba(255, 255, 255, 0.95);
   font-weight: 500;
 }
 
@@ -188,7 +188,7 @@
 .hero-location {
   font-family: var(--font-body);
   font-size: 13px;
-  color: rgba(255, 255, 255, 0.70);
+  color: rgba(255, 255, 255, 0.95);
   position: relative;
   z-index: 1;
 }
@@ -1964,4 +1964,6 @@
     color: var(--text-secondary);
     font-size: 13px;
 }
+
+
 

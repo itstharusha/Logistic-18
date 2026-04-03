@@ -18,7 +18,7 @@
   /* Text — all light */
   --text-primary:    #e8ece8;
   --text-secondary:  #a8b0a8;
-  --text-tertiary:   #606860;
+  --text-tertiary:   #a8b0a8;
   --text-inverse:    #e8ece8;
   --text-inverse-dim: #a8b0a8;
 
@@ -213,7 +213,7 @@
 }
 
 [data-theme="night"] .card-subtitle {
-  color: #606860;
+  color: #a8b0a8;
 }
 
 [data-theme="night"] .card-expand-btn {
@@ -262,7 +262,7 @@
   /* Text — all dark */
   --text-primary:    #1a1c1a;
   --text-secondary:  #5a5e5a;
-  --text-tertiary:   #8a8e8a;
+  --text-tertiary:   #6b706b;
   --text-inverse:    #1a1c1a;
   --text-inverse-dim: #5a5e5a;
 
@@ -529,3 +529,5 @@
   background: var(--brand-primary);
   flex-shrink: 0;
 }
+
+

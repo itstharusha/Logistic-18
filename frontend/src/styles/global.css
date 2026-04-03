@@ -87,7 +87,7 @@
 }
 
 .initial-loading p {
-  color: var(--text-secondary);
+  color: var(--text-inverse-dim);
   font-size: 14px;
   letter-spacing: 0.02em;
 }
@@ -283,7 +283,7 @@ textarea:focus-visible {
   align-items: center;
   min-height: 300px;
   font-size: 16px;
-  color: var(--text-secondary);
+  color: var(--text-inverse-dim);
 }
 
 .error-message {
@@ -301,5 +301,5 @@ textarea:focus-visible {
   border-radius: 8px;
   margin: var(--space-6);
   font-size: 18px;
-  color: var(--text-secondary);
+  color: var(--text-inverse-dim);
 }
