@@ -112,11 +112,160 @@ export class ShipmentService {
     }
   }
 
-  static async predictRiskScore(shipment) {
+  /**
+   * PHASE 2: Enrich shipment data with missing ML features
+   * 
+   * Calculates and adds missing features for ML model prediction
+   * - Encodes weatherLevel (string → numeric)
+   * - Calculates daysInTransit from dates
+   * - Looks up supplier risk score
+   * - Calculates isInternational flag
+   * - Fetches carrier reliability metrics
+   * - Calculates route risk
+   * - Identifies tracking gaps
+   * 
+   * @param {Object} shipment - Raw shipment from database
+   * @param {String} shipmentId - Shipment's MongoDB _id (optional, for enrichment)
+   * @returns {Promise<Object>} Enriched shipment with all ML features
+   */
+  static async enrichShipmentData(shipment, shipmentId = null) {
+    const enriched = { ...shipment };
+    const startTime = Date.now();
+    
+    console.log(`[enrichShipmentData] Starting enrichment for shipment ${shipmentId || 'new'}`);
+
+    // STEP 1: Encode weatherLevel from string to numeric (0=low, 1=medium, 2=high)
+    const weatherMap = { 'low': 0, 'medium': 1, 'high': 2 };
+    if (shipment.weatherLevel && typeof shipment.weatherLevel === 'string') {
+      const normalized = shipment.weatherLevel.toLowerCase();
+      enriched.weatherLevel = weatherMap[normalized] ?? 0;
+      console.log(`[enrichShipmentData] Encoded weatherLevel "${shipment.weatherLevel}" → ${enriched.weatherLevel}`);
+    } else {
+      enriched.weatherLevel = Number(enriched.weatherLevel) ?? 0;
+    }
+
+    // STEP 2: Calculate etaDeviationHours (already available as delayHours)
+    enriched.etaDeviationHours = Number(shipment.delayHours) || 0;
+    console.log(`[enrichShipmentData] etaDeviationHours: ${enriched.etaDeviationHours}`);
+
+    // STEP 3: Calculate daysInTransit
+    if (shipment.estimatedDelivery && shipment.actualDelivery) {
+      enriched.daysInTransit = ShipmentRepository.calculateDaysInTransit(
+        shipment.estimatedDelivery,
+        shipment.actualDelivery
+      );
+      console.log(`[enrichShipmentData] daysInTransit (calculated): ${enriched.daysInTransit}`);
+    } else {
+      enriched.daysInTransit = 0;
+      console.log(`[enrichShipmentData] daysInTransit: 0 (no delivery dates)`);
+    }
+
+    // STEP 4: Determine if international shipment
+    enriched.isInternational = (shipment.originCountry && shipment.destinationCountry && 
+                               shipment.originCountry !== shipment.destinationCountry) ? 1 : 0;
+    console.log(`[enrichShipmentData] isInternational: ${enriched.isInternational} (${shipment.originCountry} → ${shipment.destinationCountry})`);
+
+    // STEP 5: Get shipmentValueUSD (from database, default to 0)
+    enriched.shipmentValueUSD = Number(shipment.shipmentValueUSD) || 0;
+    console.log(`[enrichShipmentData] shipmentValueUSD: ${enriched.shipmentValueUSD}`);
+
+    // STEP 6: Lookup supplier risk score
+    if (shipment.supplierId) {
+      try {
+        const supplier = await SupplierRepository.findById(shipment.orgId, shipment.supplierId);
+        enriched.supplierRiskScore = supplier?.riskScore || 0;
+        console.log(`[enrichShipmentData] supplierRiskScore (from supplier): ${enriched.supplierRiskScore}`);
+      } catch (error) {
+        console.error(`[enrichShipmentData] Error looking up supplier:`, error.message);
+        enriched.supplierRiskScore = enriched.supplierRiskScore || 0;
+      }
+    } else {
+      enriched.supplierRiskScore = enriched.supplierRiskScore || 0;
+      console.log(`[enrichShipmentData] supplierRiskScore: 0 (no supplier linked)`);
+    }
+
+    // STEP 7: Get carrier reliability metrics
     try {
-      const response = await axios.post(`${ML_SERVICE_URL}/predict/shipment`, shipment, {
+      const carrierReliability = await ShipmentRepository.getCarrierReliability(shipment.carrier);
+      enriched.carrierReliability = carrierReliability;
+      console.log(`[enrichShipmentData] carrierReliability (${shipment.carrier}): ${carrierReliability.toFixed(3)}`);
+
+      const carrierDelayRate = await ShipmentRepository.getCarrierDelayRate(shipment.carrier);
+      enriched.carrierDelayRate = carrierDelayRate;
+      console.log(`[enrichShipmentData] carrierDelayRate (${shipment.carrier}): ${carrierDelayRate.toFixed(3)}`);
+    } catch (error) {
+      console.error(`[enrichShipmentData] Error calculating carrier metrics:`, error.message);
+      enriched.carrierReliability = enriched.carrierReliability ?? 0.5;
+      enriched.carrierDelayRate = enriched.carrierDelayRate ?? 0.15;
+    }
+
+    // STEP 8: Calculate route risk
+    enriched.routeRiskIndex = ShipmentRepository.calculateRouteRisk(
+      shipment.originCountry,
+      shipment.destinationCountry
+    );
+    console.log(`[enrichShipmentData] routeRiskIndex: ${enriched.routeRiskIndex.toFixed(3)}`);
+
+    // STEP 9: Calculate tracking gap hours
+    enriched.trackingGapHours = ShipmentRepository.calculateTrackingGapHours(shipment.trackingEvents);
+    console.log(`[enrichShipmentData] trackingGapHours: ${enriched.trackingGapHours}`);
+
+    // STEP 10: Ensure all ML features are numeric
+    const requiredNumericFields = [
+      'etaDeviationHours', 'weatherLevel', 'routeRiskIndex', 'carrierReliability',
+      'trackingGapHours', 'shipmentValueUSD', 'daysInTransit', 'supplierRiskScore',
+      'isInternational', 'carrierDelayRate'
+    ];
+    
+    for (const field of requiredNumericFields) {
+      if (enriched[field] === undefined || enriched[field] === null) {
+        enriched[field] = 0;
+      } else {
+        enriched[field] = Number(enriched[field]) || 0;
+      }
+    }
+
+    const enrichmentTime = Date.now() - startTime;
+    console.log(`[enrichShipmentData] ✅ Enrichment complete in ${enrichmentTime}ms`);
+    console.log(`[enrichShipmentData] Final features:`, {
+      etaDeviationHours: enriched.etaDeviationHours,
+      weatherLevel: enriched.weatherLevel,
+      routeRiskIndex: enriched.routeRiskIndex,
+      carrierReliability: enriched.carrierReliability,
+      trackingGapHours: enriched.trackingGapHours,
+      shipmentValueUSD: enriched.shipmentValueUSD,
+      daysInTransit: enriched.daysInTransit,
+      supplierRiskScore: enriched.supplierRiskScore,
+      isInternational: enriched.isInternational,
+      carrierDelayRate: enriched.carrierDelayRate
+    });
+
+    return enriched;
+  }
+
+  /**
+   * Predict shipment risk score using ML service
+   * PHASE 2: Now enriches shipment data before prediction
+   * 
+   * @param {Object} shipment - Raw shipment data from database
+   * @param {String} shipmentId - Shipment's MongoDB _id (optional, for enrichment)
+   * @returns {Promise<Object>} {riskScore, riskTier, recommendations, shapValues}
+   */
+  static async predictRiskScore(shipment, shipmentId = null) {
+    try {
+      // PHASE 2: Enrich shipment with missing ML features
+      const enrichedShipment = await this.enrichShipmentData(shipment, shipmentId);
+      
+      console.log(`[predictRiskScore] Calling ML service at ${ML_SERVICE_URL}/predict/shipment`);
+      const startTime = Date.now();
+      
+      const response = await axios.post(`${ML_SERVICE_URL}/predict/shipment`, enrichedShipment, {
         timeout: 5000 // 5 second timeout per NFR
       });
+      
+      const predictionTime = Date.now() - startTime;
+      console.log(`[predictRiskScore] ML service returned in ${predictionTime}ms: riskScore=${response.data.riskScore}, riskTier=${response.data.riskTier}`);
+
       return {
         riskScore: response.data.riskScore,
         riskTier: response.data.riskTier,
@@ -124,7 +273,7 @@ export class ShipmentService {
         shapValues: response.data.shapValues || []
       };
     } catch (error) {
-      console.warn(`[ML Service Fallback] Shipment prediction failed: ${error.message}. Using rule-based.`);
+      console.warn(`[predictRiskScore] ML Service failed: ${error.message}. Using rule-based fallback scoring.`);
       return this.computeRiskScore(shipment);
     }
   }
@@ -154,7 +303,7 @@ export class ShipmentService {
       delaySeverity,
       status: 'registered',
     };
-    const { riskScore, riskTier, recommendations, shapValues } = await this.predictRiskScore(shipmentData);
+    const { riskScore, riskTier, recommendations, shapValues } = await this.predictRiskScore(shipmentData, null);
 
     const shipment = await ShipmentRepository.create({
       ...shipmentData,
@@ -201,7 +350,7 @@ export class ShipmentService {
     const { delayHours, delaySeverity } = this.computeDelay(merged.estimatedDelivery);
     merged.delayHours    = delayHours;
     merged.delaySeverity = delaySeverity;
-    const { riskScore, riskTier, recommendations, shapValues } = await this.predictRiskScore(merged);
+    const { riskScore, riskTier, recommendations, shapValues } = await this.predictRiskScore(merged, shipmentId);
 
     const updated = await ShipmentRepository.update(orgId, shipmentId, {
       ...data,
@@ -259,7 +408,7 @@ export class ShipmentService {
 
     // Recompute risk with new status
     const merged = { ...shipment.toObject(), ...updates };
-    const { riskScore, riskTier, recommendations, shapValues } = await this.predictRiskScore(merged);
+    const { riskScore, riskTier, recommendations, shapValues } = await this.predictRiskScore(merged, shipment._id);
     updates.riskScore    = riskScore;
     updates.riskTier     = riskTier;
     updates.recommendations = recommendations;
@@ -336,7 +485,7 @@ export class ShipmentService {
             status: 'delayed',
             delayHours,
             delaySeverity,
-          });
+          }, shipment._id);
 
           await ShipmentRepository.update(shipment.orgId, shipment._id, {
             status: 'delayed',
@@ -363,7 +512,7 @@ export class ShipmentService {
             ...shipment.toObject(),
             delayHours,
             delaySeverity,
-          });
+          }, shipment._id);
 
           await ShipmentRepository.update(shipment.orgId, shipment._id, {
             delayHours,

@@ -170,4 +170,122 @@ export class ShipmentRepository {
       return null;
     }
   }
+
+  /**
+   * Get carrier reliability score based on historical on-time delivery rate
+   * Returns value 0-1 where 1.0 = 100% on-time
+   */
+  static async getCarrierReliability(carrier) {
+    if (!carrier || carrier === 'Other') return 0.5; // Default if no carrier specified
+    try {
+      const total = await Shipment.countDocuments({ carrier });
+      if (total === 0) return 0.5; // No history, return neutral score
+      
+      const onTime = await Shipment.countDocuments({
+        carrier,
+        status: { $in: ['delivered', 'closed'] },
+        delayHours: { $lte: 0 }
+      });
+      
+      const onTimeRate = onTime / total;
+      return Math.max(0, Math.min(1, onTimeRate)); // Clamp to 0-1
+    } catch (error) {
+      console.error(`[ShipmentRepository] Error calculating carrier reliability for ${carrier}:`, error.message);
+      return 0.5;
+    }
+  }
+
+  /**
+   * Get average delay rate for a specific carrier
+   * Returns value 0-1 where 0 = never late, 1 = always late
+   */
+  static async getCarrierDelayRate(carrier) {
+    if (!carrier || carrier === 'Other') return 0.15; // Default estimate
+    try {
+      const total = await Shipment.countDocuments({ 
+        carrier,
+        status: { $in: ['delivered', 'closed'] }
+      });
+      
+      if (total === 0) return 0.15; // No history
+      
+      const delayedCount = await Shipment.countDocuments({
+        carrier,
+        status: { $in: ['delivered', 'closed'] },
+        delayHours: { $gt: 0 }
+      });
+      
+      const delayRate = delayedCount / total;
+      return Math.max(0, Math.min(1, delayRate)); // Clamp to 0-1
+    } catch (error) {
+      console.error(`[ShipmentRepository] Error calculating carrier delay rate for ${carrier}:`, error.message);
+      return 0.15;
+    }
+  }
+
+  /**
+   * Calculate route risk index based on geopolitical factors
+   * Returns 0-1 scale where 0 = safe, 1 = high risk
+   */
+  static calculateRouteRisk(originCountry, destinationCountry) {
+    // Simple high-risk country list (can be expanded)
+    const highRiskCountries = ['North Korea', 'Iran', 'Syria', 'Venezuela'];
+    const mediumRiskCountries = ['Pakistan', 'Afghanistan', 'Yemen', 'Somalia', 'Sudan'];
+    
+    let riskScore = 0;
+    
+    if (highRiskCountries.includes(originCountry) || highRiskCountries.includes(destinationCountry)) {
+      riskScore = 0.8;
+    } else if (mediumRiskCountries.includes(originCountry) || mediumRiskCountries.includes(destinationCountry)) {
+      riskScore = 0.4;
+    }
+    
+    // Sea route generally riskier than domestic
+    if (originCountry && destinationCountry && originCountry !== destinationCountry) {
+      riskScore = Math.max(riskScore, 0.3);
+    }
+    
+    return Math.min(1, riskScore);
+  }
+
+  /**
+   * Calculate maximum gap duration between tracking events
+   * Returns hours, 0 if no significant gaps
+   */
+  static calculateTrackingGapHours(trackingEvents) {
+    if (!trackingEvents || trackingEvents.length < 2) return 0;
+    
+    try {
+      let maxGapHours = 0;
+      for (let i = 1; i < trackingEvents.length; i++) {
+        const prevTime = new Date(trackingEvents[i - 1].timestamp);
+        const currTime = new Date(trackingEvents[i].timestamp);
+        const gapMs = currTime - prevTime;
+        const gapHours = gapMs / (1000 * 60 * 60);
+        maxGapHours = Math.max(maxGapHours, gapHours);
+      }
+      return Math.round(maxGapHours);
+    } catch (error) {
+      console.error(`[ShipmentRepository] Error calculating tracking gaps:`, error.message);
+      return 0;
+    }
+  }
+
+  /**
+   * Calculate days in transit from estimated vs actual delivery
+   */
+  static calculateDaysInTransit(estimatedDelivery, actualDelivery) {
+    try {
+      if (!estimatedDelivery || !actualDelivery) return 0;
+      
+      const estDate = new Date(estimatedDelivery);
+      const actDate = new Date(actualDelivery);
+      const daysDiff = Math.round((actDate - estDate) / (1000 * 60 * 60 * 24));
+      
+      return Math.max(0, daysDiff); // Return 0 if delivered early
+    } catch (error) {
+      console.error(`[ShipmentRepository] Error calculating days in transit:`, error.message);
+      return 0;
+    }
+  }
 }

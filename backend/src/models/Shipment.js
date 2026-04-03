@@ -82,6 +82,7 @@ const shipmentSchema = new mongoose.Schema(
 
     // Physical attributes
     weight:            { type: Number, min: 0, default: 0 },
+    shipmentValueUSD:  { type: Number, min: 0, default: 0 },  // For ML model: shipmentValueUSD feature
 
     // State machine
     // Registered → In Transit → Delayed | Rerouted → Delivered → Closed
