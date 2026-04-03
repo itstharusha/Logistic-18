@@ -7,7 +7,7 @@
   "scripts": {
     "start": "node src/app.js",
     "dev": "nodemon src/app.js",
-    "test": "jest --detectOpenHandles --forceExit"
+    "test": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js --detectOpenHandles --forceExit"
   },
   "keywords": [
     "logistics",
