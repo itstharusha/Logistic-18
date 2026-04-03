@@ -17,7 +17,7 @@
  */
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Bell, LogOut, User } from 'lucide-react';
+import { Bell, LogOut, User, Moon, Sun } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
 import { logout } from '../redux/authSlice.js';
 import {
@@ -26,6 +26,7 @@ import {
   selectNotificationDropdownOpen,
   selectAlerts,
 } from '../redux/alertsSlice.js';
+import { useTheme } from '../context/ThemeContext.jsx';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import NotificationDropdown from './NotificationDropdown';
 import UserProfileDrawer from './UsersPage/UserProfileDrawer';
@@ -50,6 +51,8 @@ export default function TopNav() {
 
   // Controls whether the user dropdown menu is visible
   const [showUserMenu, setShowUserMenu] = useState(false);
+
+  const { theme, setTheme } = useTheme();
 
   // Controls whether the user profile drawer is visible
   const [showProfileDrawer, setShowProfileDrawer] = useState(false);
@@ -159,8 +162,17 @@ export default function TopNav() {
         })}
       </div>
 
-      {/* ── Actions (Notifications + User Menu) ─────── */}
+      {/* ── Actions (Theme Toggle + Notifications + User Menu) ─────── */}
       <div className="nav-actions">
+
+        {/* Theme Toggle Button */}
+        <button
+          className="nav-icon-btn"
+          title={`Switch to ${theme === 'night' ? 'light' : 'dark'} mode`}
+          onClick={() => setTheme(theme === 'night' ? 'default' : 'night')}
+        >
+          {theme === 'night' ? <Sun size={20} strokeWidth={1.8} /> : <Moon size={20} strokeWidth={1.8} />}
+        </button>
 
         {/* Notification Bell with badge showing unread count */}
         <div ref={notificationRef} style={{ position: 'relative' }}>

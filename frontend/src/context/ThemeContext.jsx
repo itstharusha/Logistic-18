@@ -12,15 +12,6 @@ export function ThemeProvider({ children }) {
     localStorage.setItem('app-theme', newTheme);
   };
 
-  useEffect(() => {
-    const root = document.documentElement;
-    if (theme === 'default') {
-      root.removeAttribute('data-theme');
-    } else {
-      root.setAttribute('data-theme', theme);
-    }
-  }, [theme]);
-
   return (
     <ThemeContext.Provider value={{ theme, setTheme }}>
       {children}
