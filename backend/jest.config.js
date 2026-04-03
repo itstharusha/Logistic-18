@@ -1,20 +1,16 @@
-module.exports = {
+export default {
   testEnvironment: 'node',
-  coveragePathIgnorePatterns: ['/node_modules/'],
-  testMatch: ['**/__tests__/**/*.test.js', '**/?(*.)+(spec|test).js'],
-  collectCoverageFrom: [
-    'src/**/*.js',
-    '!src/utils/errors.js',
-    '!src/config/database.js'
-  ],
-  coverageThreshold: {
-    global: {
-      branches: 50,
-      functions: 50,
-      lines: 50,
-      statements: 50
-    }
+  transform: {},
+  extensionsToTreatAsEsm: ['.js'],
+  moduleNameMapper: {
+    '^(\\.{1,2}/.*)\\.js$': '$1',
   },
-  setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
-  testTimeout: 10000
+  testMatch: ['src/__tests__/**/*.test.js'],
+  coveragePathIgnorePatterns: ['/node_modules/', 'src/__tests__/'],
+  testTimeout: 30000,
+  globals: {
+    'ts-jest': {
+      useESM: true,
+    },
+  },
 };

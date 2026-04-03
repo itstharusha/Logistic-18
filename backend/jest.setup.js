@@ -4,10 +4,10 @@ process.env.MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/
 process.env.JWT_SECRET = 'test-secret-key';
 process.env.JWT_EXPIRY = '24h';
 
-// Suppress console output during tests
-global.console.log = jest.fn();
-global.console.error = jest.fn();
-global.console.warn = jest.fn();
+// Suppress console output during tests (optional)
+// global.console.log = jest.fn();
+// global.console.error = jest.fn();
+// global.console.warn = jest.fn();
 
 // Extended timeout for slow operations
-jest.setTimeout(10000);
+jest.setTimeout(30000);

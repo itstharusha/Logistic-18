@@ -1,15 +1,15 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import { Package, TrendingUp, TrendingDown } from 'lucide-react';
 import KPICard from '../../components/KPICard.jsx';
 
 describe('KPICard Component', () => {
-  it('should render the KPI card with title', () => {
+  it('should render the KPI card with label and value', () => {
     render(
       <KPICard
-        title="Total Orders"
-        value="1,234"
-        change="+12%"
-        icon="📦"
+        icon={Package}
+        label="Total Orders"
+        value={1234}
       />
     );
 
@@ -17,58 +17,119 @@ describe('KPICard Component', () => {
     expect(screen.getByText('1,234')).toBeInTheDocument();
   });
 
-  it('should display positive change in green', () => {
+  it('should display positive change with trending up icon', () => {
     const { container } = render(
       <KPICard
-        title="Revenue"
-        value="$50,000"
-        change="+15%"
-        icon="💰"
-        trend="positive"
+        icon={TrendingUp}
+        label="Revenue"
+        value={50000}
+        delta={15}
+        deltaPositiveIsGood
       />
     );
 
-    const changeElement = screen.getByText('+15%');
-    expect(changeElement).toHaveClass('positive');
+    // Check for the delta display
+    expect(screen.getByText(/15%/)).toBeInTheDocument();
+    // Good change should have 'good' class
+    const deltaElement = container.querySelector('.an-kpi-delta.good');
+    expect(deltaElement).toBeInTheDocument();
   });
 
-  it('should display negative change in red', () => {
-    render(
-      <KPICard
-        title="Costs"
-        value="$5,000"
-        change="-5%"
-        icon="📉"
-        trend="negative"
-      />
-    );
-
-    const changeElement = screen.getByText('-5%');
-    expect(changeElement).toHaveClass('negative');
-  });
-
-  it('should render custom icon', () => {
+  it('should display negative change with trending down icon', () => {
     const { container } = render(
       <KPICard
-        title="Test"
-        value="100"
-        change="0%"
-        icon="🎯"
+        icon={TrendingDown}
+        label="Costs"
+        value={5000}
+        delta={-5}
+        deltaPositiveIsGood={false}
       />
     );
 
-    expect(screen.getByText('🎯')).toBeInTheDocument();
+    // Negative delta is good when deltaPositiveIsGood is false
+    expect(screen.getByText(/5%/)).toBeInTheDocument();
+    const deltaElement = container.querySelector('.an-kpi-delta.good');
+    expect(deltaElement).toBeInTheDocument();
   });
 
-  it('should handle missing optional props', () => {
-    render(
+  it('should render with custom icon component', () => {
+    const { container } = render(
       <KPICard
-        title="Simple Card"
-        value="42"
+        icon={Package}
+        label="Test"
+        value={100}
       />
     );
 
-    expect(screen.getByText('Simple Card')).toBeInTheDocument();
-    expect(screen.getByText('42')).toBeInTheDocument();
+    // Check that the icon container exists
+    const iconContainer = container.querySelector('.an-kpi-icon');
+    expect(iconContainer).toBeInTheDocument();
+  });
+
+  it('should render loading skeleton state', () => {
+    const { container } = render(
+      <KPICard
+        icon={Package}
+        label="Test"
+        value={100}
+        loading={true}
+      />
+    );
+
+    // Should render skeleton elements
+    const skeletons = container.querySelectorAll('.an-skeleton');
+    expect(skeletons.length).toBeGreaterThan(0);
+  });
+
+  it('should render with unit suffix', () => {
+    render(
+      <KPICard
+        icon={Package}
+        label="Completion Rate"
+        value={95}
+        unit="%"
+      />
+    );
+
+    expect(screen.getByText('95')).toBeInTheDocument();
+    expect(screen.getByText('%')).toBeInTheDocument();
+  });
+
+  it('should render without delta when not provided', () => {
+    const { container } = render(
+      <KPICard
+        icon={Package}
+        label="Simple Metric"
+        value={42}
+      />
+    );
+
+    const deltaElement = container.querySelector('.an-kpi-delta');
+    expect(deltaElement).not.toBeInTheDocument();
+  });
+
+  it('should format large numbers with commas', () => {
+    render(
+      <KPICard
+        icon={Package}
+        label="Large Number"
+        value={1000000}
+      />
+    );
+
+    expect(screen.getByText('1,000,000')).toBeInTheDocument();
+  });
+
+  it('should render description when provided', () => {
+    render(
+      <KPICard
+        icon={Package}
+        label="Test"
+        value={100}
+        description="This is a description"
+      />
+    );
+
+    expect(screen.getByText('This is a description')).toBeInTheDocument();
   });
 });
