@@ -61,12 +61,10 @@
 
 /* ── SKELETON ─────────────────────────────────────────────────────────────── */
 .an-skeleton {
-  background: linear-gradient(
-    90deg,
-    rgba(255, 255, 255, 0.05) 0%,
-    rgba(255, 255, 255, 0.10) 40%,
-    rgba(255, 255, 255, 0.05) 80%
-  );
+  background: linear-gradient(90deg,
+      rgba(255, 255, 255, 0.05) 0%,
+      rgba(255, 255, 255, 0.10) 40%,
+      rgba(255, 255, 255, 0.05) 80%);
   background-size: 200% 100%;
   animation: anShimmer 1.4s ease-in-out infinite;
   flex-shrink: 0;
@@ -74,8 +72,13 @@
 }
 
 @keyframes anShimmer {
-  0% { background-position: 200% center; }
-  100% { background-position: -200% center; }
+  0% {
+    background-position: 200% center;
+  }
+
+  100% {
+    background-position: -200% center;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -107,7 +110,9 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .an-kpi-card:hover { transform: none; }
+  .an-kpi-card:hover {
+    transform: none;
+  }
 }
 
 /* ✅ FIXED FALLBACK ORDER (safe → modern) */
@@ -283,11 +288,15 @@
 }
 
 @keyframes anSpin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .an-spin { animation: none; }
+  .an-spin {
+    animation: none;
+  }
 }
 
 /* ── REPORT FORM ─────────────────────────────────────────────────────────── */
@@ -349,7 +358,9 @@
 }
 
 @media (max-width: 600px) {
-  .an-form-grid { grid-template-columns: 1fr; }
+  .an-form-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .an-form-group {
@@ -369,23 +380,52 @@
   color: var(--text-muted);
 }
 
-.an-form-group input[type="date"] {
-  background: var(--surface-input);
-  border: 1px solid var(--surface-border);
-  border-radius: 10px;
-  color: var(--text-primary);
-  font-family: var(--font-ui);
-  font-size: 13px;
-  padding: 9px 12px;
-  outline: none;
+.an-form-group input[type="date"],
+.an-form-group select {
+  background: rgba(255, 255, 255, 0.09) !important;
+  border: 1px solid rgba(255, 255, 255, 0.25) !important;
+  border-radius: 10px !important;
+  color: #393737 !important;
+  font-family: var(--font-ui) !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  padding: 9px 12px !important;
+  outline: none !important;
   transition: border-color var(--transition-base), box-shadow var(--transition-base);
-  width: 100%;
-  color-scheme: dark;
+  width: 100% !important;
+  color-scheme: dark !important;
+  opacity: 1 !important;
+  cursor: pointer !important;
+  -webkit-text-fill-color: #353333 !important;
 }
 
-.an-form-group input[type="date"]:focus {
-  border-color: rgba(232, 93, 47, 0.5);
-  box-shadow: 0 0 0 3px rgba(232, 93, 47, 0.1);
+.an-form-group input[type="date"]::-webkit-datetime-edit,
+.an-form-group input[type="date"]::-webkit-datetime-edit-text,
+.an-form-group input[type="date"]::-webkit-datetime-edit-month-field,
+.an-form-group input[type="date"]::-webkit-datetime-edit-day-field,
+.an-form-group input[type="date"]::-webkit-datetime-edit-year-field {
+  color: #353333 !important;
+  -webkit-text-fill-color: #262424 !important;
+  opacity: 1 !important;
+}
+
+.an-form-group input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1) brightness(100%) !important;
+  opacity: 1 !important;
+  cursor: pointer !important;
+}
+
+.an-form-group input[type="date"]:focus,
+.an-form-group select:focus {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(232, 93, 47, 0.6);
+  box-shadow: 0 0 0 3px rgba(232, 93, 47, 0.15);
+}
+
+.an-form-group select option {
+  background: #0d0e13;
+  color: #FFFFFF;
+  padding: 8px;
 }
 
 /* Type selector buttons */

@@ -275,6 +275,7 @@ export default function AnalyticsDashboardPage() {
 
     const [customDateStart, setCustomDateStart] = useState('');
     const [customDateEnd, setCustomDateEnd] = useState('');
+    const [filterError, setFilterError] = useState('');
 
     const data = useSelector(selectDashboard);
     const loading = useSelector(selectLoading);
@@ -338,9 +339,31 @@ export default function AnalyticsDashboardPage() {
     );
 
     const handleApply = useCallback(() => {
+        setFilterError('');
+        if (filters.dateRange === 'custom') {
+            if (!customDateStart || !customDateEnd) {
+                setFilterError('Please select both start and end dates.');
+                return;
+            }
+
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const startObj = new Date(customDateStart);
+            const endObj = new Date(customDateEnd);
+
+            if (startObj > today || endObj > today) {
+                setFilterError('Custom date range cannot include future dates.');
+                return;
+            }
+
+            if (startObj > endObj) {
+                setFilterError('Start date cannot be after end date.');
+                return;
+            }
+        }
         setAppliedFilters({ ...filters });
         fetchData(filters);
-    }, [filters, fetchData]);
+    }, [filters, customDateStart, customDateEnd, fetchData]);
 
     const handleReset = useCallback(() => {
         const defaultFilters = {
@@ -354,6 +377,7 @@ export default function AnalyticsDashboardPage() {
         setAppliedFilters(defaultFilters);
         setCustomDateStart('');
         setCustomDateEnd('');
+        setFilterError('');
         fetchData(defaultFilters);
     }, [fetchData]);
 
@@ -524,6 +548,13 @@ export default function AnalyticsDashboardPage() {
                     <div className="ad-banner ad-banner-error">
                         <X size={15} />
                         <span>{reduxError}</span>
+                    </div>
+                )}
+
+                {filterError && (
+                    <div className="ad-banner ad-banner-error">
+                        <X size={15} />
+                        <span>{filterError}</span>
                     </div>
                 )}
 
