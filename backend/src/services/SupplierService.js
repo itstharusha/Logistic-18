@@ -194,7 +194,7 @@ export class SupplierService {
         shapValues: response.data.shapValues || []
       };
     } catch (error) {
-      console.warn(`[predictRiskScore] ML Service failed: ${error.message}. Using rule-based fallback scoring.`);
+      console.warn(`[predictRiskScore] ML Service failed: ${error.message || error.code || error}. Using rule-based fallback scoring.`);
       return this.computeRiskScore(supplier);
     }
   }

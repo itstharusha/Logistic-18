@@ -76,6 +76,11 @@ const warehouseTransferSchema = new mongoose.Schema(
     expectedDeliveryDate: {
       type: Date,
     },
+    shipmentId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Shipment',
+      default: null,
+    },
   },
   {
     timestamps: true,

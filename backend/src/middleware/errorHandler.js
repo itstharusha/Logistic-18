@@ -35,7 +35,7 @@ export const requestLogger = (req, res, next) => {
   res.on('finish', () => {
     const duration = Date.now() - start;
     console.log(
-      `[${new Date().toISOString()}] ${req.method} ${req.path} - ${res.statusCode} (${duration}ms)`
+      `[${new Date().toISOString()}] ${req.method} ${req.originalUrl} - ${res.statusCode} (${duration}ms)`
     );
   });
 
@@ -59,7 +59,7 @@ export const errorHandler = async (err, req, res, next) => {
   console.error('Stack:', err.stack);
   console.error('Request:', {
     method: req.method,
-    path: req.path,
+    path: req.originalUrl,
     body: req.body,
   });
 
@@ -114,7 +114,7 @@ export const errorHandler = async (err, req, res, next) => {
 export const notFoundHandler = (req, res) => {
   res.status(404).json({
     error: 'Endpoint not found',
-    path: req.path,
+    path: req.originalUrl,
     method: req.method,
   });
 };

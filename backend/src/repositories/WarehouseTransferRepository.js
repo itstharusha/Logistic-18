@@ -11,11 +11,12 @@ export class WarehouseTransferRepository {
   static async findById(transferId, orgId) {
     return WarehouseTransfer.findOne({ _id: transferId, orgId })
       .populate('inventoryItemId', 'sku productName')
-      .populate('fromWarehouseId', 'code name')
-      .populate('toWarehouseId', 'code name')
+      .populate('fromWarehouseId', 'code name location')
+      .populate('toWarehouseId', 'code name location')
       .populate('requestedBy', 'name email')
       .populate('approvedBy', 'name email')
-      .populate('completedBy', 'name email');
+      .populate('completedBy', 'name email')
+      .populate('shipmentId', 'shipmentNumber status shipmentType');
   }
 
   // Find all transfers in organization
@@ -52,7 +53,8 @@ export class WarehouseTransferRepository {
     query.populate('inventoryItemId', 'sku productName')
       .populate('fromWarehouseId', 'code name')
       .populate('toWarehouseId', 'code name')
-      .populate('requestedBy', 'name');
+      .populate('requestedBy', 'name')
+      .populate('shipmentId', 'shipmentNumber status shipmentType');
 
     return query.exec();
   }

@@ -70,6 +70,37 @@ const shipmentSchema = new mongoose.Schema(
       default: null,
     },
 
+    // Internal transfer link
+    warehouseTransferId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'WarehouseTransfer',
+      default: null,
+    },
+
+    // Inventory & Warehouse links
+    inventoryItemId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'InventoryItem',
+      default: null,
+    },
+    originWarehouseId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Warehouse',
+      default: null,
+    },
+    destinationWarehouseId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Warehouse',
+      default: null,
+    },
+
+    // Shipment type
+    shipmentType: {
+      type: String,
+      enum: ['external', 'internal_transfer'],
+      default: 'external',
+    },
+
     // Locations
     originCity:        { type: String, trim: true, default: '' },
     originCountry:     { type: String, trim: true, default: '' },

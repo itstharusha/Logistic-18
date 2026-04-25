@@ -352,6 +352,11 @@ export const schemas = {
     weatherLevel: joi.string().valid('low', 'medium', 'high').optional().default('low'),
     originGeoRisk: joi.number().valid(0, 1).optional().default(0),
     destinationGeoRisk: joi.number().valid(0, 1).optional().default(0),
+    inventoryItemId: joi.string().allow('', null).optional(),
+    originWarehouseId: joi.string().allow('', null).optional(),
+    destinationWarehouseId: joi.string().allow('', null).optional(),
+    warehouseTransferId: joi.string().allow('', null).optional(),
+    shipmentType: joi.string().valid('external', 'internal_transfer').optional().default('external'),
   }),
 
   // Update shipment
@@ -370,6 +375,11 @@ export const schemas = {
     weatherLevel: joi.string().valid('low', 'medium', 'high').optional(),
     originGeoRisk: joi.number().valid(0, 1).optional(),
     destinationGeoRisk: joi.number().valid(0, 1).optional(),
+    inventoryItemId: joi.string().allow('', null).optional(),
+    originWarehouseId: joi.string().allow('', null).optional(),
+    destinationWarehouseId: joi.string().allow('', null).optional(),
+    warehouseTransferId: joi.string().allow('', null).optional(),
+    shipmentType: joi.string().valid('external', 'internal_transfer').optional(),
   }),
 
   // Update shipment status

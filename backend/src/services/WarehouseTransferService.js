@@ -2,11 +2,12 @@ import { WarehouseTransferRepository } from '../repositories/WarehouseTransferRe
 import { WarehouseRepository } from '../repositories/WarehouseRepository.js';
 import { InventoryRepository } from '../repositories/InventoryRepository.js';
 import { WarehouseService } from './WarehouseService.js';
+import { ShipmentService } from './ShipmentService.js';
 import AuditLog from '../models/AuditLog.js';
 import Alert from '../models/Alert.js';
 
 export class WarehouseTransferService {
-  // Create a new transfer request
+  // Create a new transfer request and auto-create a linked shipment
   static async createTransfer(transferData, userId) {
     // Validate source and destination are different
     if (transferData.fromWarehouseId === transferData.toWarehouseId) {
@@ -49,6 +50,49 @@ export class WarehouseTransferService {
       requestedAt: new Date(),
     });
 
+    // ── Auto-create a linked shipment for this transfer ──
+    let shipment = null;
+    try {
+      const estimatedDelivery = transferData.expectedDeliveryDate
+        ? new Date(transferData.expectedDeliveryDate)
+        : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // Default: 7 days from now
+
+      const shipmentData = {
+        description: `Internal transfer ${transfer.transferNumber}: ${inventoryItem.productName} (${transferData.quantity} units) from ${fromWarehouse.name} to ${toWarehouse.name}`,
+        carrier: 'Other',
+        priority: transferData.priority === 'urgent' ? 'overnight'
+          : transferData.priority === 'high' ? 'express'
+          : 'standard',
+        originCity: fromWarehouse.location?.city || '',
+        originCountry: fromWarehouse.location?.country || '',
+        destinationCity: toWarehouse.location?.city || '',
+        destinationCountry: toWarehouse.location?.country || '',
+        estimatedDelivery,
+        shipmentType: 'internal_transfer',
+        warehouseTransferId: transfer._id,
+        inventoryItemId: transferData.inventoryItemId,
+        originWarehouseId: transferData.fromWarehouseId,
+        destinationWarehouseId: transferData.toWarehouseId,
+      };
+
+      shipment = await ShipmentService.createShipment(
+        transferData.orgId,
+        shipmentData,
+        userId
+      );
+
+      // Link shipment back to transfer
+      await WarehouseTransferRepository.update(transfer._id, transferData.orgId, {
+        shipmentId: shipment._id,
+      });
+      transfer.shipmentId = shipment._id;
+
+      console.log(`[WarehouseTransferService] Auto-created shipment ${shipment.shipmentNumber} for transfer ${transfer.transferNumber}`);
+    } catch (shipmentError) {
+      // Log but don't fail the transfer creation if shipment creation fails
+      console.error(`[WarehouseTransferService] Failed to auto-create shipment for transfer ${transfer.transferNumber}:`, shipmentError.message);
+    }
+
     // Log audit
     await AuditLog.create({
       orgId: transferData.orgId,
@@ -56,7 +100,11 @@ export class WarehouseTransferService {
       action: 'WAREHOUSE_TRANSFER_CREATED',
       entityType: 'WAREHOUSE_TRANSFER',
       entityId: transfer._id,
-      newValue: transferData,
+      newValue: {
+        ...transferData,
+        shipmentId: shipment?._id || null,
+        shipmentNumber: shipment?.shipmentNumber || null,
+      },
     });
 
     return transfer;
@@ -84,8 +132,8 @@ export class WarehouseTransferService {
     };
   }
 
-  // Approve a transfer (changes status to in-transit)
-  static async approveTransfer(transferId, orgId, userId) {
+  // Approve a transfer (changes status to in-transit) and advance linked shipment
+  static async approveTransfer(transferId, orgId, userId, options = {}) {
     const transfer = await WarehouseTransferRepository.findById(transferId, orgId);
     if (!transfer) {
       throw new Error('Transfer not found');
@@ -110,6 +158,26 @@ export class WarehouseTransferService {
       approvedAt: new Date(),
     });
 
+    // ── Advance linked shipment to in_transit ──
+    if (!options._skipShipmentSync) {
+      const shipmentId = transfer.shipmentId?._id || transfer.shipmentId;
+      if (shipmentId) {
+        try {
+          await ShipmentService.updateStatus(
+            orgId,
+            shipmentId,
+            'in_transit',
+            userId,
+            `Transfer ${transfer.transferNumber} approved — goods in transit`,
+            { _skipTransferSync: true }
+          );
+          console.log(`[WarehouseTransferService] Advanced shipment to in_transit for transfer ${transfer.transferNumber}`);
+        } catch (err) {
+          console.error(`[WarehouseTransferService] Failed to advance shipment for transfer ${transfer.transferNumber}:`, err.message);
+        }
+      }
+    }
+
     // Log audit
     await AuditLog.create({
       orgId,
@@ -127,7 +195,7 @@ export class WarehouseTransferService {
   }
 
   // Complete a transfer
-  static async completeTransfer(transferId, orgId, userId) {
+  static async completeTransfer(transferId, orgId, userId, options = {}) {
     const transfer = await WarehouseTransferRepository.findById(transferId, orgId);
     if (!transfer) {
       throw new Error('Transfer not found');
@@ -178,6 +246,29 @@ export class WarehouseTransferService {
       completedAt: new Date(),
     });
 
+    // ── Mark linked shipment as delivered (if not already) ──
+    if (!options._skipShipmentSync) {
+      const shipmentId = transfer.shipmentId?._id || transfer.shipmentId;
+      if (shipmentId) {
+        try {
+          const linkedShipment = await ShipmentService.getShipment(orgId, shipmentId);
+          if (linkedShipment.status !== 'delivered' && linkedShipment.status !== 'closed') {
+            await ShipmentService.updateStatus(
+              orgId,
+              shipmentId,
+              'delivered',
+              userId,
+              `Transfer ${transfer.transferNumber} completed — goods received at destination`,
+              { _skipTransferSync: true }
+            );
+            console.log(`[WarehouseTransferService] Marked shipment as delivered for transfer ${transfer.transferNumber}`);
+          }
+        } catch (err) {
+          console.error(`[WarehouseTransferService] Failed to update shipment on transfer completion:`, err.message);
+        }
+      }
+    }
+
     // Log audit
     await AuditLog.create({
       orgId,
@@ -199,7 +290,7 @@ export class WarehouseTransferService {
   }
 
   // Cancel a transfer
-  static async cancelTransfer(transferId, orgId, userId, reason = '') {
+  static async cancelTransfer(transferId, orgId, userId, reason = '', options = {}) {
     const transfer = await WarehouseTransferRepository.findById(transferId, orgId);
     if (!transfer) {
       throw new Error('Transfer not found');
@@ -221,6 +312,54 @@ export class WarehouseTransferService {
       status: 'cancelled',
       notes: reason ? `Cancelled: ${reason}` : transfer.notes,
     });
+
+    // ── Close the linked shipment ──
+    if (!options._skipShipmentSync) {
+      const shipmentId = transfer.shipmentId?._id || transfer.shipmentId;
+      if (shipmentId) {
+        try {
+          // Need to move shipment through valid transitions to reach 'closed'
+          const shipment = await ShipmentService.getShipment(orgId, shipmentId);
+          const shipmentStatus = shipment.status;
+
+          // Determine the path to 'closed' based on current status
+          if (shipmentStatus === 'registered') {
+            await ShipmentService.updateStatus(
+              orgId, shipmentId, 'closed', userId,
+              `Transfer ${transfer.transferNumber} cancelled: ${reason || 'No reason provided'}`,
+              { _skipTransferSync: true }
+            );
+          } else if (['in_transit', 'delayed', 'rerouted'].includes(shipmentStatus)) {
+            // These statuses can transition to 'delivered' then 'closed', but for
+            // a cancellation we go directly to 'closed' if the state machine allows.
+            // delayed/rerouted can go to closed directly
+            if (['delayed', 'rerouted'].includes(shipmentStatus)) {
+              await ShipmentService.updateStatus(
+                orgId, shipmentId, 'closed', userId,
+                `Transfer ${transfer.transferNumber} cancelled: ${reason || 'No reason provided'}`,
+                { _skipTransferSync: true }
+              );
+            } else {
+              // in_transit → delayed → closed
+              await ShipmentService.updateStatus(
+                orgId, shipmentId, 'delayed', userId,
+                `Transfer ${transfer.transferNumber} being cancelled`,
+                { _skipTransferSync: true }
+              );
+              await ShipmentService.updateStatus(
+                orgId, shipmentId, 'closed', userId,
+                `Transfer ${transfer.transferNumber} cancelled: ${reason || 'No reason provided'}`,
+                { _skipTransferSync: true }
+              );
+            }
+          }
+
+          console.log(`[WarehouseTransferService] Closed shipment for cancelled transfer ${transfer.transferNumber}`);
+        } catch (err) {
+          console.error(`[WarehouseTransferService] Failed to close shipment for cancelled transfer ${transfer.transferNumber}:`, err.message);
+        }
+      }
+    }
 
     // Log audit
     await AuditLog.create({

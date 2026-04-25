@@ -23,7 +23,11 @@ export class ShipmentRepository {
         .sort({ createdAt: -1 })
         .skip(Number(skip))
         .limit(Number(limit))
-        .populate('supplierId', 'name country'),
+        .populate('supplierId', 'name country')
+        .populate('inventoryItemId', 'sku productName')
+        .populate('originWarehouseId', 'code name location')
+        .populate('destinationWarehouseId', 'code name location')
+        .populate('warehouseTransferId', 'transferNumber status'),
       Shipment.countDocuments(query),
     ]);
 
@@ -33,7 +37,11 @@ export class ShipmentRepository {
   static async findById(orgId, shipmentId) {
     return Shipment.findOne({ _id: shipmentId, orgId })
       .populate('supplierId', 'name country riskTier')
-      .populate('createdBy', 'name email role');
+      .populate('createdBy', 'name email role')
+      .populate('inventoryItemId', 'sku productName currentStock')
+      .populate('originWarehouseId', 'code name location')
+      .populate('destinationWarehouseId', 'code name location')
+      .populate('warehouseTransferId', 'transferNumber status quantity');
   }
 
   static async getNextShipmentNumber(orgId) {

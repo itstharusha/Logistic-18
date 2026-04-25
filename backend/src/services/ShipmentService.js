@@ -1,6 +1,7 @@
 import cron from 'node-cron';
 import { ShipmentRepository } from '../repositories/ShipmentRepository.js';
 import { SupplierRepository } from '../repositories/SupplierRepository.js';
+import { WarehouseTransferRepository } from '../repositories/WarehouseTransferRepository.js';
 import { UserRepository } from '../repositories/UserRepository.js';
 import AuditLog from '../models/AuditLog.js';
 import { NotFoundError, ValidationError, ConflictError } from '../utils/errors.js';
@@ -10,12 +11,12 @@ const ML_SERVICE_URL = process.env.ML_SERVICE_URL || 'http://localhost:8000';
 
 // Valid state machine transitions
 const VALID_TRANSITIONS = {
-  registered:  ['in_transit', 'closed'],
-  in_transit:  ['delayed', 'rerouted', 'delivered'],
-  delayed:     ['in_transit', 'rerouted', 'delivered', 'closed'],
-  rerouted:    ['in_transit', 'delayed', 'delivered', 'closed'],
-  delivered:   ['closed'],
-  closed:      [],
+  registered: ['in_transit', 'closed'],
+  in_transit: ['delayed', 'rerouted', 'delivered'],
+  delayed: ['in_transit', 'rerouted', 'delivered', 'closed'],
+  rerouted: ['in_transit', 'delayed', 'delivered', 'closed'],
+  delivered: ['closed'],
+  closed: [],
 };
 
 export class ShipmentService {
@@ -39,11 +40,11 @@ export class ShipmentService {
     // Feature 1: Status-based base penalty
     const statusPenalty = {
       registered: 0,
-      in_transit:  5,
-      delayed:    30,
-      rerouted:   20,
-      delivered:   0,
-      closed:      0,
+      in_transit: 5,
+      delayed: 30,
+      rerouted: 20,
+      delivered: 0,
+      closed: 0,
     }[status] ?? 0;
 
     // Feature 2: Delay magnitude penalty (0–40)
@@ -78,10 +79,10 @@ export class ShipmentService {
     const riskScore = Math.round(Math.min(raw, 100));
 
     let riskTier;
-    if (riskScore <= 30)      riskTier = 'low';
+    if (riskScore <= 30) riskTier = 'low';
     else if (riskScore <= 60) riskTier = 'medium';
     else if (riskScore <= 80) riskTier = 'high';
-    else                      riskTier = 'critical';
+    else riskTier = 'critical';
 
     return { riskScore, riskTier };
   }
@@ -95,10 +96,10 @@ export class ShipmentService {
     const delayHours = Math.round(diffMs / (1000 * 60 * 60) * 10) / 10;
 
     let delaySeverity = null;
-    if (delayHours >= 2  && delayHours < 6)   delaySeverity = 'low';
-    else if (delayHours >= 6  && delayHours < 12)  delaySeverity = 'medium';
+    if (delayHours >= 2 && delayHours < 6) delaySeverity = 'low';
+    else if (delayHours >= 6 && delayHours < 12) delaySeverity = 'medium';
     else if (delayHours >= 12 && delayHours < 24) delaySeverity = 'high';
-    else if (delayHours >= 24)                    delaySeverity = 'critical';
+    else if (delayHours >= 24) delaySeverity = 'critical';
 
     return { delayHours, delaySeverity };
   }
@@ -131,7 +132,7 @@ export class ShipmentService {
   static async enrichShipmentData(shipment, shipmentId = null) {
     const enriched = { ...shipment };
     const startTime = Date.now();
-    
+
     console.log(`[enrichShipmentData] Starting enrichment for shipment ${shipmentId || 'new'}`);
 
     // STEP 1: Encode weatherLevel from string to numeric (0=low, 1=medium, 2=high)
@@ -161,8 +162,8 @@ export class ShipmentService {
     }
 
     // STEP 4: Determine if international shipment
-    enriched.isInternational = (shipment.originCountry && shipment.destinationCountry && 
-                               shipment.originCountry !== shipment.destinationCountry) ? 1 : 0;
+    enriched.isInternational = (shipment.originCountry && shipment.destinationCountry &&
+      shipment.originCountry !== shipment.destinationCountry) ? 1 : 0;
     console.log(`[enrichShipmentData] isInternational: ${enriched.isInternational} (${shipment.originCountry} → ${shipment.destinationCountry})`);
 
     // STEP 5: Get shipmentValueUSD (from database, default to 0)
@@ -216,7 +217,7 @@ export class ShipmentService {
       'trackingGapHours', 'shipmentValueUSD', 'daysInTransit', 'supplierRiskScore',
       'isInternational', 'carrierDelayRate'
     ];
-    
+
     for (const field of requiredNumericFields) {
       if (enriched[field] === undefined || enriched[field] === null) {
         enriched[field] = 0;
@@ -255,14 +256,14 @@ export class ShipmentService {
     try {
       // PHASE 2: Enrich shipment with missing ML features
       const enrichedShipment = await this.enrichShipmentData(shipment, shipmentId);
-      
+
       console.log(`[predictRiskScore] Calling ML service at ${ML_SERVICE_URL}/predict/shipment`);
       const startTime = Date.now();
-      
+
       const response = await axios.post(`${ML_SERVICE_URL}/predict/shipment`, enrichedShipment, {
         timeout: 5000 // 5 second timeout per NFR
       });
-      
+
       const predictionTime = Date.now() - startTime;
       console.log(`[predictRiskScore] ML service returned in ${predictionTime}ms: riskScore=${response.data.riskScore}, riskTier=${response.data.riskTier}`);
 
@@ -273,7 +274,7 @@ export class ShipmentService {
         shapValues: response.data.shapValues || []
       };
     } catch (error) {
-      console.warn(`[predictRiskScore] ML Service failed: ${error.message}. Using rule-based fallback scoring.`);
+      console.warn(`[predictRiskScore] ML Service failed: ${error.message || error.code || error}. Using rule-based fallback scoring.`);
       return this.computeRiskScore(shipment);
     }
   }
@@ -323,9 +324,9 @@ export class ShipmentService {
       statusHistory: [{
         status: 'registered',
         changedAt: now,
-        changedByName:  user?.name  || 'System',
+        changedByName: user?.name || 'System',
         changedByEmail: user?.email || '',
-        changedByRole:  user?.role  || '',
+        changedByRole: user?.role || '',
         notes: 'Shipment created',
       }],
     });
@@ -348,7 +349,7 @@ export class ShipmentService {
 
     const merged = { ...existing.toObject(), ...data };
     const { delayHours, delaySeverity } = this.computeDelay(merged.estimatedDelivery);
-    merged.delayHours    = delayHours;
+    merged.delayHours = delayHours;
     merged.delaySeverity = delaySeverity;
     const { riskScore, riskTier, recommendations, shapValues } = await this.predictRiskScore(merged, shipmentId);
 
@@ -383,7 +384,7 @@ export class ShipmentService {
     return updated;
   }
 
-  static async updateStatus(orgId, shipmentId, newStatus, userId, notes = '') {
+  static async updateStatus(orgId, shipmentId, newStatus, userId, notes = '', options = {}) {
     const shipment = await ShipmentRepository.findById(orgId, shipmentId);
     if (!shipment) throw new NotFoundError('Shipment not found');
 
@@ -402,25 +403,25 @@ export class ShipmentService {
 
     if (['delayed', 'rerouted'].includes(newStatus)) {
       const { delayHours, delaySeverity } = this.computeDelay(shipment.estimatedDelivery);
-      updates.delayHours    = delayHours;
+      updates.delayHours = delayHours;
       updates.delaySeverity = delaySeverity;
     }
 
     // Recompute risk with new status
     const merged = { ...shipment.toObject(), ...updates };
     const { riskScore, riskTier, recommendations, shapValues } = await this.predictRiskScore(merged, shipment._id);
-    updates.riskScore    = riskScore;
-    updates.riskTier     = riskTier;
+    updates.riskScore = riskScore;
+    updates.riskTier = riskTier;
     updates.recommendations = recommendations;
-    updates.shapValues   = shapValues;
+    updates.shapValues = shapValues;
     updates.lastScoredAt = now;
 
     const statusEntry = {
       status: newStatus,
-      changedAt:      now,
-      changedByName:  user?.name  || 'System',
+      changedAt: now,
+      changedByName: user?.name || 'System',
       changedByEmail: user?.email || '',
-      changedByRole:  user?.role  || '',
+      changedByRole: user?.role || '',
       notes,
     };
 
@@ -457,6 +458,11 @@ export class ShipmentService {
       oldValue: { status: shipment.status },
       newValue: { status: newStatus, notes },
     });
+
+    // ── Sync linked warehouse transfer (if not already triggered by transfer service) ──
+    if (!options._skipTransferSync && shipment.warehouseTransferId) {
+      await this._syncLinkedTransfer(orgId, shipment, newStatus, userId);
+    }
 
     return ShipmentRepository.findById(orgId, shipmentId);
   }
@@ -553,12 +559,12 @@ export class ShipmentService {
 
   static _statusDescription(status, notes) {
     const descriptions = {
-      registered:  'Shipment registered in system',
-      in_transit:  'Shipment picked up and in transit',
-      delayed:     notes ? `Shipment delayed — ${notes}` : 'Shipment delayed',
-      rerouted:    notes ? `Shipment rerouted — ${notes}` : 'Shipment rerouted to alternate path',
-      delivered:   'Shipment delivered successfully',
-      closed:      'Shipment case closed',
+      registered: 'Shipment registered in system',
+      in_transit: 'Shipment picked up and in transit',
+      delayed: notes ? `Shipment delayed — ${notes}` : 'Shipment delayed',
+      rerouted: notes ? `Shipment rerouted — ${notes}` : 'Shipment rerouted to alternate path',
+      delivered: 'Shipment delivered successfully',
+      closed: 'Shipment case closed',
     };
     return descriptions[status] || status;
   }
@@ -568,7 +574,7 @@ export class ShipmentService {
       const supplier = await SupplierRepository.findById(orgId, shipment.supplierId.toString());
       if (!supplier) return;
 
-      const wasOnTime  = shipment.delayHours < 2;
+      const wasOnTime = shipment.delayHours < 2;
       const totalDeliveries = 10;
       const currentRate = supplier.onTimeDeliveryRate ?? 80;
       const newRate = Math.round(
@@ -584,22 +590,82 @@ export class ShipmentService {
           avgDelayDays: newAvgDelay,
         },
         adjustmentEntry: {
-          adjustedBy:      userId,
-          adjustedByName:  'System',
+          adjustedBy: userId,
+          adjustedByName: 'System',
           adjustedByEmail: '',
-          adjustedByRole:  'SYSTEM',
-          source:          'auto_shipment',
-          shipmentId:      shipment._id,
-          reason:          `Auto-updated from shipment delivery: ${shipment.shipmentNumber} (${wasOnTime ? 'on time' : `${shipment.delayHours}h delay`})`,
+          adjustedByRole: 'SYSTEM',
+          source: 'auto_shipment',
+          shipmentId: shipment._id,
+          reason: `Auto-updated from shipment delivery: ${shipment.shipmentNumber} (${wasOnTime ? 'on time' : `${shipment.delayHours}h delay`})`,
           changes: {
             onTimeDeliveryRate: { old: currentRate, new: newRate },
-            avgDelayDays:       { old: supplier.avgDelayDays ?? 0, new: newAvgDelay },
+            avgDelayDays: { old: supplier.avgDelayDays ?? 0, new: newAvgDelay },
           },
           adjustedAt: new Date(),
         },
       });
     } catch (err) {
       console.error('[ShipmentService] Failed to update supplier on delivery:', err.message);
+    }
+  }
+
+  /**
+   * Sync the linked warehouse transfer when a shipment status changes.
+   * Called from updateStatus() when the shipment has a warehouseTransferId.
+   * 
+   * Mapping:
+   *   shipment 'in_transit' → transfer 'in-transit' (via approveTransfer)
+   *   shipment 'delayed'/'rerouted' → transfer stays 'in-transit', update notes
+   *   shipment 'delivered' → transfer 'completed'
+   *   shipment 'closed'    → transfer 'cancelled' (if not already completed)
+   */
+  static async _syncLinkedTransfer(orgId, shipment, newStatus, userId) {
+    try {
+      const transferId = shipment.warehouseTransferId?._id || shipment.warehouseTransferId;
+      if (!transferId) return;
+
+      const transfer = await WarehouseTransferRepository.findById(transferId, orgId);
+      if (!transfer) {
+        console.warn(`[ShipmentService] Linked transfer ${transferId} not found for shipment ${shipment._id}`);
+        return;
+      }
+
+      // Only sync if transfer is in a state that can transition
+      if (['completed', 'cancelled'].includes(transfer.status)) {
+        return; // Transfer already in terminal state, no sync needed
+      }
+
+      const { WarehouseTransferService } = await import('./WarehouseTransferService.js');
+
+      if (newStatus === 'in_transit' && transfer.status === 'pending') {
+        await WarehouseTransferService.approveTransfer(transferId, orgId, userId, { _skipShipmentSync: true });
+        console.log(`[ShipmentService] Auto-approved transfer ${transfer.transferNumber} — shipment in transit`);
+      } else if (['delayed', 'rerouted'].includes(newStatus) && transfer.status === 'in-transit') {
+        const delayInfo = shipment.delayHours
+          ? `${shipment.delayHours.toFixed(1)} hours delayed (${shipment.delaySeverity || 'unknown'} severity)`
+          : '';
+        const notes = newStatus === 'delayed' 
+          ? `Shipment ${shipment.shipmentNumber} delayed: ${delayInfo}`
+          : `Shipment ${shipment.shipmentNumber} has been rerouted`;
+        
+        await WarehouseTransferRepository.update(transferId, orgId, { notes });
+        console.log(`[ShipmentService] Transfer ${transfer.transferNumber} notes updated — shipment ${newStatus}`);
+      } else if (newStatus === 'delivered' && transfer.status === 'in-transit') {
+        // Shipment delivered → auto-complete the transfer
+        await WarehouseTransferService.completeTransfer(transferId, orgId, userId, { _skipShipmentSync: true });
+        console.log(`[ShipmentService] Auto-completed transfer ${transfer.transferNumber} — shipment delivered`);
+      } else if (newStatus === 'closed' && transfer.status !== 'completed') {
+        // Shipment closed without delivery → auto-cancel the transfer
+        await WarehouseTransferService.cancelTransfer(
+          transferId, orgId, userId,
+          `Linked shipment ${shipment.shipmentNumber} was closed`,
+          { _skipShipmentSync: true }
+        );
+        console.log(`[ShipmentService] Auto-cancelled transfer ${transfer.transferNumber} — shipment closed`);
+      }
+
+    } catch (err) {
+      console.error(`[ShipmentService] Failed to sync linked transfer:`, err.message);
     }
   }
 }
