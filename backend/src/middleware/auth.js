@@ -22,6 +22,7 @@
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 import AuditLog from '../models/AuditLog.js';
+import { ROLES, isValidRole } from '../config/rbac.constants.js';
 
 // ─────────────────────────────────────────────
 // JWT Utility Functions
@@ -110,6 +111,10 @@ export const generateRefreshToken = (userId, orgId, version) => {
  *
  * On success: sets req.user = { userId, orgId, role } and calls next()
  * On failure: returns 401 Unauthorized
+ *
+ * SECURITY: Also verifies that:
+ * - The user account is still active (not deactivated)
+ * - The role is still valid
  */
 export const authenticate = async (req, res, next) => {
   try {
@@ -125,6 +130,21 @@ export const authenticate = async (req, res, next) => {
 
     try {
       const decoded = verifyAccessToken(token);
+      
+      // ✅ NEW SECURITY CHECK: Verify user is still active in database
+      const user = await User.findById(decoded.userId);
+      if (!user) {
+        return res.status(401).json({ error: 'User account not found' });
+      }
+      if (!user.isActive) {
+        return res.status(401).json({ error: 'User account is inactive or has been deactivated' });
+      }
+      
+      // ✅ NEW SECURITY CHECK: Verify role is still valid
+      if (!isValidRole(decoded.role)) {
+        return res.status(401).json({ error: 'User role is invalid' });
+      }
+      
       // Attach the decoded user identity to the request for use in controllers
       req.user = {
         userId: decoded.userId,
@@ -211,7 +231,7 @@ export const validateOrgId = (req, res, next) => {
  */
 export const preventPrivilegeEscalation = async (req, res, next) => {
   // Only ORG_ADMIN can include a 'role' field in the request body
-  if (req.body.role && req.user.role !== 'ORG_ADMIN') {
+  if (req.body.role && req.user.role !== ROLES.ORG_ADMIN) {
     return res.status(403).json({ error: 'Only org admins can assign roles' });
   }
 

@@ -2,6 +2,7 @@ import express from 'express';
 import { authenticate, authorize } from '../middleware/auth.js';
 import { validate, validateObjectId, sanitizeQuery } from '../middleware/validation.js';
 import { AlertController } from '../controllers/AlertController.js';
+import { ROLES } from '../config/rbac.constants.js';
 
 const router = express.Router();
 
@@ -9,44 +10,48 @@ const router = express.Router();
 // ALERTS & NOTIFICATIONS MODULE (Kulatunga)
 // ==========================================
 
-// Dashboard stats — accessible by all authenticated users
-router.get('/dashboard', authenticate, AlertController.getDashboard);
+// Dashboard stats — accessible by ORG_ADMIN, RISK_ANALYST, LOGISTICS_OPERATOR, INVENTORY_MANAGER
+router.get('/dashboard', authenticate, authorize([ROLES.ORG_ADMIN, ROLES.RISK_ANALYST, ROLES.LOGISTICS_OPERATOR, ROLES.INVENTORY_MANAGER, ROLES.VIEWER]), AlertController.getDashboard);
 
 // My alerts — alerts assigned to current user
-router.get('/my', authenticate, sanitizeQuery, AlertController.getMyAlerts);
+// Accessible by: ORG_ADMIN, RISK_ANALYST, LOGISTICS_OPERATOR, INVENTORY_MANAGER
+router.get('/my', authenticate, authorize([ROLES.ORG_ADMIN, ROLES.RISK_ANALYST, ROLES.LOGISTICS_OPERATOR, ROLES.INVENTORY_MANAGER, ROLES.VIEWER]), sanitizeQuery, AlertController.getMyAlerts);
 
 // Alert history — resolved alerts
-router.get('/history/all', authenticate, sanitizeQuery, AlertController.getHistory);
+// Accessible by: ORG_ADMIN, RISK_ANALYST, LOGISTICS_OPERATOR, INVENTORY_MANAGER
+router.get('/history/all', authenticate, authorize([ROLES.ORG_ADMIN, ROLES.RISK_ANALYST, ROLES.LOGISTICS_OPERATOR, ROLES.INVENTORY_MANAGER, ROLES.VIEWER]), sanitizeQuery, AlertController.getHistory);
 
 // Escalate overdue alerts (internal/cron — admin only)
 router.post(
   '/escalate',
   authenticate,
-  authorize(['ORG_ADMIN']),
+  authorize([ROLES.ORG_ADMIN]),
   AlertController.escalateAlerts
 );
 
 // List all alerts with filters
-router.get('/', authenticate, sanitizeQuery, AlertController.listAlerts);
+// Accessible by: ORG_ADMIN, RISK_ANALYST, LOGISTICS_OPERATOR, INVENTORY_MANAGER
+router.get('/', authenticate, authorize([ROLES.ORG_ADMIN, ROLES.RISK_ANALYST, ROLES.LOGISTICS_OPERATOR, ROLES.INVENTORY_MANAGER, ROLES.VIEWER]), sanitizeQuery, AlertController.listAlerts);
 
 // Create a new alert (admin, risk analyst, or system)
 router.post(
   '/',
   authenticate,
-  authorize(['ORG_ADMIN', 'RISK_ANALYST']),
+  authorize([ROLES.ORG_ADMIN, ROLES.RISK_ANALYST]),
   validate('createAlert'),
   AlertController.createAlert
 );
 
 // Get single alert detail
-router.get('/:alertId', authenticate, validateObjectId('alertId'), AlertController.getAlertDetail);
+// Accessible by: ORG_ADMIN, RISK_ANALYST, LOGISTICS_OPERATOR, INVENTORY_MANAGER
+router.get('/:alertId', authenticate, authorize([ROLES.ORG_ADMIN, ROLES.RISK_ANALYST, ROLES.LOGISTICS_OPERATOR, ROLES.INVENTORY_MANAGER, ROLES.VIEWER]), validateObjectId('alertId'), AlertController.getAlertDetail);
 
 // Acknowledge alert (one-click)
 router.post(
   '/:alertId/acknowledge',
   authenticate,
   validateObjectId('alertId'),
-  authorize(['ORG_ADMIN', 'RISK_ANALYST', 'LOGISTICS_OPERATOR', 'INVENTORY_MANAGER']),
+  authorize([ROLES.ORG_ADMIN, ROLES.RISK_ANALYST, ROLES.LOGISTICS_OPERATOR, ROLES.INVENTORY_MANAGER]),
   AlertController.acknowledgeAlert
 );
 
@@ -55,7 +60,7 @@ router.post(
   '/:alertId/resolve',
   authenticate,
   validateObjectId('alertId'),
-  authorize(['ORG_ADMIN', 'RISK_ANALYST', 'LOGISTICS_OPERATOR', 'INVENTORY_MANAGER']),
+  authorize([ROLES.ORG_ADMIN, ROLES.RISK_ANALYST, ROLES.LOGISTICS_OPERATOR, ROLES.INVENTORY_MANAGER]),
   validate('resolveAlert'),
   AlertController.resolveAlert
 );

@@ -100,7 +100,7 @@
 }
 
 .auth-card {
-  background-color: rgba(242, 244, 240, 0.9);
+  background-color: var(--surface-card);
   backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 16px;

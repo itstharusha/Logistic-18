@@ -167,7 +167,7 @@
   justify-content: space-between;
   align-items: center;
   cursor: pointer;
-  color: var(--text-inverse);
+  color: var(--text-primary);
   font-size: 14px;
   font-weight: 600;
   transition: all 0.2s;
@@ -225,13 +225,13 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  color: var(--text-inverse-dim);
+  color: var(--text-secondary);
   font-weight: 500;
   flex-shrink: 0;
 }
 
 .info-value {
-  color: var(--text-inverse);
+  color: var(--text-primary);
   text-align: right;
   flex: 1;
   word-break: break-all;

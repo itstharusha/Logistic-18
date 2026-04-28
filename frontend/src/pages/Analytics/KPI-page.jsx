@@ -17,6 +17,7 @@ import {
 
 import TrendChart from '../../components/TrendChart.jsx';
 import KPICard from '../../components/KPICard.jsx';
+import StatBox from '../../components/StatBox.jsx';
 import Layout from '../../components/Layout.jsx';
 
 import {

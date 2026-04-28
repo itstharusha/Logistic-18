@@ -14,6 +14,7 @@ import {
   BarChart2, CheckCircle2, AlertTriangle, Edit2, X,
   TrendingUp, Calendar, Package, History, ShieldCheck
 } from 'lucide-react';
+import { ROLES } from '../config/rbac.constants.js';
 import {
   getSupplier, getRiskHistory, overrideScore, updateSupplier,
   updateSupplierStatus, updateSupplierMetrics, clearError, clearMessage, clearSelectedSupplier
@@ -215,8 +216,8 @@ export default function SupplierDetailPage() {
     }
   };
 
-  const canManage = user?.role === 'ORG_ADMIN';
-  const canOverride = user?.role === 'ORG_ADMIN' || user?.role === 'RISK_ANALYST';
+  const canManage = user?.role === ROLES.ORG_ADMIN;
+  const canOverride = user?.role === ROLES.ORG_ADMIN || user?.role === ROLES.RISK_ANALYST;
 
   if (detailLoading && !supplier) {
     return (

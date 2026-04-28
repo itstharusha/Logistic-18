@@ -1,5 +1,6 @@
 import { InventoryService } from '../services/InventoryService.js';
 import { asyncHandler } from '../middleware/errorHandler.js';
+import { coerceInventoryData, logCoercionWarnings } from '../utils/dataCoercion.js';
 
 export class InventoryController {
   // GET /api/inventory
@@ -49,8 +50,14 @@ export class InventoryController {
 
   // POST /api/inventory
   static createItem = asyncHandler(async (req, res) => {
+    // Coerce and validate incoming data
+    const coercion = coerceInventoryData(req.validatedBody || req.body);
+    if (!coercion.isValid) {
+      logCoercionWarnings(coercion.errors, 'inventory', 'create');
+    }
+
     const itemData = {
-      ...req.validatedBody,
+      ...coercion.data,
       orgId: req.user.orgId,
     };
 
@@ -74,7 +81,13 @@ export class InventoryController {
 
   // PUT /api/inventory/:itemId
   static updateItem = asyncHandler(async (req, res) => {
-    const updateData = { ...req.validatedBody };
+    // Coerce and validate incoming data
+    const coercion = coerceInventoryData(req.validatedBody || req.body);
+    if (!coercion.isValid) {
+      logCoercionWarnings(coercion.errors, 'inventory', req.params.itemId);
+    }
+
+    const updateData = { ...coercion.data };
     
     // Remove empty string supplierId (can't cast to ObjectId)
     if (updateData.supplierId === '') {
@@ -97,14 +110,17 @@ export class InventoryController {
   static updateStock = asyncHandler(async (req, res) => {
     const { currentStock } = req.body;
 
-    if (currentStock === undefined || currentStock < 0) {
-      return res.status(400).json({ error: 'Invalid stock value' });
+    // Coerce currentStock value
+    const coercion = coerceInventoryData({ currentStock });
+    if (!coercion.isValid) {
+      logCoercionWarnings(coercion.errors, 'inventory-stock', req.params.itemId);
+      return res.status(400).json({ error: 'Invalid stock value', details: coercion.errors });
     }
 
     const item = await InventoryService.updateStock(
       req.params.itemId,
       req.user.orgId,
-      currentStock,
+      coercion.data.currentStock,
       req.user.userId
     );
     res.json({

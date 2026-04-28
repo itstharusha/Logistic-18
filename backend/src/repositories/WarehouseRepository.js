@@ -7,19 +7,19 @@ export class WarehouseRepository {
     return warehouse.save();
   }
 
-  // Find warehouse by ID (scoped to org)
+  // Find warehouse by ID
   static async findById(warehouseId, orgId) {
-    return Warehouse.findOne({ _id: warehouseId, orgId });
+    return Warehouse.findById(warehouseId);
   }
 
-  // Find warehouse by code (scoped to org)
+  // Find warehouse by code
   static async findByCode(code, orgId) {
-    return Warehouse.findOne({ code: code.toUpperCase(), orgId });
+    return Warehouse.findOne({ code: code.toUpperCase() });
   }
 
-  // Find all warehouses in organization
+  // Find all warehouses
   static async findByOrgId(orgId, options = {}) {
-    const query = Warehouse.find({ orgId });
+    const query = Warehouse.find({});
 
     // Apply filters
     if (options.status) {
@@ -49,9 +49,9 @@ export class WarehouseRepository {
     return query.exec();
   }
 
-  // Count warehouses in organization
+  // Count warehouses
   static async countByOrgId(orgId, filters = {}) {
-    const query = { orgId };
+    const query = {};
     if (filters.status) query.status = filters.status;
     if (filters.type) query.type = filters.type;
     return Warehouse.countDocuments(query);
@@ -59,7 +59,7 @@ export class WarehouseRepository {
 
   // Find active warehouses for dropdown
   static async findActiveWarehouses(orgId) {
-    return Warehouse.find({ orgId, status: 'active' })
+    return Warehouse.find({ status: 'active' })
       .select('_id code name type location.city')
       .sort({ name: 1 })
       .exec();
@@ -67,8 +67,8 @@ export class WarehouseRepository {
 
   // Update warehouse
   static async update(warehouseId, orgId, updateData) {
-    return Warehouse.findOneAndUpdate(
-      { _id: warehouseId, orgId },
+    return Warehouse.findByIdAndUpdate(
+      warehouseId,
       { ...updateData, updatedAt: new Date() },
       { new: true, runValidators: true }
     );
@@ -76,8 +76,8 @@ export class WarehouseRepository {
 
   // Update utilization
   static async updateUtilization(warehouseId, orgId, utilization) {
-    return Warehouse.findOneAndUpdate(
-      { _id: warehouseId, orgId },
+    return Warehouse.findByIdAndUpdate(
+      warehouseId,
       { currentUtilization: utilization, updatedAt: new Date() },
       { new: true }
     );
@@ -85,19 +85,19 @@ export class WarehouseRepository {
 
   // Delete warehouse
   static async delete(warehouseId, orgId) {
-    return Warehouse.findOneAndDelete({ _id: warehouseId, orgId });
+    return Warehouse.findByIdAndDelete(warehouseId);
   }
 
   // Get default warehouse
   static async getDefaultWarehouse(orgId) {
-    return Warehouse.findOne({ orgId, isDefault: true });
+    return Warehouse.findOne({ isDefault: true });
   }
 
   // Set default warehouse (unset others first)
   static async setDefaultWarehouse(warehouseId, orgId) {
-    await Warehouse.updateMany({ orgId }, { isDefault: false });
-    return Warehouse.findOneAndUpdate(
-      { _id: warehouseId, orgId },
+    await Warehouse.updateMany({}, { isDefault: false });
+    return Warehouse.findByIdAndUpdate(
+      warehouseId,
       { isDefault: true },
       { new: true }
     );
@@ -105,7 +105,7 @@ export class WarehouseRepository {
 
   // Get warehouse stats for dashboard
   static async getWarehouseStats(orgId) {
-    const warehouses = await Warehouse.find({ orgId });
+    const warehouses = await Warehouse.find({});
     
     const stats = {
       total: warehouses.length,

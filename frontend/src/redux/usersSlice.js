@@ -112,18 +112,6 @@ export const createUser = createAsyncThunk(
   }
 );
 
-export const inviteUser = createAsyncThunk(
-  'users/inviteUser',
-  async (data, { rejectWithValue }) => {
-    try {
-      const response = await userAPI.inviteUser(data);
-      return response.data;
-    } catch (error) {
-      return rejectWithValue(error.response?.data?.error || 'Failed to invite user');
-    }
-  }
-);
-
 export const updateUser = createAsyncThunk(
   'users/updateUser',
   async ({ userId, data }, { rejectWithValue }) => {
@@ -225,18 +213,6 @@ const usersSlice = createSlice({
         state.message = 'User created successfully';
       })
       .addCase(createUser.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload;
-      })
-      // Invite user
-      .addCase(inviteUser.pending, (state) => {
-        state.loading = true;
-      })
-      .addCase(inviteUser.fulfilled, (state) => {
-        state.loading = false;
-        state.message = 'User invited successfully';
-      })
-      .addCase(inviteUser.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       })

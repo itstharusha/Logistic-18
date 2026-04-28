@@ -17,7 +17,7 @@
  */
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Bell, LogOut, User, Moon, Sun } from 'lucide-react';
+import { Bell, LogOut, User, Moon, Sun, Shield } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
 import { logout } from '../redux/authSlice.js';
 import {
@@ -28,6 +28,7 @@ import {
 } from '../redux/alertsSlice.js';
 import { useTheme } from '../context/ThemeContext.jsx';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { ROLES, getRoleLabel, getRoleColor } from '../config/rbac.constants.js';
 import NotificationDropdown from './NotificationDropdown';
 import UserProfileDrawer from './UsersPage/UserProfileDrawer';
 import '../styles/layout.css';
@@ -139,8 +140,11 @@ export default function TopNav() {
       {/* ── Navigation Tabs ─────────────────────────── */}
       <div className="nav-tabs" role="tablist">
         {navPaths.map((path, i) => {
+          // VIEWER role: only allow access to Overview tab (/)
+          if (user?.role === ROLES.VIEWER && path !== '/') return null;
+
           // Hide the Users tab from non-admin users (RBAC enforcement in UI)
-          if (path === '/users' && user?.role !== 'ORG_ADMIN') return null;
+          if (path === '/users' && user?.role !== ROLES.ORG_ADMIN) return null;
 
           // Capitalise the path segment for use as label (e.g. "/suppliers" → "Suppliers")
           const label = path === '/'
@@ -214,6 +218,14 @@ export default function TopNav() {
 
           {/* Dropdown — shown when avatar is clicked */}
           <div className="nav-user-dropdown" style={{ display: showUserMenu ? 'block' : 'none' }}>
+            {/* User role badge */}
+            {user?.role && (
+              <div className="nav-dropdown-role-badge">
+                <Shield size={14} />
+                <span>{getRoleLabel(user.role)}</span>
+              </div>
+            )}
+            
             <button
               onClick={() => { setShowProfileDrawer(true); setShowUserMenu(false); }}
               className="dropdown-item"
@@ -236,6 +248,7 @@ export default function TopNav() {
         <UserProfileDrawer
           user={user}
           onClose={() => setShowProfileDrawer(false)}
+          readOnly
         />
       )}
     </nav>

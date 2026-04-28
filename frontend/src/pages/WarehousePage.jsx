@@ -5,6 +5,7 @@ import {
   CheckCircle, AlertCircle, Settings, Star, Package, TrendingUp,
   ArrowRightLeft, BarChart3, Activity, RefreshCw, Eye, ArrowUpRight
 } from 'lucide-react';
+import { ROLES } from '../config/rbac.constants.js';
 import {
   listWarehouses, getWarehouseStats, createWarehouse, updateWarehouse,
   deleteWarehouse, setDefaultWarehouse, listTransfers, getTransferStats,
@@ -125,7 +126,7 @@ export default function WarehousePage() {
     notes: '',
   });
 
-  const canEdit = user?.role === 'ORG_ADMIN' || user?.role === 'INVENTORY_MANAGER';
+  const canEdit = user?.role === ROLES.ORG_ADMIN || user?.role === ROLES.INVENTORY_MANAGER;
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);

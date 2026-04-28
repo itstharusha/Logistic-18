@@ -1,4 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 import {
   Users, Briefcase, Bell, BarChart3, MapPin, AlertTriangle,
   ArrowUpRight, Building2, Truck, Archive, CheckCircle2, Star,
@@ -15,6 +17,12 @@ import {
   Tooltip,
 } from 'chart.js';
 import Layout from '../components/Layout.jsx';
+import {
+  fetchDashboard,
+  selectDashboard,
+  selectLoading,
+  selectError,
+} from '../redux/analyticsSlice.js';
 import '../styles/pages.css';
 
 
@@ -48,10 +56,23 @@ function Counter({ target, decimals = 0, suffix = '' }) {
 }
 
 export default function DashboardPage() {
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
   const chartRef = useRef(null);
   const [chartReady, setChartReady] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
   const [currentTime, setCurrentTime] = useState(new Date());
+
+  // Get data from Redux
+  const dashboardData = useSelector(selectDashboard);
+  const isLoading = useSelector(selectLoading);
+  const apiError = useSelector(selectError);
+
+  // Fetch dashboard data on mount + auto-refresh every 30s (Audit Fix W2)
+  useEffect(() => {
+    dispatch(fetchDashboard());
+    const pollInterval = setInterval(() => dispatch(fetchDashboard()), 30000);
+    return () => clearInterval(pollInterval);
+  }, [dispatch]);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -59,21 +80,22 @@ export default function DashboardPage() {
   }, []);
 
   useEffect(() => {
-    // Initial loading shimmer duration
-    const shimmerTimer = setTimeout(() => setIsLoading(false), 800);
     // Trigger callout after chart animation completes
-    const chartTimer = setTimeout(() => setChartReady(true), 1100);
-    return () => {
-      clearTimeout(shimmerTimer);
-      clearTimeout(chartTimer);
-    };
-  }, []);
+    if (!isLoading) {
+      const chartTimer = setTimeout(() => setChartReady(true), 1100);
+      return () => clearTimeout(chartTimer);
+    }
+  }, [isLoading]);
 
   /* ─── Chart.js Config ─── */
+  // Use real data from Redux if available, with fallback to empty
+  const trendData = dashboardData?.trendChart?.data || [];
+  const trendLabels = dashboardData?.trendChart?.labels || [];
+
   const chartData = {
-    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+    labels: trendLabels.length > 0 ? trendLabels : ['Loading...'],
     datasets: [{
-      data: [28, 35, 52, 42.5, 38, 42.5],
+      data: trendData.length > 0 ? trendData : [0],
       borderColor: '#E85D2F',
       borderWidth: 2.5,
       pointBackgroundColor: '#1A1C1A',
@@ -116,23 +138,35 @@ export default function DashboardPage() {
     },
   };
 
-  const [actionFeedback, setActionFeedback] = useState(null);
+  // Audit Fix W1: Quick Actions navigate to the correct page
+  const actionRoutes = {
+    users: '/users',
+    suppliers: '/suppliers',
+    alerts: '/alerts',
+    reports: '/reports',
+  };
 
   const triggerAction = (id) => {
-    setActionFeedback(id);
-    setTimeout(() => setActionFeedback(null), 2000);
+    const route = actionRoutes[id];
+    if (route) {
+      navigate(route);
+    }
   };
 
   return (
     <Layout>
+      {/* Error Banner */}
+      {apiError && (
+        <div className="error-banner" style={{ padding: '12px 16px', marginBottom: '16px', backgroundColor: '#fee2e2', borderLeft: '4px solid #ef4444', borderRadius: '4px', color: '#991b1b' }}>
+          ⚠️ {apiError}
+        </div>
+      )}
+
       {/* ═══ HERO BANNER ═══ */}
       <section className="dashboard-hero">
         <span className="hero-location">Location : Colombo, Sri Lanka</span>
         <h1 className="hero-title">Logistic 18<br />Overview Dashboard</h1>
         <div className="hero-actions">
-          <button className="hero-btn hero-btn--light" onClick={() => { }}>
-            <MapPin size={15} /> Live Map
-          </button>
           <button className="hero-btn hero-btn--dark" onClick={() => { }}>
             <AlertTriangle size={15} /> Risk Alerts
           </button>
@@ -155,7 +189,7 @@ export default function DashboardPage() {
           <div className="card-header">
             <div>
               <h2 className="card-title">Today's Risk Alerts</h2>
-              <span className="card-subtitle">June 20</span>
+              <span className="card-subtitle">{currentTime.toLocaleDateString([], { month: 'short', day: 'numeric' })}</span>
             </div>
             <a href="/alerts" className="card-expand-btn" aria-label="Expand alerts">
               <ArrowUpRight size={16} />
@@ -163,32 +197,31 @@ export default function DashboardPage() {
           </div>
 
           <div className="alert-rows">
-            <div className="alert-row">
-              <span className="alert-pill alert-pill--high">HIGH</span>
-              <div className="alert-info">
-                <span className="alert-name">Supplier Alpha</span>
-                <span className="alert-desc">Financial Score Drop</span>
+            {dashboardData?.alerts && dashboardData.alerts.length > 0 ? (
+              dashboardData.alerts.slice(0, 3).map((alert, index) => (
+                <React.Fragment key={alert._id || index}>
+                  <div className="alert-row">
+                    <span className={`alert-pill alert-pill--${alert.severity.toLowerCase()}`}>
+                      {alert.severity?.toUpperCase()}
+                    </span>
+                    <div className="alert-info">
+                      <span className="alert-name">{alert.entityName || 'Unknown'}</span>
+                      <span className="alert-desc">{alert.description || 'No description'}</span>
+                    </div>
+                    <span className="alert-code">{alert.alertId || 'N/A'}</span>
+                  </div>
+                  {index < Math.min(2, dashboardData.alerts.length - 1) && <div className="alert-divider"></div>}
+                </React.Fragment>
+              ))
+            ) : (
+              <div className="alert-row">
+                <span className="alert-pill alert-pill--low">INFO</span>
+                <div className="alert-info">
+                  <span className="alert-name">No Active Alerts</span>
+                  <span className="alert-desc">System operating normally</span>
+                </div>
               </div>
-              <span className="alert-code">SUP-001</span>
-            </div>
-            <div className="alert-divider"></div>
-            <div className="alert-row">
-              <span className="alert-pill alert-pill--med">MED</span>
-              <div className="alert-info">
-                <span className="alert-name">Shipment #SH-042</span>
-                <span className="alert-desc">ETA Exceeded 3h</span>
-              </div>
-              <span className="alert-code">SHP-042</span>
-            </div>
-            <div className="alert-divider"></div>
-            <div className="alert-row">
-              <span className="alert-pill alert-pill--low">LOW</span>
-              <div className="alert-info">
-                <span className="alert-name">Inventory SKU-881</span>
-                <span className="alert-desc">Below Reorder Point</span>
-              </div>
-              <span className="alert-code">INV-881</span>
-            </div>
+            )}
           </div>
         </div>
 
@@ -211,42 +244,42 @@ export default function DashboardPage() {
             <div className="overview-metric">
               <div className="metric-icon"><Activity size={18} /></div>
               <div className="metric-data">
-                <div className="metric-value"><Counter target={42.5} decimals={1} suffix="%" /></div>
+                <div className="metric-value"><Counter target={dashboardData?.overview?.riskScore || 0} decimals={1} suffix="%" /></div>
                 <div className="metric-label">Risk Score</div>
               </div>
             </div>
             <div className="overview-metric">
               <div className="metric-icon"><Bell size={18} /></div>
               <div className="metric-data">
-                <div className="metric-value"><Counter target={12} /></div>
+                <div className="metric-value"><Counter target={dashboardData?.overview?.activeAlerts || 0} /></div>
                 <div className="metric-label">Active Alerts</div>
               </div>
             </div>
             <div className="overview-metric">
               <div className="metric-icon"><Truck size={18} /></div>
               <div className="metric-data">
-                <div className="metric-value"><Counter target={3} /></div>
+                <div className="metric-value"><Counter target={dashboardData?.overview?.delayedShipments || 0} /></div>
                 <div className="metric-label">Delayed Ship</div>
               </div>
             </div>
             <div className="overview-metric">
               <div className="metric-icon"><Archive size={18} /></div>
               <div className="metric-data">
-                <div className="metric-value"><Counter target={18} /></div>
+                <div className="metric-value"><Counter target={dashboardData?.overview?.atRiskInventory || 0} /></div>
                 <div className="metric-label">At-Risk Inv</div>
               </div>
             </div>
             <div className="overview-metric">
               <div className="metric-icon"><Users size={18} /></div>
               <div className="metric-data">
-                <div className="metric-value"><Counter target={7} /></div>
+                <div className="metric-value"><Counter target={dashboardData?.overview?.registeredUsers || 0} /></div>
                 <div className="metric-label">Reg Users</div>
               </div>
             </div>
             <div className="overview-metric">
               <div className="metric-icon"><CheckCircle2 size={18} /></div>
               <div className="metric-data">
-                <div className="metric-value"><Counter target={94.2} decimals={1} suffix="%" /></div>
+                <div className="metric-value"><Counter target={dashboardData?.overview?.onTimeRate || 0} decimals={1} suffix="%" /></div>
                 <div className="metric-label">On-Time Rate</div>
               </div>
             </div>
@@ -268,7 +301,7 @@ export default function DashboardPage() {
             <Line ref={chartRef} data={chartData} options={chartOptions} />
             <div className={`chart-callout ${chartReady ? 'visible' : ''}`}>
               <div className="callout-dot"></div>
-              <span>Trend Up +4.2%</span>
+              <span>Trend {dashboardData?.trendDirection === 'up' ? '↑' : '↓'} {dashboardData?.trendChange || '+0'}%</span>
             </div>
           </div>
         </div>
@@ -292,11 +325,7 @@ export default function DashboardPage() {
                 <span className="action-name">Users</span>
                 <span className="action-desc">Manage organization users</span>
               </div>
-              {actionFeedback === 'users' ? (
-                <CheckCircle2 size={14} color="#2DB87A" style={{ marginLeft: 'auto' }} />
-              ) : (
-                <span className="action-badge">★ Admin</span>
-              )}
+              <span className="action-badge">★ Admin</span>
             </div>
             <div className="action-item" onClick={() => triggerAction('suppliers')}>
               <Briefcase size={18} className="action-icon" />
@@ -304,11 +333,7 @@ export default function DashboardPage() {
                 <span className="action-name">Suppliers</span>
                 <span className="action-desc">Supplier risk profiles</span>
               </div>
-              {actionFeedback === 'suppliers' ? (
-                <CheckCircle2 size={14} color="#2DB87A" style={{ marginLeft: 'auto' }} />
-              ) : (
-                <span className="action-badge">★ Risk</span>
-              )}
+              <span className="action-badge">★ Risk</span>
             </div>
             <div className="action-item" onClick={() => triggerAction('alerts')}>
               <Bell size={18} className="action-icon" />
@@ -316,11 +341,7 @@ export default function DashboardPage() {
                 <span className="action-name">Alerts</span>
                 <span className="action-desc">Urgent system notifications</span>
               </div>
-              {actionFeedback === 'alerts' ? (
-                <CheckCircle2 size={14} color="#2DB87A" style={{ marginLeft: 'auto' }} />
-              ) : (
-                <span className="action-badge">★ Urgent</span>
-              )}
+              <span className="action-badge">★ Urgent</span>
             </div>
             <div className="action-item" onClick={() => triggerAction('reports')}>
               <BarChart3 size={18} className="action-icon" />
@@ -328,11 +349,7 @@ export default function DashboardPage() {
                 <span className="action-name">Reports</span>
                 <span className="action-desc">Analytics and insights</span>
               </div>
-              {actionFeedback === 'reports' ? (
-                <CheckCircle2 size={14} color="#2DB87A" style={{ marginLeft: 'auto' }} />
-              ) : (
-                <span className="action-badge">★ Analytics</span>
-              )}
+              <span className="action-badge">★ Analytics</span>
             </div>
           </div>
         </div>
@@ -351,19 +368,19 @@ export default function DashboardPage() {
             <div className="breakdown-row">
               <Building2 size={16} className="breakdown-icon" />
               <span className="breakdown-label">Supplier Risk:</span>
-              <span className="breakdown-value">63.2 / High</span>
+              <span className="breakdown-value">{dashboardData?.breakdown?.supplierRisk || 'N/A'}</span>
             </div>
             <div className="alert-divider"></div>
             <div className="breakdown-row">
               <Truck size={16} className="breakdown-icon" />
               <span className="breakdown-label">Shipment Risk:</span>
-              <span className="breakdown-value">47.8 / Medium</span>
+              <span className="breakdown-value">{dashboardData?.breakdown?.shipmentRisk || 'N/A'}</span>
             </div>
             <div className="alert-divider"></div>
             <div className="breakdown-row">
               <Archive size={16} className="breakdown-icon" />
               <span className="breakdown-label">Inventory Risk:</span>
-              <span className="breakdown-value">38.1 / Medium</span>
+              <span className="breakdown-value">{dashboardData?.breakdown?.inventoryRisk || 'N/A'}</span>
             </div>
           </div>
 
@@ -377,7 +394,7 @@ export default function DashboardPage() {
           <div className="card-header">
             <div>
               <h2 className="card-title">Active Users</h2>
-              <span className="card-subtitle">7 users online</span>
+              <span className="card-subtitle">{dashboardData?.activeUsers?.length || 0} users {dashboardData?.activeUsers?.length > 0 ? 'online' : 'offline'}</span>
             </div>
             <a href="/users" className="card-expand-btn" aria-label="Expand users">
               <ArrowUpRight size={16} />
@@ -385,41 +402,33 @@ export default function DashboardPage() {
           </div>
 
           <div className="user-rows">
-            <div className="user-row">
-              <div className="user-avatar user-avatar--green">A</div>
-              <div className="user-info">
-                <span className="user-name">Admin User</span>
-                <span className="user-role">Org Administrator</span>
+            {dashboardData?.activeUsers && dashboardData.activeUsers.length > 0 ? (
+              dashboardData.activeUsers.slice(0, 3).map((user, index) => (
+                <React.Fragment key={user._id || index}>
+                  <div className="user-row">
+                    <div className="user-avatar" style={{ backgroundColor: user.avatarColor || '#E85D2F' }}>
+                      {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
+                    </div>
+                    <div className="user-info">
+                      <span className="user-name">{user.name || 'Unknown User'}</span>
+                      <span className="user-role">{user.role || 'No role'}</span>
+                    </div>
+                    {user.rating && (
+                      <div className="user-rating">
+                        <Star size={12} className="star-icon" fill="#E85D2F" stroke="#E85D2F" /> 
+                        <span>{user.rating}</span>
+                      </div>
+                    )}
+                    <span className="user-badge">{user.roleCode || 'USER'}</span>
+                  </div>
+                  {index < Math.min(2, dashboardData.activeUsers.length - 1) && <div className="alert-divider"></div>}
+                </React.Fragment>
+              ))
+            ) : (
+              <div className="user-row">
+                <span style={{ padding: '8px' }}>No active users at this time</span>
               </div>
-              <div className="user-rating">
-                <Star size={12} className="star-icon" fill="#E85D2F" stroke="#E85D2F" /> <span>5.0</span>
-              </div>
-              <span className="user-badge">ORG-ADMIN</span>
-            </div>
-            <div className="alert-divider"></div>
-            <div className="user-row">
-              <div className="user-avatar user-avatar--purple">R</div>
-              <div className="user-info">
-                <span className="user-name">Risk Analyst</span>
-                <span className="user-role">Risk Management</span>
-              </div>
-              <div className="user-rating">
-                <Star size={12} className="star-icon" fill="#E85D2F" stroke="#E85D2F" /> <span>4.9</span>
-              </div>
-              <span className="user-badge">RISK-ANA</span>
-            </div>
-            <div className="alert-divider"></div>
-            <div className="user-row">
-              <div className="user-avatar user-avatar--amber">I</div>
-              <div className="user-info">
-                <span className="user-name">Inv. Manager</span>
-                <span className="user-role">Inventory Control</span>
-              </div>
-              <div className="user-rating">
-                <Star size={12} className="star-icon" fill="#E85D2F" stroke="#E85D2F" /> <span>4.8</span>
-              </div>
-              <span className="user-badge">INV-MGR</span>
-            </div>
+            )}
           </div>
         </div>
       </div >

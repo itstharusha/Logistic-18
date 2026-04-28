@@ -39,10 +39,10 @@ export class UserService {
     return user;
   }
 
-  // Get all users in organization
+  // Get all users (across all organizations for admin visibility)
   static async listUsers(orgId, options = {}) {
-    const users = await UserRepository.findByOrgId(orgId, options);
-    const total = await UserRepository.countByOrgId(orgId);
+    const users = await UserRepository.findAll(options);
+    const total = await UserRepository.countAll();
 
     return {
       users,

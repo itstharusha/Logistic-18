@@ -6,12 +6,14 @@ import {
   Clock, Globe, ChevronRight, Edit2, X, Package,
   Navigation, BarChart2, Tag
 } from 'lucide-react';
+import { ROLES } from '../config/rbac.constants.js';
 import {
   listShipments, createShipment, updateShipment,
   updateShipmentStatus, clearMessage, clearError,
 } from '../redux/shipmentsSlice.js';
 import Layout from '../components/Layout.jsx';
 import ExplainabilityPanel from '../components/ExplainabilityPanel.jsx';
+import { validateShipmentForm } from '../utils/validation.js';
 import '../styles/pages.css';
 
 const CARRIERS = [
@@ -53,7 +55,8 @@ const EMPTY_FORM = {
   destinationCity:    '',
   destinationCountry: '',
   estimatedDelivery:  '',
-  weight:             '',
+  weight:             0,
+  shipmentValueUSD:   0,
   weatherLevel:       'low',
   originGeoRisk:      0,
   destinationGeoRisk: 0,
@@ -109,6 +112,7 @@ export default function ShipmentsPage() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [formData, setFormData]       = useState(EMPTY_FORM);
   const [editingId, setEditingId]     = useState(null);
+  const [formErrors, setFormErrors]   = useState({});
 
   const [searchTerm,    setSearchTerm]    = useState('');
   const [statusFilter,  setStatusFilter]  = useState('all');
@@ -134,9 +138,19 @@ export default function ShipmentsPage() {
 
   const handleAddSubmit = async (e) => {
     e.preventDefault();
+    
+    // Validate form data
+    const validation = validateShipmentForm(formData);
+    if (!validation.isValid) {
+      setFormErrors(validation.errors);
+      return;
+    }
+    setFormErrors({});
+    
     const payload = {
       ...formData,
       weight:             formData.weight      ? Number(formData.weight)      : 0,
+      shipmentValueUSD:   Number(formData.shipmentValueUSD) || 0,
       originGeoRisk:      Number(formData.originGeoRisk),
       destinationGeoRisk: Number(formData.destinationGeoRisk),
     };
@@ -145,6 +159,7 @@ export default function ShipmentsPage() {
     if (!result.error) {
       setFormData(EMPTY_FORM);
       setShowAddForm(false);
+      setFormErrors({});
     }
   };
 
@@ -163,20 +178,32 @@ export default function ShipmentsPage() {
       estimatedDelivery:   shipment.estimatedDelivery
         ? new Date(shipment.estimatedDelivery).toISOString().slice(0, 16)
         : '',
-      weight:              shipment.weight ?? '',
+      weight:              shipment.weight ?? 0,
+      shipmentValueUSD:    shipment.shipmentValueUSD   ?? 0,
       weatherLevel:        shipment.weatherLevel       || 'low',
       originGeoRisk:       shipment.originGeoRisk      ?? 0,
       destinationGeoRisk:  shipment.destinationGeoRisk ?? 0,
     });
+    setFormErrors({});
     setShowAddForm(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleEditSubmit = async (e) => {
     e.preventDefault();
+    
+    // Validate form data
+    const validation = validateShipmentForm(formData);
+    if (!validation.isValid) {
+      setFormErrors(validation.errors);
+      return;
+    }
+    setFormErrors({});
+    
     const payload = {
       ...formData,
       weight:             formData.weight      ? Number(formData.weight)      : 0,
+      shipmentValueUSD:   Number(formData.shipmentValueUSD) || 0,
       originGeoRisk:      Number(formData.originGeoRisk),
       destinationGeoRisk: Number(formData.destinationGeoRisk),
     };
@@ -186,6 +213,7 @@ export default function ShipmentsPage() {
       setEditingId(null);
       setFormData(EMPTY_FORM);
       setShowAddForm(false);
+      setFormErrors({});
     }
   };
 
@@ -225,7 +253,7 @@ export default function ShipmentsPage() {
   const delayedCount   = shipments.filter(s => ['delayed', 'rerouted'].includes(s.status)).length;
   const deliveredCount = shipments.filter(s => s.status === 'delivered').length;
 
-  const canManage = user?.role === 'ORG_ADMIN' || user?.role === 'LOGISTICS_OPERATOR';
+  const canManage = user?.role === ROLES.ORG_ADMIN || user?.role === ROLES.LOGISTICS_OPERATOR;
 
   const allowedNextStatuses = (current) => {
     const transitions = {
@@ -372,6 +400,14 @@ export default function ShipmentsPage() {
                 </div>
               </div>
               <div className="form-group-premium">
+                <label>Shipment Value (USD) *</label>
+                <div className="input-wrapper">
+                  <Package size={18} className="input-icon" />
+                  <input type="number" name="shipmentValueUSD" placeholder="e.g. 5000" min="0" step="0.01" value={formData.shipmentValueUSD} onChange={handleFormChange} required />
+                </div>
+                {formErrors.shipmentValueUSD && <span style={{ color: '#EF4444', fontSize: '12px' }}>{formErrors.shipmentValueUSD}</span>}
+              </div>
+              <div className="form-group-premium">
                 <label>Description</label>
                 <div className="input-wrapper">
                   <Package size={18} className="input-icon" />
@@ -427,6 +463,7 @@ export default function ShipmentsPage() {
                   <Globe size={18} className="input-icon" />
                   <input type="text" name="destinationCountry" placeholder="e.g. United States" value={formData.destinationCountry} onChange={handleFormChange} required />
                 </div>
+                {formErrors.destinationCountry && <span style={{ color: '#EF4444', fontSize: '12px' }}>{formErrors.destinationCountry}</span>}
               </div>
               <div className="form-group-premium">
                 <label>Destination Geopolitical Risk</label>

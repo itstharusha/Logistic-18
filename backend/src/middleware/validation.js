@@ -431,23 +431,30 @@ export const schemas = {
 
   // Generate report
   generateReport: joi.object({
-    type: joi.string().valid('summary', 'detailed', 'comparison', 'trend').required().messages({
-      'any.required': 'Report type is required',
-      'any.only': 'Type must be one of: summary, detailed, comparison, trend',
+    type: joi.string().valid('summary', 'detailed', 'comparison', 'trend', 'weekly', 'monthly', 'custom').optional().messages({
+      'any.only': 'Type must be one of: summary, detailed, comparison, trend, weekly, monthly, custom',
     }),
     format: joi.string().valid('pdf', 'csv').required().messages({
       'any.required': 'Report format is required',
       'any.only': 'Format must be either pdf or csv',
     }),
-    module: joi.string().valid('dashboard', 'overall', 'supplier_risk', 'shipments', 'shipment_tracking', 'inventory', 'alerts').required().messages({
-      'any.required': 'Module is required',
+    module: joi.string().valid('dashboard', 'overall', 'supplier_risk', 'shipments', 'shipment_tracking', 'inventory', 'alerts').optional().messages({
       'any.only': 'Module must be one of: dashboard, overall, supplier_risk, shipments, shipment_tracking, inventory, alerts',
     }),
-    severity: joi.string().valid('low', 'medium', 'high', 'critical').optional(),
-    include: joi.array().items(joi.string()).optional(),
+    severity: joi.string().valid('low', 'medium', 'high', 'critical', 'all').optional().messages({
+      'any.only': 'Severity must be one of: low, medium, high, critical, all',
+    }),
+    include: joi.alternatives().try(
+      joi.array().items(joi.string()),
+      joi.object({
+        kpis: joi.boolean(),
+        charts: joi.boolean(),
+        details: joi.boolean(),
+      })
+    ).optional(),
     dateRange: joi.object({
-      from: joi.date().optional(),
-      to: joi.date().optional(),
+      from: joi.string().optional(),
+      to: joi.string().optional(),
     }).optional(),
   }),
 

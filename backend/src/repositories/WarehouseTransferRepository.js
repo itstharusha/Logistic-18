@@ -7,9 +7,9 @@ export class WarehouseTransferRepository {
     return transfer.save();
   }
 
-  // Find transfer by ID (scoped to org)
+  // Find transfer by ID
   static async findById(transferId, orgId) {
-    return WarehouseTransfer.findOne({ _id: transferId, orgId })
+    return WarehouseTransfer.findById(transferId)
       .populate('inventoryItemId', 'sku productName')
       .populate('fromWarehouseId', 'code name location')
       .populate('toWarehouseId', 'code name location')
@@ -19,9 +19,9 @@ export class WarehouseTransferRepository {
       .populate('shipmentId', 'shipmentNumber status shipmentType');
   }
 
-  // Find all transfers in organization
+  // Find all transfers
   static async findByOrgId(orgId, options = {}) {
-    const query = WarehouseTransfer.find({ orgId });
+    const query = WarehouseTransfer.find({});
 
     // Apply filters
     if (options.status) {
@@ -59,9 +59,9 @@ export class WarehouseTransferRepository {
     return query.exec();
   }
 
-  // Count transfers in organization
+  // Count transfers
   static async countByOrgId(orgId, filters = {}) {
-    const query = { orgId };
+    const query = {};
     if (filters.status) query.status = filters.status;
     if (filters.fromWarehouseId) query.fromWarehouseId = filters.fromWarehouseId;
     if (filters.toWarehouseId) query.toWarehouseId = filters.toWarehouseId;
@@ -70,8 +70,8 @@ export class WarehouseTransferRepository {
 
   // Update transfer
   static async update(transferId, orgId, updateData) {
-    return WarehouseTransfer.findOneAndUpdate(
-      { _id: transferId, orgId },
+    return WarehouseTransfer.findByIdAndUpdate(
+      transferId,
       { ...updateData, updatedAt: new Date() },
       { new: true, runValidators: true }
     ).populate('inventoryItemId', 'sku productName')
@@ -81,7 +81,7 @@ export class WarehouseTransferRepository {
 
   // Get pending transfers for a warehouse
   static async getPendingTransfers(warehouseId, orgId, direction = 'both') {
-    const query = { orgId, status: { $in: ['pending', 'in-transit'] } };
+    const query = { status: { $in: ['pending', 'in-transit'] } };
     
     if (direction === 'outgoing') {
       query.fromWarehouseId = warehouseId;
@@ -100,7 +100,7 @@ export class WarehouseTransferRepository {
 
   // Get transfer statistics
   static async getTransferStats(orgId) {
-    const transfers = await WarehouseTransfer.find({ orgId });
+    const transfers = await WarehouseTransfer.find({});
     
     const stats = {
       total: transfers.length,
@@ -126,7 +126,7 @@ export class WarehouseTransferRepository {
 
   // Get transfers for an inventory item
   static async getByInventoryItem(inventoryItemId, orgId) {
-    return WarehouseTransfer.find({ inventoryItemId, orgId })
+    return WarehouseTransfer.find({ inventoryItemId })
       .populate('fromWarehouseId', 'code name')
       .populate('toWarehouseId', 'code name')
       .sort({ createdAt: -1 });

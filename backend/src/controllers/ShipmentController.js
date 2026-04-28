@@ -20,6 +20,7 @@
 
 import { ShipmentService } from '../services/ShipmentService.js';
 import { asyncHandler } from '../middleware/errorHandler.js';
+import { coerceShipmentData, logCoercionWarnings } from '../utils/dataCoercion.js';
 
 export class ShipmentController {
 
@@ -51,9 +52,15 @@ export class ShipmentController {
    * Returns the saved shipment document with HTTP 201 Created.
    */
   static createShipment = asyncHandler(async (req, res) => {
+    // Coerce and validate incoming data
+    const coercion = coerceShipmentData(req.validatedBody || req.body);
+    if (!coercion.isValid) {
+      logCoercionWarnings(coercion.errors, 'shipment', 'create');
+    }
+
     const shipment = await ShipmentService.createShipment(
       req.user.orgId,
-      req.validatedBody || req.body,
+      coercion.data,
       req.user.userId
     );
 
@@ -82,10 +89,16 @@ export class ShipmentController {
    * Returns the fully updated shipment document.
    */
   static updateShipment = asyncHandler(async (req, res) => {
+    // Coerce and validate incoming data
+    const coercion = coerceShipmentData(req.validatedBody || req.body);
+    if (!coercion.isValid) {
+      logCoercionWarnings(coercion.errors, 'shipment', req.params.shipmentId);
+    }
+
     const shipment = await ShipmentService.updateShipment(
       req.user.orgId,
       req.params.shipmentId,
-      req.validatedBody || req.body,
+      coercion.data,
       req.user.userId
     );
 

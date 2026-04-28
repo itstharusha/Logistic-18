@@ -7,19 +7,19 @@ export class InventoryRepository {
     return item.save();
   }
 
-  // Find inventory item by ID (scoped to org)
+  // Find inventory item by ID
   static async findById(itemId, orgId) {
-    return InventoryItem.findOne({ _id: itemId, orgId });
+    return InventoryItem.findById(itemId);
   }
 
-  // Find inventory item by SKU (scoped to org)
+  // Find inventory item by SKU
   static async findBySku(sku, orgId) {
-    return InventoryItem.findOne({ sku: sku.toUpperCase(), orgId });
+    return InventoryItem.findOne({ sku: sku.toUpperCase() });
   }
 
-  // Find all inventory items in organization with filters
+  // Find all inventory items with filters
   static async findByOrgId(orgId, options = {}) {
-    const query = InventoryItem.find({ orgId });
+    const query = InventoryItem.find({});
 
     // Apply filters
     if (options.warehouseId) {
@@ -66,9 +66,9 @@ export class InventoryRepository {
     return query.exec();
   }
 
-  // Count inventory items in organization
+  // Count inventory items
   static async countByOrgId(orgId, filters = {}) {
-    const query = { orgId };
+    const query = {};
     
     if (filters.warehouseId) query.warehouseId = filters.warehouseId;
     if (filters.supplierId) query.supplierId = filters.supplierId;
@@ -80,8 +80,8 @@ export class InventoryRepository {
 
   // Update inventory item
   static async update(itemId, orgId, updateData) {
-    return InventoryItem.findOneAndUpdate(
-      { _id: itemId, orgId },
+    return InventoryItem.findByIdAndUpdate(
+      itemId,
       { ...updateData, updatedAt: new Date() },
       { new: true, runValidators: true }
     );
@@ -89,8 +89,8 @@ export class InventoryRepository {
 
   // Update stock level
   static async updateStock(itemId, orgId, newStock) {
-    return InventoryItem.findOneAndUpdate(
-      { _id: itemId, orgId },
+    return InventoryItem.findByIdAndUpdate(
+      itemId,
       { currentStock: newStock, lastUpdatedAt: new Date(), updatedAt: new Date() },
       { new: true, runValidators: true }
     );
@@ -98,8 +98,8 @@ export class InventoryRepository {
 
   // Update risk score and tier
   static async updateRiskScore(itemId, orgId, riskData) {
-    return InventoryItem.findOneAndUpdate(
-      { _id: itemId, orgId },
+    return InventoryItem.findByIdAndUpdate(
+      itemId,
       {
         riskScore: riskData.riskScore,
         riskTier: riskData.riskTier,
@@ -114,8 +114,8 @@ export class InventoryRepository {
 
   // Update pending order
   static async updatePendingOrder(itemId, orgId, pendingQty, incomingDays) {
-    return InventoryItem.findOneAndUpdate(
-      { _id: itemId, orgId },
+    return InventoryItem.findByIdAndUpdate(
+      itemId,
       {
         pendingOrderQty: pendingQty,
         incomingStockDays: incomingDays,
@@ -128,25 +128,23 @@ export class InventoryRepository {
   // Find items needing reorder
   static async findItemsNeedingReorder(orgId) {
     return InventoryItem.find({
-      orgId,
       $expr: { $lte: ['$currentStock', '$reorderPoint'] },
     }).sort({ riskScore: -1 });
   }
 
   // Find items by risk tier
   static async findByRiskTier(orgId, tier) {
-    return InventoryItem.find({ orgId, riskTier: tier }).sort({ riskScore: -1 });
+    return InventoryItem.find({ riskTier: tier }).sort({ riskScore: -1 });
   }
 
   // Find critical items
   static async findCriticalItems(orgId) {
-    return InventoryItem.find({ orgId, isCriticalItem: true }).sort({ riskScore: -1 });
+    return InventoryItem.find({ isCriticalItem: true }).sort({ riskScore: -1 });
   }
 
   // Find items at risk (high or critical tier)
   static async findAtRiskItems(orgId) {
     return InventoryItem.find({
-      orgId,
       riskTier: { $in: ['high', 'critical'] },
     }).sort({ riskScore: -1 });
   }
@@ -154,7 +152,6 @@ export class InventoryRepository {
   // Get inventory summary statistics
   static async getSummaryStats(orgId) {
     const stats = await InventoryItem.aggregate([
-      { $match: { orgId: new (await import('mongoose')).default.Types.ObjectId(orgId) } },
       {
         $group: {
           _id: null,
@@ -195,7 +192,6 @@ export class InventoryRepository {
   // Get items below reorder point count
   static async countBelowReorderPoint(orgId) {
     return InventoryItem.countDocuments({
-      orgId,
       $expr: { $lte: ['$currentStock', '$reorderPoint'] },
     });
   }
@@ -203,7 +199,6 @@ export class InventoryRepository {
   // Get warehouse summary
   static async getWarehouseSummary(orgId) {
     return InventoryItem.aggregate([
-      { $match: { orgId: new (await import('mongoose')).default.Types.ObjectId(orgId) } },
       {
         $group: {
           _id: '$warehouseId',
@@ -219,22 +214,22 @@ export class InventoryRepository {
     ]);
   }
 
-  // Delete inventory item (soft delete not implemented - hard delete)
+  // Delete inventory item
   static async delete(itemId, orgId) {
-    return InventoryItem.findOneAndDelete({ _id: itemId, orgId });
+    return InventoryItem.findByIdAndDelete(itemId);
   }
 
   // Bulk update supplier risk scores
   static async bulkUpdateSupplierRisk(orgId, supplierId, supplierRiskScore) {
     return InventoryItem.updateMany(
-      { orgId, supplierId },
+      { supplierId },
       { supplierRiskScore, updatedAt: new Date() }
     );
   }
 
   // Find all items for a supplier
   static async findBySupplier(orgId, supplierId, options = {}) {
-    const query = InventoryItem.find({ orgId, supplierId });
+    const query = InventoryItem.find({ supplierId });
     
     if (options.limit) query.limit(options.limit);
     if (options.skip) query.skip(options.skip);
@@ -243,25 +238,26 @@ export class InventoryRepository {
     return query.exec();
   }
 
-  // Get unique warehouses in organization
+  // Get unique warehouses
   static async getWarehouses(orgId) {
-    return InventoryItem.distinct('warehouseId', { orgId });
+    return InventoryItem.distinct('warehouseId');
   }
 
   // Count items in a specific warehouse
   static async countByWarehouse(warehouseId, orgId) {
-    return InventoryItem.countDocuments({ orgId, warehouseId });
+    return InventoryItem.countDocuments({ warehouseId });
   }
 
   // Find item by SKU and warehouse
   static async findBySkuAndWarehouse(sku, warehouseId, orgId) {
-    return InventoryItem.findOne({ sku: sku.toUpperCase(), warehouseId, orgId });
+    return InventoryItem.findOne({ sku: sku.toUpperCase(), warehouseId });
   }
 
   // Get total stock in a warehouse
   static async getTotalStockInWarehouse(warehouseId, orgId) {
+    const mongoose = (await import('mongoose')).default;
     const result = await InventoryItem.aggregate([
-      { $match: { orgId: new (await import('mongoose')).default.Types.ObjectId(orgId), warehouseId: new (await import('mongoose')).default.Types.ObjectId(warehouseId) } },
+      { $match: { warehouseId: new mongoose.Types.ObjectId(warehouseId) } },
       { $group: { _id: null, totalStock: { $sum: '$currentStock' } } },
     ]);
     return result[0]?.totalStock || 0;
@@ -271,7 +267,7 @@ export class InventoryRepository {
   static async getWarehouseInventorySummary(warehouseId, orgId) {
     const mongoose = (await import('mongoose')).default;
     const result = await InventoryItem.aggregate([
-      { $match: { orgId: new mongoose.Types.ObjectId(orgId), warehouseId: new mongoose.Types.ObjectId(warehouseId) } },
+      { $match: { warehouseId: new mongoose.Types.ObjectId(warehouseId) } },
       {
         $group: {
           _id: null,
@@ -302,9 +298,7 @@ export class InventoryRepository {
 
   // Get items grouped by warehouse
   static async getItemsByWarehouse(orgId) {
-    const mongoose = (await import('mongoose')).default;
     return InventoryItem.aggregate([
-      { $match: { orgId: new mongoose.Types.ObjectId(orgId) } },
       {
         $group: {
           _id: '$warehouseId',

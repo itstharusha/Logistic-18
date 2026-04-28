@@ -8,16 +8,16 @@ export class AlertRepository {
         return alert.save();
     }
 
-    // Find alert by ID (scoped to org)
+    // Find alert by ID
     static async findById(alertId, orgId) {
-        return Alert.findOne({ _id: alertId, orgId })
+        return Alert.findById(alertId)
             .populate('assignedTo', 'name email role')
             .populate('resolvedBy', 'name email role');
     }
 
-    // Find all alerts for an organization with filters
+    // Find all alerts with filters
     static async findByOrgId(orgId, filters = {}, options = {}) {
-        const query = { orgId };
+        const query = {};
 
         if (filters.status) query.status = filters.status;
         if (filters.severity) query.severity = filters.severity;
@@ -42,9 +42,9 @@ export class AlertRepository {
         return mongoQuery.exec();
     }
 
-    // Count alerts by org
+    // Count alerts
     static async countByOrgId(orgId, filters = {}) {
-        const query = { orgId };
+        const query = {};
         if (filters.status) query.status = filters.status;
         if (filters.severity) query.severity = filters.severity;
         if (filters.entityType) query.entityType = filters.entityType;
@@ -58,7 +58,6 @@ export class AlertRepository {
     // Get alert stats for dashboard
     static async getAlertStats(orgId) {
         const stats = await Alert.aggregate([
-            { $match: { orgId: orgId } },
             {
                 $group: {
                     _id: null,
@@ -84,7 +83,7 @@ export class AlertRepository {
     // Get severity breakdown by entity type
     static async getSeverityBreakdown(orgId) {
         return Alert.aggregate([
-            { $match: { orgId: orgId, status: { $in: ['open', 'escalated'] } } },
+            { $match: { status: { $in: ['open', 'escalated'] } } },
             {
                 $group: {
                     _id: { entityType: '$entityType', severity: '$severity' },
@@ -97,8 +96,8 @@ export class AlertRepository {
 
     // Update alert status
     static async updateStatus(alertId, orgId, updateData) {
-        return Alert.findOneAndUpdate(
-            { _id: alertId, orgId },
+        return Alert.findByIdAndUpdate(
+            alertId,
             { ...updateData, updatedAt: new Date() },
             { new: true, runValidators: true }
         )
@@ -109,7 +108,6 @@ export class AlertRepository {
     // Check for existing active alert (cooldown check)
     static async findActiveDuplicate(orgId, entityType, entityId) {
         return Alert.findOne({
-            orgId,
             entityType,
             entityId,
             status: { $in: ['open', 'acknowledged', 'escalated'] },
@@ -134,7 +132,6 @@ export class AlertRepository {
     static async getRecentAlerts(orgId, limit = 10) {
         const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
         return Alert.find({
-            orgId,
             createdAt: { $gte: yesterday },
         })
             .populate('assignedTo', 'name email role')
@@ -144,7 +141,7 @@ export class AlertRepository {
 
     // Get alerts assigned to a specific user
     static async findByAssignedUser(orgId, userId, filters = {}) {
-        const query = { orgId, assignedTo: userId };
+        const query = { assignedTo: userId };
         if (filters.status) query.status = filters.status;
         if (filters.statuses && Array.isArray(filters.statuses)) {
             query.status = { $in: filters.statuses };
@@ -157,7 +154,7 @@ export class AlertRepository {
 
     // Get alert history (resolved alerts)
     static async getHistory(orgId, options = {}) {
-        const query = { orgId, status: 'resolved' };
+        const query = { status: 'resolved' };
         const mongoQuery = Alert.find(query)
             .populate('assignedTo', 'name email role')
             .populate('resolvedBy', 'name email role')
@@ -173,7 +170,7 @@ export class AlertRepository {
     static async getAlertTrend(orgId, days = 7) {
         const startDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
         return Alert.aggregate([
-            { $match: { orgId: orgId, createdAt: { $gte: startDate } } },
+            { $match: { createdAt: { $gte: startDate } } },
             {
                 $group: {
                     _id: {
@@ -189,6 +186,6 @@ export class AlertRepository {
 
     // Find user by role for auto-assign
     static async findUserByRole(orgId, role) {
-        return User.findOne({ orgId, role, isActive: true });
+        return User.findOne({ role, isActive: true });
     }
 }

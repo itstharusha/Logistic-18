@@ -1,8 +1,12 @@
+// Load environment variables FIRST (before any module reads process.env)
+import 'dotenv/config';
+
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
-import dotenv from 'dotenv';
+import rateLimit from 'express-rate-limit';
+import cron from 'node-cron';
 import { connectDB } from './config/database.js';
 import { requestLogger, errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 
@@ -12,6 +16,7 @@ import './models/index.js';
 // Import routes
 import authRoutes from './routes/authRoutes.js';
 import { ShipmentService } from './services/ShipmentService.js';
+import { AlertService } from './services/AlertService.js';
 import userRoutes from './routes/userRoutes.js';
 import supplierRoutes from './routes/supplierRoutes.js';
 import shipmentRoutes from './routes/shipmentRoutes.js';
@@ -19,10 +24,37 @@ import inventoryRoutes from './routes/inventoryRoutes.js';
 import alertRoutes from './routes/alertRoutes.js';
 import analyticsRoutes from './routes/analyticsRoutes.js';
 
-// Load environment variables
-dotenv.config();
-
 const app = express();
+
+// ==========================================
+// Rate Limiting (Audit Fix #1)
+// ==========================================
+
+// Global rate limiter: 100 requests per minute per IP
+const globalLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests, please try again later.' },
+});
+
+// Auth rate limiter: stricter limits for login/register to prevent brute force
+const authLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 5, // 5 requests per minute
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many authentication attempts, please try again later.' },
+});
+
+const registerLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 3, // 3 requests per minute
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many registration attempts, please try again later.' },
+});
 
 // Middleware
 app.use(helmet());
@@ -33,6 +65,9 @@ app.use(cors({
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 app.use(cookieParser());
+
+// Apply global rate limiter
+app.use(globalLimiter);
 
 // Request logger
 app.use(requestLogger);
@@ -50,7 +85,9 @@ app.get('/api/health', (req, res) => {
 // API Routes
 // ==========================================
 
-// Authentication endpoints (public)
+// Authentication endpoints (public — with stricter rate limiting)
+app.use('/api/auth/login', authLimiter);
+app.use('/api/auth/register', registerLimiter);
 app.use('/api/auth', authRoutes);
 
 // User management (requires auth)
@@ -94,6 +131,20 @@ const startServer = async () => {
 
     // Start shipment delay detection cron (every 15 min)
     ShipmentService.startPollingCron();
+
+    // Start alert escalation cron (every 5 min) — Audit Fix W5
+    cron.schedule('*/5 * * * *', async () => {
+      console.log('[AlertEscalation] Running SLA breach check...');
+      try {
+        const results = await AlertService.escalateOverdueAlerts();
+        if (results.length > 0) {
+          console.log(`[AlertEscalation] Escalated ${results.length} alerts.`);
+        }
+      } catch (err) {
+        console.error('[AlertEscalation] Escalation check failed:', err.message);
+      }
+    });
+    console.log('[AlertEscalation] SLA escalation cron registered (every 5 min).');
 
     // Start Express server
     const server = app.listen(PORT, () => {

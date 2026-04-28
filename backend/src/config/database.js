@@ -10,10 +10,8 @@
  */
 
 import mongoose from 'mongoose';
-import dotenv from 'dotenv';
 
-// Load environment variables from .env file
-dotenv.config();
+// Note: dotenv is loaded via side-effect import in app.js before this module runs
 
 /**
  * connectDB
@@ -29,6 +27,9 @@ const connectDB = async () => {
       useNewUrlParser: true,       // Use new URL parser (avoids deprecation warning)
       useUnifiedTopology: true,    // Use new server discovery engine
       serverSelectionTimeoutMS: 5000, // Fail fast if DB is unreachable (5 seconds)
+      maxPoolSize: 20,             // Audit Fix #17: Production connection pool
+      minPoolSize: 5,
+      socketTimeoutMS: 45000,
     });
 
     console.log('✓ MongoDB connected successfully');

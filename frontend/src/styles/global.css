@@ -10,16 +10,16 @@
   /* Colors from design guide */
   --brand-primary: #E85D2F;
   --brand-primary-dim: #C94D22;
-  --surface-deep: #0D0F0E;
-  --surface-dark: #141614;
-  --surface-mid: #1C1F1C;
-  --surface-card: #F2F4F0;
-  --surface-card-alt: #ECEEED;
-  --text-primary: #1A1C1A;
-  --text-secondary: #5A5E5A;
-  --text-tertiary: #9A9E9A;
-  --text-inverse: #F5F7F4;
-  --text-inverse-dim: #E0E4E0;
+  --surface-deep: #edf0ec;
+  --surface-dark: #ffffff;
+  --surface-mid: #f5f7f4;
+  --surface-card: #ffffff;
+  --surface-card-alt: #f8faf7;
+  --text-primary: #1a1c1a;
+  --text-secondary: #5a5e5a;
+  --text-tertiary: #6b706b;
+  --text-inverse: #ffffff;
+  --text-inverse-dim: #f2f4f0;
   /* Updated for WCAG AA 4.5:1 contrast */
   --border-light: #E2E5E0;
   --border-medium: #C8CCC5;

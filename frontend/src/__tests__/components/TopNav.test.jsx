@@ -5,6 +5,7 @@ import { Provider } from 'react-redux';
 import { configureStore } from '@reduxjs/toolkit';
 import TopNav from '../../components/TopNav.jsx';
 import alertsReducer from '../../redux/alertsSlice.js';
+import { ROLES } from '../../config/rbac.constants.js';
 
 // Mock the useTheme hook
 vi.mock('../../context/ThemeContext.jsx', () => ({
@@ -21,7 +22,7 @@ describe('TopNav Component', () => {
     store = configureStore({
       reducer: {
         alerts: alertsReducer,
-        auth: (state = { user: { name: 'Test User', role: 'ORG_ADMIN', email: 'test@example.com' } }) => state
+        auth: (state = { user: { name: 'Test User', role: ROLES.ORG_ADMIN, email: 'test@example.com' } }) => state
       }
     });
   });

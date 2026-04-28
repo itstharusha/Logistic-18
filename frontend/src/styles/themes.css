@@ -19,8 +19,8 @@
   --text-primary:    #e8ece8;
   --text-secondary:  #a8b0a8;
   --text-tertiary:   #a8b0a8;
-  --text-inverse:    #e8ece8;
-  --text-inverse-dim: #a8b0a8;
+  --text-inverse:    #0a0c0a;
+  --text-inverse-dim: #3a3e3a;
 
   /* Borders — subtle white glows */
   --border-light:    rgba(255, 255, 255, 0.10);
@@ -263,8 +263,8 @@
   --text-primary:    #1a1c1a;
   --text-secondary:  #5a5e5a;
   --text-tertiary:   #6b706b;
-  --text-inverse:    #1a1c1a;
-  --text-inverse-dim: #5a5e5a;
+  --text-inverse:    #ffffff;
+  --text-inverse-dim: #f5f7f4;
 
   /* Borders — soft gray */
   --border-light:    #dde0da;

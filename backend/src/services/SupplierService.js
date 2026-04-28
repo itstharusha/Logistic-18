@@ -3,6 +3,8 @@ import { ShipmentRepository } from '../repositories/ShipmentRepository.js';
 import { UserRepository } from '../repositories/UserRepository.js';
 import AuditLog from '../models/AuditLog.js';
 import { NotFoundError, ValidationError } from '../utils/errors.js';
+import { sanitizeForML, hasFiniteNumericValues } from '../middleware/mlValidation.js';
+import { generateFeatureVersion, getCurrentFeatureVersion, createPredictionMetadata } from '../utils/featureVersioning.js';
 import axios from 'axios';
 
 const ML_SERVICE_URL = process.env.ML_SERVICE_URL || 'http://localhost:8000';
@@ -167,20 +169,53 @@ export class SupplierService {
   /**
    * Predict supplier risk score using ML service
    * PHASE 1: Now enriches supplier data before prediction
+   * PHASE 3: Validates all required ML features before sending to ML service
+   * PHASE 4: Tracks feature version for reproducibility
    * 
    * @param {Object} supplier - Raw supplier data from database
    * @param {String} supplierId - Supplier's MongoDB _id (optional, for enrichment)
-   * @returns {Promise<Object>} {riskScore, riskTier, recommendations, shapValues}
+   * @returns {Promise<Object>} {riskScore, riskTier, recommendations, shapValues, featureVersion}
    */
   static async predictRiskScore(supplier, supplierId = null) {
     try {
       // PHASE 1: Enrich supplier with missing ML features
       const enrichedSupplier = await this.enrichSupplierData(supplier, supplierId);
       
+      // PHASE 3: Validate ML features before sending to ML service
+      const requiredMLFeatures = [
+        'onTimeDeliveryRate', 'financialScore', 'defectRate', 'disputeFrequency',
+        'geopoliticalRiskFlag', 'totalShipments', 'averageDelayDays',
+        'daysSinceLastShip', 'activeShipmentCount', 'categoryRisk'
+      ];
+      
+      // Check all required features are present
+      const missingFeatures = requiredMLFeatures.filter(f => enrichedSupplier[f] === undefined || enrichedSupplier[f] === null);
+      if (missingFeatures.length > 0) {
+        console.warn(`[predictRiskScore] Missing ML features: ${missingFeatures.join(', ')}. Using fallback.`);
+        return this.computeRiskScore(supplier);
+      }
+
+      // Validate all values are finite numbers
+      if (!hasFiniteNumericValues(enrichedSupplier)) {
+        console.warn(`[predictRiskScore] Non-finite values detected. Sanitizing for ML.`);
+      }
+      
+      // Sanitize to ensure no NaN/Infinity values slip through
+      const sanitizedSupplier = sanitizeForML(enrichedSupplier);
+      
+      // PHASE 4: Create feature version metadata
+      const featureVersion = getCurrentFeatureVersion('SUPPLIER');
+      const predictionMetadata = createPredictionMetadata('SUPPLIER', sanitizedSupplier, featureVersion);
+      console.log(`[predictRiskScore] Prediction metadata:`, {
+        featureVersion: predictionMetadata.featureVersion,
+        featureCount: predictionMetadata.snapshot.featureCount,
+        hash: predictionMetadata.snapshot.hash,
+      });
+      
       console.log(`[predictRiskScore] Calling ML service at ${ML_SERVICE_URL}/predict/supplier`);
       const startTime = Date.now();
       
-      const response = await axios.post(`${ML_SERVICE_URL}/predict/supplier`, enrichedSupplier, {
+      const response = await axios.post(`${ML_SERVICE_URL}/predict/supplier`, sanitizedSupplier, {
         timeout: 5000 // 5 second timeout per NFR
       });
       
@@ -191,7 +226,8 @@ export class SupplierService {
         riskScore: response.data.riskScore,
         riskTier: response.data.riskTier,
         recommendations: response.data.recommendations || [],
-        shapValues: response.data.shapValues || []
+        shapValues: response.data.shapValues || [],
+        featureVersion: predictionMetadata.featureVersion,
       };
     } catch (error) {
       console.warn(`[predictRiskScore] ML Service failed: ${error.message || error.code || error}. Using rule-based fallback scoring.`);
@@ -210,7 +246,8 @@ export class SupplierService {
   }
 
   static async createSupplier(orgId, data, userId) {
-    const { riskScore, riskTier, recommendations, shapValues } = await this.predictRiskScore(data, null);
+    // PHASE 2: Mark new suppliers for tracking default feature values
+    const { riskScore, riskTier, recommendations, shapValues, featureVersion } = await this.predictRiskScore(data, null);
     const now = new Date();
 
     const supplier = await SupplierRepository.create({
@@ -220,8 +257,10 @@ export class SupplierService {
       riskTier,
       recommendations,
       shapValues,
+      modelVersion: featureVersion || '1.0',
       lastScoredAt: now,
       riskHistory: [{ riskScore, riskTier, scoredAt: now }],
+      _isNewSupplier: true,  // Flag new suppliers - will be cleared on first update
     });
 
     await AuditLog.create({
@@ -243,16 +282,25 @@ export class SupplierService {
     // Merge existing with incoming data for score recomputation
     const merged = { ...existing.toObject(), ...data };
     // PHASE 1: Pass supplierId to enrichSupplierData
-    const { riskScore, riskTier, recommendations, shapValues } = await this.predictRiskScore(merged, supplierId);
+    const { riskScore, riskTier, recommendations, shapValues, featureVersion } = await this.predictRiskScore(merged, supplierId);
 
-    const updated = await SupplierRepository.update(orgId, supplierId, {
+    const updateData = {
       ...data,
       riskScore,
       riskTier,
       recommendations,
       shapValues,
+      modelVersion: featureVersion || '1.0',
       lastScoredAt: new Date(),
-    });
+    };
+
+    // PHASE 2: Clear _isNewSupplier flag on first update (supplier now has real data)
+    if (existing._isNewSupplier) {
+      updateData._isNewSupplier = false;
+      console.log(`[updateSupplier] Cleared _isNewSupplier flag for supplier ${supplierId} - now established`);
+    }
+
+    const updated = await SupplierRepository.update(orgId, supplierId, updateData);
 
     // Append risk snapshot when score changes
     if (riskScore !== existing.riskScore) {

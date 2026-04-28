@@ -2,7 +2,7 @@ import Supplier from '../models/Supplier.js';
 
 export class SupplierRepository {
   static async findAll(orgId, { search, status, tier, skip = 0, limit = 50 } = {}) {
-    const query = { orgId };
+    const query = {};
 
     if (status && status !== 'all') query.status = status;
     if (tier && tier !== 'all') query.riskTier = tier;
@@ -23,7 +23,7 @@ export class SupplierRepository {
   }
 
   static async findById(orgId, supplierId) {
-    return Supplier.findOne({ _id: supplierId, orgId });
+    return Supplier.findById(supplierId);
   }
 
   static async create(data) {
@@ -32,28 +32,28 @@ export class SupplierRepository {
   }
 
   static async update(orgId, supplierId, data) {
-    return Supplier.findOneAndUpdate(
-      { _id: supplierId, orgId },
+    return Supplier.findByIdAndUpdate(
+      supplierId,
       { $set: { ...data, updatedAt: new Date() } },
       { new: true, runValidators: true }
     );
   }
 
   static async findManyByIds(orgId, ids) {
-    return Supplier.find({ _id: { $in: ids }, orgId });
+    return Supplier.find({ _id: { $in: ids } });
   }
 
   static async appendRiskSnapshot(orgId, supplierId, snapshot) {
-    return Supplier.findOneAndUpdate(
-      { _id: supplierId, orgId },
+    return Supplier.findByIdAndUpdate(
+      supplierId,
       { $push: { riskHistory: snapshot } },
       { new: true }
     );
   }
 
   static async saveMetricsAdjustment(orgId, supplierId, { metricUpdates, adjustmentEntry }) {
-    return Supplier.findOneAndUpdate(
-      { _id: supplierId, orgId },
+    return Supplier.findByIdAndUpdate(
+      supplierId,
       {
         $set: { ...metricUpdates, updatedAt: new Date() },
         $push: { metricsAdjustmentHistory: adjustmentEntry },
@@ -63,8 +63,8 @@ export class SupplierRepository {
   }
 
   static async saveOverride(orgId, supplierId, { riskScore, riskTier, overrideEntry, historyEntry }) {
-    return Supplier.findOneAndUpdate(
-      { _id: supplierId, orgId },
+    return Supplier.findByIdAndUpdate(
+      supplierId,
       {
         $set: { riskScore, riskTier, lastScoredAt: new Date(), updatedAt: new Date() },
         $push: {

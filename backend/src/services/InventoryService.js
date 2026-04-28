@@ -2,8 +2,10 @@ import { InventoryRepository } from '../repositories/InventoryRepository.js';
 import { WarehouseRepository } from '../repositories/WarehouseRepository.js';
 import { WarehouseTransferRepository } from '../repositories/WarehouseTransferRepository.js';
 import { WarehouseService } from './WarehouseService.js';
+import { AlertService } from './AlertService.js';
 import AuditLog from '../models/AuditLog.js';
-import Alert from '../models/Alert.js';
+import { sanitizeForML, hasFiniteNumericValues } from '../middleware/mlValidation.js';
+import { generateFeatureVersion, getCurrentFeatureVersion, createPredictionMetadata } from '../utils/featureVersioning.js';
 import axios from 'axios';
 
 const ML_SERVICE_URL = process.env.ML_SERVICE_URL || 'http://localhost:8000';
@@ -24,7 +26,11 @@ export class InventoryService {
     try {
       const riskData = await this.predictRisk(item);
       if (riskData) {
-        await InventoryRepository.updateRiskScore(item._id, item.orgId, riskData);
+        const updateData = {
+          ...riskData,
+          modelVersion: riskData.featureVersion || '1.0',
+        };
+        await InventoryRepository.updateRiskScore(item._id, item.orgId, updateData);
         item.riskScore = riskData.riskScore;
         item.riskTier = riskData.riskTier;
         item.riskExplanation = riskData.riskExplanation;
@@ -109,7 +115,11 @@ export class InventoryService {
     try {
       const riskData = await this.predictRisk(item);
       if (riskData) {
-        await InventoryRepository.updateRiskScore(item._id, item.orgId, riskData);
+        const updateRiskData = {
+          ...riskData,
+          modelVersion: riskData.featureVersion || '1.0',
+        };
+        await InventoryRepository.updateRiskScore(item._id, item.orgId, updateRiskData);
         item.riskScore = riskData.riskScore;
         item.riskTier = riskData.riskTier;
         item.riskExplanation = riskData.riskExplanation;
@@ -375,7 +385,38 @@ export class InventoryService {
         isCriticalItem: item.isCriticalItem ? 1 : 0,
       };
 
-      const response = await axios.post(`${ML_SERVICE_URL}/predict/inventory`, features, {
+      // PHASE 3: Validate ML features before sending to ML service
+      const requiredMLFeatures = [
+        'currentStock', 'averageDailyDemand', 'leadTimeDays', 'demandVariance',
+        'supplierRiskScore', 'safetyStock', 'reorderPoint', 'incomingStockDays',
+        'pendingOrderQty', 'isCriticalItem'
+      ];
+      
+      // Check all required features are present
+      const missingFeatures = requiredMLFeatures.filter(f => features[f] === undefined || features[f] === null);
+      if (missingFeatures.length > 0) {
+        console.warn(`[predictRisk] Missing ML features: ${missingFeatures.join(', ')}. Using fallback.`);
+        return this.calculateLocalRiskScore(item);
+      }
+
+      // Validate all values are finite numbers
+      if (!hasFiniteNumericValues(features)) {
+        console.warn(`[predictRisk] Non-finite values detected. Sanitizing for ML.`);
+      }
+      
+      // Sanitize to ensure no NaN/Infinity values slip through
+      const sanitizedFeatures = sanitizeForML(features);
+
+      // PHASE 4: Create feature version metadata
+      const featureVersion = getCurrentFeatureVersion('INVENTORY');
+      const predictionMetadata = createPredictionMetadata('INVENTORY', sanitizedFeatures, featureVersion);
+      console.log(`[predictRisk] Prediction metadata:`, {
+        featureVersion: predictionMetadata.featureVersion,
+        featureCount: predictionMetadata.snapshot.featureCount,
+        hash: predictionMetadata.snapshot.hash,
+      });
+
+      const response = await axios.post(`${ML_SERVICE_URL}/predict/inventory`, sanitizedFeatures, {
         timeout: 5000,
       });
 
@@ -385,6 +426,7 @@ export class InventoryService {
           riskTier: response.data.riskTier || 'low',
           riskExplanation: response.data.explanation || '',
           shapValues: response.data.shapValues || [],
+          featureVersion: predictionMetadata.featureVersion,
         };
       }
       return null;
@@ -448,59 +490,54 @@ export class InventoryService {
     };
   }
 
-  // Create risk alert
+  // Create risk alert — routed through AlertService for cooldown/deduplication (Audit Fix #6)
   static async createRiskAlert(item, riskData) {
-    // Check for existing open alert
-    const existingAlert = await Alert.findOne({
-      orgId: item.orgId,
-      entityType: 'inventory',
-      entityId: item._id,
-      status: { $in: ['open', 'acknowledged'] },
-    });
+    try {
+      const result = await AlertService.createAlert({
+        orgId: item.orgId,
+        entityType: 'inventory',
+        entityId: item._id,
+        severity: riskData.riskTier,
+        title: `High Risk Inventory: ${item.sku}`,
+        description: `${item.productName} has a risk score of ${riskData.riskScore}. ${riskData.riskExplanation}`,
+        mitigationRecommendation: this.generateMitigationRecommendation(item, riskData),
+      }, null);
 
-    if (existingAlert) return existingAlert;
-
-    const alert = await Alert.create({
-      orgId: item.orgId,
-      entityType: 'inventory',
-      entityId: item._id,
-      severity: riskData.riskTier,
-      title: `High Risk Inventory: ${item.sku}`,
-      description: `${item.productName} has a risk score of ${riskData.riskScore}. ${riskData.riskExplanation}`,
-      mitigationRecommendation: this.generateMitigationRecommendation(item, riskData),
-      status: 'open',
-    });
-
-    return alert;
+      if (result.suppressed) {
+        console.log(`[InventoryService] Risk alert suppressed — active duplicate exists for ${item.sku}`);
+        return result.existingAlert;
+      }
+      return result.alert;
+    } catch (err) {
+      console.error('[InventoryService] Failed to create risk alert:', err.message);
+      return null;
+    }
   }
 
-  // Create reorder alert
+  // Create reorder alert — routed through AlertService for cooldown/deduplication (Audit Fix #6)
   static async createReorderAlert(item) {
-    // Check for existing open reorder alert
-    const existingAlert = await Alert.findOne({
-      orgId: item.orgId,
-      entityType: 'inventory',
-      entityId: item._id,
-      title: { $regex: /Reorder Required/i },
-      status: { $in: ['open', 'acknowledged'] },
-    });
-
-    if (existingAlert) return existingAlert;
-
     const severity = item.isCriticalItem ? 'high' : 'medium';
 
-    const alert = await Alert.create({
-      orgId: item.orgId,
-      entityType: 'inventory',
-      entityId: item._id,
-      severity,
-      title: `Reorder Required: ${item.sku}`,
-      description: `${item.productName} has fallen below reorder point. Current stock: ${item.currentStock}, Reorder point: ${item.reorderPoint}`,
-      mitigationRecommendation: `Place order for approximately ${Math.max(0, item.reorderPoint - item.currentStock + item.safetyStock)} units to restore optimal stock levels.`,
-      status: 'open',
-    });
+    try {
+      const result = await AlertService.createAlert({
+        orgId: item.orgId,
+        entityType: 'inventory',
+        entityId: item._id,
+        severity,
+        title: `Reorder Required: ${item.sku}`,
+        description: `${item.productName} has fallen below reorder point. Current stock: ${item.currentStock}, Reorder point: ${item.reorderPoint}`,
+        mitigationRecommendation: `Place order for approximately ${Math.max(0, item.reorderPoint - item.currentStock + item.safetyStock)} units to restore optimal stock levels.`,
+      }, null);
 
-    return alert;
+      if (result.suppressed) {
+        console.log(`[InventoryService] Reorder alert suppressed — active duplicate exists for ${item.sku}`);
+        return result.existingAlert;
+      }
+      return result.alert;
+    } catch (err) {
+      console.error('[InventoryService] Failed to create reorder alert:', err.message);
+      return null;
+    }
   }
 
   // Generate mitigation recommendation

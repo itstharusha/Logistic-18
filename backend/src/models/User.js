@@ -15,6 +15,7 @@
 
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
+import { VALID_ROLES } from '../config/rbac.constants.js';
 
 const userSchema = new mongoose.Schema(
   {
@@ -54,7 +55,7 @@ const userSchema = new mongoose.Schema(
     // RBAC role — controls what the user can see and do
     role: {
       type: String,
-      enum: ['ORG_ADMIN', 'RISK_ANALYST', 'LOGISTICS_OPERATOR', 'INVENTORY_MANAGER', 'VIEWER'],
+      enum: VALID_ROLES,
       default: 'VIEWER',
       required: true,
     },

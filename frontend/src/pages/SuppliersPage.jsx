@@ -11,6 +11,7 @@ import {
   updateSupplierStatus, compareSuppliers, clearMessage,
   clearError, clearComparisonData
 } from '../redux/suppliersSlice.js';
+import { ROLES } from '../config/rbac.constants.js';
 import Layout from '../components/Layout.jsx';
 import '../styles/pages.css';
 
@@ -181,8 +182,8 @@ export default function SuppliersPage() {
     ? Math.round(suppliers.reduce((sum, s) => sum + (s.riskScore || 0), 0) / suppliers.length)
     : 0;
 
-  const canManage = user?.role === 'ORG_ADMIN';
-  const canOverride = user?.role === 'ORG_ADMIN' || user?.role === 'RISK_ANALYST';
+  const canManage = user?.role === ROLES.ORG_ADMIN;
+  const canOverride = user?.role === ROLES.ORG_ADMIN || user?.role === ROLES.RISK_ANALYST;
 
   return (
     <Layout>

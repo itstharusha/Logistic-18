@@ -1,5 +1,6 @@
 import { SupplierService } from '../services/SupplierService.js';
 import { asyncHandler } from '../middleware/errorHandler.js';
+import { coerceSupplierData, logCoercionWarnings } from '../utils/dataCoercion.js';
 
 export class SupplierController {
   // GET /api/suppliers
@@ -19,9 +20,15 @@ export class SupplierController {
 
   // POST /api/suppliers
   static createSupplier = asyncHandler(async (req, res) => {
+    // Coerce and validate incoming data
+    const coercion = coerceSupplierData(req.validatedBody || req.body);
+    if (!coercion.isValid) {
+      logCoercionWarnings(coercion.errors, 'supplier', 'create');
+    }
+
     const supplier = await SupplierService.createSupplier(
       req.user.orgId,
-      req.validatedBody || req.body,
+      coercion.data,
       req.user.userId
     );
 
@@ -36,10 +43,16 @@ export class SupplierController {
 
   // PUT /api/suppliers/:id
   static updateSupplier = asyncHandler(async (req, res) => {
+    // Coerce and validate incoming data
+    const coercion = coerceSupplierData(req.validatedBody || req.body);
+    if (!coercion.isValid) {
+      logCoercionWarnings(coercion.errors, 'supplier', req.params.id);
+    }
+
     const supplier = await SupplierService.updateSupplier(
       req.user.orgId,
       req.params.id,
-      req.validatedBody || req.body,
+      coercion.data,
       req.user.userId
     );
 
@@ -82,11 +95,20 @@ export class SupplierController {
       reason, source, shipmentId,
     } = req.validatedBody || req.body;
 
+    // Coerce numeric metrics
+    const coercion = coerceSupplierData({
+      onTimeDeliveryRate, defectRate, disputeFrequency,
+      avgDelayDays, financialScore, yearsInBusiness, contractValue,
+    });
+    if (!coercion.isValid) {
+      logCoercionWarnings(coercion.errors, 'supplier', req.params.id);
+    }
+
     const supplier = await SupplierService.updateMetrics(
       req.user.orgId,
       req.params.id,
       req.user.userId,
-      { onTimeDeliveryRate, defectRate, disputeFrequency, avgDelayDays, financialScore, yearsInBusiness, contractValue, reason, source, shipmentId }
+      { ...coercion.data, reason, source, shipmentId }
     );
 
     res.json({ message: 'Supplier metrics updated successfully', supplier });

@@ -50,8 +50,18 @@ import Layout from '../../components/Layout.jsx';
 import KpiCard from '../../components/KPICard.jsx';
 import '../../styles/analyticsDashboard.css';
 
+import { ROLES } from '../../config/rbac.constants.js';
+
 // ─── RBAC ───────────────────────────────────────────────────────────────────
-const ALLOWED_ROLES = ['ORG_ADMIN', 'RISK_ANALYST', 'VIEWER'];
+const ALLOWED_ROLES = [ROLES.ORG_ADMIN, ROLES.RISK_ANALYST, ROLES.VIEWER];
+
+// ─── SEVERITY COLOR MAPPING ──────────────────────────────────────────────────
+const SEVERITY_COLORS = {
+  Critical: '#ef4444',
+  High: '#f97316',
+  Medium: '#eab308',
+  Low: '#22c55e'
+};
 
 function getStoredUserRole() {
     try {

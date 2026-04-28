@@ -88,6 +88,9 @@ def preprocess_shipment_data(df: pd.DataFrame, is_training=True):
     df_clean = df.copy()
     
     # Encode weatherLevel (Low=0, Medium=1, High=2)
+    # NOTE: Backend (ShipmentService.js) already encodes weatherLevel to numeric before sending to ML.
+    # This check handles legacy data or external inputs where weatherLevel might still be a string.
+    # If weatherLevel is already numeric (normal case), this block is skipped and data passes through.
     if 'weatherLevel' in df_clean.columns and df_clean['weatherLevel'].dtype == 'object':
         weather_map = {'low': 0, 'medium': 1, 'high': 2}
         df_clean['weatherLevel'] = df_clean['weatherLevel'].str.lower().map(weather_map).fillna(0)

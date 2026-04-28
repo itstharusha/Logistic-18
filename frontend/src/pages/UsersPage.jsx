@@ -5,7 +5,7 @@ import {
   Search, Mail, ShieldCheck, MoreVertical, Info,
   Edit2, Trash2, Power, UserCircle, Activity, Download, Grid, List, CheckSquare, Lock
 } from 'lucide-react';
-import { listUsers, assignRole, deactivateUser, activateUser, inviteUser, createUser, updateUser, bulkAssignRole, bulkDeactivateUsers, bulkActivateUsers } from '../redux/usersSlice.js';
+import { listUsers, assignRole, deactivateUser, activateUser, createUser, updateUser, bulkAssignRole, bulkDeactivateUsers, bulkActivateUsers } from '../redux/usersSlice.js';
 import Layout from '../components/Layout.jsx';
 import UserAvatar from '../components/UsersPage/UserAvatar.jsx';
 import UserActivitySidebar from '../components/UsersPage/UserActivitySidebar.jsx';
@@ -13,25 +13,15 @@ import RolePermissionMatrix from '../components/UsersPage/RolePermissionMatrix.j
 import UserProfileDrawer from '../components/UsersPage/UserProfileDrawer.jsx';
 import { SkeletonGrid } from '../components/SkeletonCard.jsx';
 import { getStatusDuration, getStatusColor } from '../utils/userFormatters.js';
+import { ROLES, getRoleLabel, getRoleColor } from '../config/rbac.constants.js';
 import '../styles/pages.css';
-
-// Added Role Colors
-const roleColors = {
-  ORG_ADMIN: { bg: '#fee2e2', text: '#ef4444', label: 'Admin', icon: '🔴' },
-  RISK_ANALYST: { bg: '#ecfdf5', text: '#10b981', label: 'Analyst', icon: '🟢' },
-  LOGISTICS_OPERATOR: { bg: '#e0f2fe', text: '#0ea5e9', label: 'Operator', icon: '🔵' },
-  INVENTORY_MANAGER: { bg: '#fef3c7', text: '#f59e0b', label: 'Manager', icon: '🟡' },
-  VIEWER: { bg: '#f3f4f6', text: '#6b7280', label: 'Viewer', icon: '⚪' }
-};
 
 export default function UsersPage() {
   const dispatch = useDispatch();
   const { users, loading, error } = useSelector((state) => state.users);
   const user = useSelector((state) => state.auth.user);
-  const [showInviteForm, setShowInviteForm] = useState(false);
-  const [inviteData, setInviteData] = useState({ name: '', email: '', role: 'VIEWER' });
   const [showCreateForm, setShowCreateForm] = useState(false);
-  const [createData, setCreateData] = useState({ name: '', email: '', password: '', role: 'VIEWER' });
+  const [createData, setCreateData] = useState({ name: '', email: '', password: '', role: ROLES.VIEWER });
 
   const [editingUserId, setEditingUserId] = useState(null);
   const [editData, setEditData] = useState({ name: '', email: '', role: '' });
@@ -48,21 +38,6 @@ export default function UsersPage() {
     dispatch(listUsers({ limit: 20, skip: 0 }));
   }, [dispatch]);
 
-  const handleInviteChange = (e) => {
-    setInviteData({
-      ...inviteData,
-      [e.target.name]: e.target.value,
-    });
-  };
-
-  const handleInviteSubmit = async (e) => {
-    e.preventDefault();
-    await dispatch(inviteUser(inviteData));
-    setInviteData({ name: '', email: '', role: 'VIEWER' });
-    setShowInviteForm(false);
-    dispatch(listUsers({ limit: 20, skip: 0 }));
-  };
-
   const handleCreateChange = (e) => {
     setCreateData({
       ...createData,
@@ -78,19 +53,21 @@ export default function UsersPage() {
       return;
     }
     
-    if (user.role !== 'ORG_ADMIN') {
+    if (user.role !== ROLES.ORG_ADMIN) {
       alert('Only organization admins can create users');
       return;
     }
     
-    if (createData.password.length < 6) {
-      alert('Password must be at least 6 characters');
+    // Validate password: min 8 chars, 1 uppercase, 1 lowercase, 1 digit
+    const passwordRegex = /^(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9]).{8,}$/;
+    if (!passwordRegex.test(createData.password)) {
+      alert('Password must be at least 8 characters with 1 uppercase letter, 1 lowercase letter, and 1 number');
       return;
     }
     try {
       const result = await dispatch(createUser(createData)).unwrap();
       alert('User created successfully!');
-      setCreateData({ name: '', email: '', password: '', role: 'VIEWER' });
+      setCreateData({ name: '', email: '', password: '', role: ROLES.VIEWER });
       setShowCreateForm(false);
       dispatch(listUsers({ limit: 20, skip: 0 }));
     } catch (err) {
@@ -194,7 +171,7 @@ export default function UsersPage() {
   };
 
   const activeUsers = users.filter(u => u.isActive).length;
-  const adminUsers = users.filter(u => u.role === 'ORG_ADMIN').length;
+  const adminUsers = users.filter(u => u.role === ROLES.ORG_ADMIN).length;
 
   const filteredUsers = users.filter(u =>
     u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -217,17 +194,11 @@ export default function UsersPage() {
             <Download size={18} />
             <span>Export CSV</span>
           </button>
-          {user?.role === 'ORG_ADMIN' && (
-            <>
-              <button onClick={() => setShowCreateForm(!showCreateForm)} className="action-btn-premium">
-                <UserPlus size={18} />
-                <span>Create User</span>
-              </button>
-              <button onClick={() => setShowInviteForm(!showInviteForm)} className="action-btn-premium">
-                <Mail size={18} />
-                <span>Invite User</span>
-              </button>
-            </>
+          {user?.role === ROLES.ORG_ADMIN && (
+            <button onClick={() => setShowCreateForm(!showCreateForm)} className="action-btn-premium">
+              <UserPlus size={18} />
+              <span>Create User</span>
+            </button>
           )}
         </div>
       </div>
@@ -268,70 +239,6 @@ export default function UsersPage() {
         </div>
       </div>
 
-      {showInviteForm && (
-        <div className="glass-panel anim-card glass-panel-margin">
-          <form onSubmit={handleInviteSubmit} className="invite-form-premium">
-            <div className="form-header">
-              <UserPlus size={20} />
-              <h3>Invite New Team Member</h3>
-            </div>
-            <div className="form-grid">
-              <div className="form-group-premium">
-                <label>Full Name</label>
-                <div className="input-wrapper">
-                  <UserCircle size={18} className="input-icon" />
-                  <input
-                    type="text"
-                    name="name"
-                    placeholder="Enter full name"
-                    value={inviteData.name}
-                    onChange={handleInviteChange}
-                    required
-                  />
-                </div>
-              </div>
-              <div className="form-group-premium">
-                <label>Email Address</label>
-                <div className="input-wrapper">
-                  <Mail size={18} className="input-icon" />
-                  <input
-                    type="email"
-                    name="email"
-                    placeholder="name@organization.com"
-                    value={inviteData.email}
-                    onChange={handleInviteChange}
-                    required
-                  />
-                </div>
-              </div>
-              <div className="form-group-premium">
-                <label>System Role</label>
-                <div className="input-wrapper">
-                  <ShieldCheck size={18} className="input-icon" />
-                  <select name="role" value={inviteData.role} onChange={handleInviteChange}>
-                    <option value="VIEWER">Viewer (Read Only)</option>
-                    <option value="LOGISTICS_OPERATOR">Logistics Operator</option>
-                    <option value="INVENTORY_MANAGER">Inventory Manager</option>
-                    <option value="RISK_ANALYST">Risk Analyst</option>
-                    <option value="ORG_ADMIN">Organization Admin</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-            <div className="form-actions-premium">
-              <button type="submit" className="btn-primary-premium">Send Invitation</button>
-              <button
-                type="button"
-                onClick={() => setShowInviteForm(false)}
-                className="btn-ghost"
-              >
-                Cancel
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
-
       {showCreateForm && (
         <div className="glass-panel anim-card glass-panel-margin">
           <form onSubmit={handleCreateSubmit} className="invite-form-premium">
@@ -369,13 +276,13 @@ export default function UsersPage() {
                 </div>
               </div>
               <div className="form-group-premium">
-                <label>Password (min 6 characters)</label>
+                <label>Password (min 8 chars: 1 uppercase, 1 lowercase, 1 number)</label>
                 <div className="input-wrapper">
                   <Lock size={18} className="input-icon" />
                   <input
                     type="password"
                     name="password"
-                    placeholder="Set account password"
+                    placeholder="e.g., SecurePass123"
                     value={createData.password}
                     onChange={handleCreateChange}
                     required
@@ -387,11 +294,11 @@ export default function UsersPage() {
                 <div className="input-wrapper">
                   <ShieldCheck size={18} className="input-icon" />
                   <select name="role" value={createData.role} onChange={handleCreateChange}>
-                    <option value="VIEWER">Viewer (Read Only)</option>
-                    <option value="LOGISTICS_OPERATOR">Logistics Operator</option>
-                    <option value="INVENTORY_MANAGER">Inventory Manager</option>
-                    <option value="RISK_ANALYST">Risk Analyst</option>
-                    <option value="ORG_ADMIN">Organization Admin</option>
+                    <option value={ROLES.VIEWER}>Viewer (Read Only)</option>
+                    <option value={ROLES.LOGISTICS_OPERATOR}>Logistics Operator</option>
+                    <option value={ROLES.INVENTORY_MANAGER}>Inventory Manager</option>
+                    <option value={ROLES.RISK_ANALYST}>Risk Analyst</option>
+                    <option value={ROLES.ORG_ADMIN}>Organization Admin</option>
                   </select>
                 </div>
               </div>
@@ -449,11 +356,11 @@ export default function UsersPage() {
                 <div className="input-wrapper">
                   <ShieldCheck size={18} className="input-icon" />
                   <select name="role" value={editData.role} onChange={handleEditChange}>
-                    <option value="VIEWER">Viewer</option>
-                    <option value="LOGISTICS_OPERATOR">Logistics Operator</option>
-                    <option value="INVENTORY_MANAGER">Inventory Manager</option>
-                    <option value="RISK_ANALYST">Risk Analyst</option>
-                    <option value="ORG_ADMIN">Organization Admin</option>
+                    <option value={ROLES.VIEWER}>Viewer</option>
+                    <option value={ROLES.LOGISTICS_OPERATOR}>Logistics Operator</option>
+                    <option value={ROLES.INVENTORY_MANAGER}>Inventory Manager</option>
+                    <option value={ROLES.RISK_ANALYST}>Risk Analyst</option>
+                    <option value={ROLES.ORG_ADMIN}>Organization Admin</option>
                   </select>
                 </div>
               </div>
@@ -478,8 +385,8 @@ export default function UsersPage() {
       {selectedUsers.length > 0 && (
         <div className="bulk-actions-bar">
           <span className="bulk-actions-text">{selectedUsers.length} user{selectedUsers.length !== 1 ? 's' : ''} selected</span>
-          <button onClick={() => handleBulkRoleChange('ORG_ADMIN')} className="btn-secondary-small bulk-action-admin">Assign Admin</button>
-          <button onClick={() => handleBulkRoleChange('RISK_ANALYST')} className="btn-secondary-small bulk-action-analyst">Assign Analyst</button>
+          <button onClick={() => handleBulkRoleChange(ROLES.ORG_ADMIN)} className="btn-secondary-small bulk-action-admin">Assign Admin</button>
+          <button onClick={() => handleBulkRoleChange(ROLES.RISK_ANALYST)} className="btn-secondary-small bulk-action-analyst">Assign Analyst</button>
           <button onClick={handleBulkActivate} className="btn-secondary-small bulk-action-activate">Activate</button>
           <button onClick={handleBulkDeactivate} className="btn-secondary-small bulk-action-deactivate">Deactivate</button>
           <button onClick={() => setSelectedUsers([])} className="btn-secondary-small">Clear</button>
@@ -573,7 +480,7 @@ export default function UsersPage() {
                           </span>
                         </td>
                         <td>
-                          {user?.role === 'ORG_ADMIN' && (
+                          {user?.role === ROLES.ORG_ADMIN && (
                             <div className="row-actions">
                               <button
                                 onClick={() => handleEditClick(u)}
@@ -661,7 +568,7 @@ export default function UsersPage() {
             <Users size={48} className="empty-icon-lucide" />
             <h3>No users discovered</h3>
             <p>Your organization directory is currently empty. Start by inviting team members.</p>
-            {user?.role === 'ORG_ADMIN' && (
+            {user?.role === ROLES.ORG_ADMIN && (
               <button onClick={() => setShowInviteForm(true)} className="btn-primary-premium">
                 <UserPlus size={18} />
                 <span>Invite First User</span>

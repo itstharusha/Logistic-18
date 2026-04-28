@@ -19,7 +19,7 @@ export const userAPI = {
   deactivateUser: (userId) => apiClient.post(`/users/${userId}/deactivate`),
   activateUser: (userId) => apiClient.post(`/users/${userId}/activate`),
   createUser: (data) => apiClient.post('/users/create', data),
-  inviteUser: (data) => apiClient.post('/users/invite', data),
+
   getActivityLog: (userId, params) => apiClient.get(`/users/${userId}/activity-log`, { params }),
   checkEmailAvailability: (email) => apiClient.get(`/users/check-email/${email}`),
 };

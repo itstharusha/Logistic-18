@@ -13,10 +13,12 @@ import {
   BarChart2, CheckCircle2, Edit2, X, TrendingUp,
   Package, Navigation, MapPin, Calendar, History
 } from 'lucide-react';
+import { ROLES } from '../config/rbac.constants.js';
 import {
   getShipment, getTrackingEvents, updateShipment,
   updateShipmentStatus, clearError, clearMessage, clearSelectedShipment,
 } from '../redux/shipmentsSlice.js';
+import { validateShipmentForm } from '../utils/validation.js';
 import Layout from '../components/Layout.jsx';
 import '../styles/pages.css';
 
@@ -153,6 +155,7 @@ export default function ShipmentDetailPage() {
   const showStatusForm = activeForm === 'status';
 
   const [editData, setEditData]       = useState({});
+  const [formErrors, setFormErrors]   = useState({});
   const [newStatus, setNewStatus]     = useState('');
   const [statusNotes, setStatusNotes] = useState('');
 
@@ -177,9 +180,19 @@ export default function ShipmentDetailPage() {
 
   const handleEditSubmit = async (e) => {
     e.preventDefault();
+    
+    // Validate form data
+    const validation = validateShipmentForm(editData);
+    if (!validation.isValid) {
+      setFormErrors(validation.errors);
+      return;
+    }
+    setFormErrors({});
+    
     const payload = {
       ...editData,
       weight:             editData.weight             ? Number(editData.weight)             : 0,
+      shipmentValueUSD:   Number(editData.shipmentValueUSD) || 0,
       originGeoRisk:      Number(editData.originGeoRisk      ?? 0),
       destinationGeoRisk: Number(editData.destinationGeoRisk ?? 0),
     };
@@ -187,6 +200,7 @@ export default function ShipmentDetailPage() {
     const result = await dispatch(updateShipment({ id, data: payload }));
     if (!result.error) {
       closeForm();
+      setFormErrors({});
       dispatch(getShipment(id));
     }
   };
@@ -204,7 +218,7 @@ export default function ShipmentDetailPage() {
     }
   };
 
-  const canManage  = user?.role === 'ORG_ADMIN' || user?.role === 'LOGISTICS_OPERATOR';
+  const canManage  = user?.role === ROLES.ORG_ADMIN || user?.role === ROLES.LOGISTICS_OPERATOR;
   const allowedNext = VALID_TRANSITIONS[shipment?.status] || [];
 
   if (detailLoading && !shipment) {
@@ -421,6 +435,14 @@ export default function ShipmentDetailPage() {
                 </div>
               </div>
               <div className="form-group-premium">
+                <label>Shipment Value (USD) *</label>
+                <div className="input-wrapper">
+                  <Package size={18} className="input-icon" />
+                  <input type="number" min="0" step="0.01" value={editData.shipmentValueUSD ?? 0} onChange={e => setEditData({ ...editData, shipmentValueUSD: e.target.value })} required />
+                </div>
+                {formErrors.shipmentValueUSD && <span style={{ color: '#EF4444', fontSize: '12px' }}>{formErrors.shipmentValueUSD}</span>}
+              </div>
+              <div className="form-group-premium">
                 <label>Description</label>
                 <div className="input-wrapper">
                   <Package size={18} className="input-icon" />
@@ -472,6 +494,7 @@ export default function ShipmentDetailPage() {
                   <Globe size={18} className="input-icon" />
                   <input type="text" value={editData.destinationCountry || ''} onChange={e => setEditData({ ...editData, destinationCountry: e.target.value })} />
                 </div>
+                {formErrors.destinationCountry && <span style={{ color: '#EF4444', fontSize: '12px' }}>{formErrors.destinationCountry}</span>}
               </div>
               <div className="form-group-premium">
                 <label>Destination Geopolitical Risk</label>

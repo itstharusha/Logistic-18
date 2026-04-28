@@ -2,6 +2,7 @@ import express from 'express';
 import { UserController } from '../controllers/UserController.js';
 import { authenticate, authorize, validateOrgId } from '../middleware/auth.js';
 import { validate } from '../middleware/validation.js';
+import { ROLES } from '../config/rbac.constants.js';
 
 const router = express.Router();
 
@@ -12,18 +13,18 @@ router.use(authenticate);
 router.get('/me', UserController.getUser);
 
 // List all users in organization (ORG_ADMIN only)
-router.get('/', authorize(['ORG_ADMIN']), UserController.listUsers);
+router.get('/', authorize([ROLES.ORG_ADMIN]), UserController.listUsers);
 
 // Bulk operations (ORG_ADMIN only)
-router.post('/bulk/assign-role', authorize(['ORG_ADMIN']), UserController.bulkAssignRole);
-router.post('/bulk/deactivate', authorize(['ORG_ADMIN']), UserController.bulkDeactivateUsers);
-router.post('/bulk/activate', authorize(['ORG_ADMIN']), UserController.bulkActivateUsers);
+router.post('/bulk/assign-role', authorize([ROLES.ORG_ADMIN]), UserController.bulkAssignRole);
+router.post('/bulk/deactivate', authorize([ROLES.ORG_ADMIN]), UserController.bulkDeactivateUsers);
+router.post('/bulk/activate', authorize([ROLES.ORG_ADMIN]), UserController.bulkActivateUsers);
 
 // Create user in organization (ORG_ADMIN only)
-router.post('/create', authorize(['ORG_ADMIN']), validate('createUser'), UserController.createUser);
+router.post('/create', authorize([ROLES.ORG_ADMIN]), validate('createUser'), UserController.createUser);
 
 // Invite user to organization (ORG_ADMIN only)
-router.post('/invite', authorize(['ORG_ADMIN']), validate('inviteUser'), UserController.inviteUser);
+router.post('/invite', authorize([ROLES.ORG_ADMIN]), validate('inviteUser'), UserController.inviteUser);
 
 // Get specific user
 router.get('/:userId', UserController.getUser);
@@ -32,16 +33,16 @@ router.get('/:userId', UserController.getUser);
 router.put('/:userId', validate('updateUser'), UserController.updateUser);
 
 // Assign role to user (ORG_ADMIN only)
-router.post('/:userId/assign-role', authorize(['ORG_ADMIN']), UserController.assignRole);
+router.post('/:userId/assign-role', authorize([ROLES.ORG_ADMIN]), UserController.assignRole);
 
 // Deactivate user (ORG_ADMIN only)
-router.post('/:userId/deactivate', authorize(['ORG_ADMIN']), UserController.deactivateUser);
+router.post('/:userId/deactivate', authorize([ROLES.ORG_ADMIN]), UserController.deactivateUser);
 
 // Activate user (ORG_ADMIN only)
-router.post('/:userId/activate', authorize(['ORG_ADMIN']), UserController.activateUser);
+router.post('/:userId/activate', authorize([ROLES.ORG_ADMIN]), UserController.activateUser);
 
 // Get user activity log (ORG_ADMIN only)
-router.get('/:userId/activity-log', authorize(['ORG_ADMIN']), UserController.getUserActivityLog);
+router.get('/:userId/activity-log', authorize([ROLES.ORG_ADMIN]), UserController.getUserActivityLog);
 
 // Check email availability (public - for registration form)
 router.get('/check-email/:email', UserController.checkEmailAvailability);

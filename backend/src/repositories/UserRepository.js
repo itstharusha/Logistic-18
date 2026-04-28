@@ -99,6 +99,35 @@ export class UserRepository {
   }
 
   /**
+   * findAll
+   * Returns all users across all organisations.
+   * Supports optional pagination (limit/skip), sorting, and field selection.
+   *
+   * @param {object} options - { limit, skip, sort, select }
+   * @returns {Promise<User[]>}
+   */
+  static async findAll(options = {}) {
+    const query = User.find();
+
+    if (options.limit) query.limit(options.limit);
+    if (options.skip) query.skip(options.skip);
+    if (options.sort) query.sort(options.sort);
+    if (options.select) query.select(options.select);
+
+    return query.exec();
+  }
+
+  /**
+   * countAll
+   * Returns the total number of users across all organisations.
+   *
+   * @returns {Promise<number>}
+   */
+  static async countAll() {
+    return User.countDocuments();
+  }
+
+  /**
    * update
    * Updates one or more fields on a user document.
    * Returns the document AFTER the update (new: true).
@@ -201,7 +230,7 @@ export class UserRepository {
    * @returns {Promise<User[]>}
    */
   static async findActiveByRole(orgId, role) {
-    return User.find({ orgId, role, isActive: true });
+    return User.find({ role, isActive: true });
   }
 
   /**

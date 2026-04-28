@@ -47,7 +47,7 @@
   font-family: var(--font-logo);
   font-size: 20px;
   font-weight: 800;
-  color: var(--text-inverse);
+  color: var(--text-primary);
   letter-spacing: -0.01em;
 }
 
@@ -74,7 +74,7 @@
 }
 
 .nav-tab:hover {
-  color: var(--text-inverse);
+  color: var(--text-primary);
   background: rgba(255, 255, 255, 0.05);
 }
 
@@ -99,7 +99,7 @@
 .nav-icon-btn {
   background: none;
   border: none;
-  color: var(--text-inverse);
+  color: var(--text-primary);
   cursor: pointer;
   position: relative;
   transition: all var(--duration-normal) var(--ease-smooth);
@@ -209,6 +209,21 @@
 .dropdown-item.logout {
   color: var(--risk-critical);
   border-top: 1px solid var(--border-light);
+}
+
+/* Role badge in dropdown */
+.nav-dropdown-role-badge {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  background-color: var(--surface-card-alt);
+  border-bottom: 1px solid var(--border-light);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 /* ═══ Mobile Responsiveness ═══ */

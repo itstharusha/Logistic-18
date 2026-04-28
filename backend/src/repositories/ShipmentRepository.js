@@ -2,7 +2,7 @@ import Shipment from '../models/Shipment.js';
 
 export class ShipmentRepository {
   static async findAll(orgId, { search, status, carrier, skip = 0, limit = 50 } = {}) {
-    const query = { orgId };
+    const query = {};
 
     if (status && status !== 'all') query.status = status;
     if (carrier && carrier !== 'all') query.carrier = carrier;
@@ -35,7 +35,7 @@ export class ShipmentRepository {
   }
 
   static async findById(orgId, shipmentId) {
-    return Shipment.findOne({ _id: shipmentId, orgId })
+    return Shipment.findById(shipmentId)
       .populate('supplierId', 'name country riskTier')
       .populate('createdBy', 'name email role')
       .populate('inventoryItemId', 'sku productName currentStock')
@@ -48,7 +48,6 @@ export class ShipmentRepository {
     const year = new Date().getFullYear();
     const prefix = `SHP-${year}-`;
     const count = await Shipment.countDocuments({
-      orgId,
       shipmentNumber: { $regex: `^${prefix}` },
     });
     const seq = String(count + 1).padStart(3, '0');
@@ -61,8 +60,8 @@ export class ShipmentRepository {
   }
 
   static async update(orgId, shipmentId, data) {
-    return Shipment.findOneAndUpdate(
-      { _id: shipmentId, orgId },
+    return Shipment.findByIdAndUpdate(
+      shipmentId,
       { $set: { ...data, updatedAt: new Date() } },
       { new: true, runValidators: true }
     );
@@ -70,7 +69,7 @@ export class ShipmentRepository {
 
   static async updateWithOptimisticLock(orgId, shipmentId, expectedVersion, data) {
     const result = await Shipment.findOneAndUpdate(
-      { _id: shipmentId, orgId, version: expectedVersion },
+      { _id: shipmentId, version: expectedVersion },
       {
         $set: { ...data, updatedAt: new Date() },
         $inc: { version: 1 },
@@ -81,8 +80,8 @@ export class ShipmentRepository {
   }
 
   static async appendTrackingEvent(orgId, shipmentId, event) {
-    return Shipment.findOneAndUpdate(
-      { _id: shipmentId, orgId },
+    return Shipment.findByIdAndUpdate(
+      shipmentId,
       {
         $push: { trackingEvents: event },
         $set: { updatedAt: new Date(), lastPolledAt: new Date() },
@@ -92,16 +91,16 @@ export class ShipmentRepository {
   }
 
   static async appendStatusHistory(orgId, shipmentId, entry) {
-    return Shipment.findOneAndUpdate(
-      { _id: shipmentId, orgId },
+    return Shipment.findByIdAndUpdate(
+      shipmentId,
       { $push: { statusHistory: entry } },
       { new: true }
     );
   }
 
   static async appendRiskSnapshot(orgId, shipmentId, snapshot) {
-    return Shipment.findOneAndUpdate(
-      { _id: shipmentId, orgId },
+    return Shipment.findByIdAndUpdate(
+      shipmentId,
       { $push: { riskHistory: snapshot } },
       { new: true }
     );
@@ -109,11 +108,11 @@ export class ShipmentRepository {
 
   /**
    * Atomically updates status fields AND appends to all three history arrays
-   * in a single findOneAndUpdate call, avoiding the $set/$push nesting bug.
+   * in a single findOneAndUpdate call.
    */
   static async updateStatusWithHistory(orgId, shipmentId, fields, statusEntry, trackingEntry, riskEntry) {
-    return Shipment.findOneAndUpdate(
-      { _id: shipmentId, orgId },
+    return Shipment.findByIdAndUpdate(
+      shipmentId,
       {
         $set:  { ...fields, updatedAt: new Date() },
         $push: {
@@ -147,7 +146,6 @@ export class ShipmentRepository {
 
   /**
    * Count active shipments for a supplier (for ML feature: activeShipmentCount)
-   * Active = not yet delivered or closed
    */
   static async countBySupplierAndStatus(supplierId, statusArray = ['registered', 'in_transit', 'delayed', 'rerouted']) {
     if (!supplierId) return 0;
@@ -164,7 +162,6 @@ export class ShipmentRepository {
 
   /**
    * Get the date of the most recent shipment for a supplier
-   * Returns null if no shipments found
    */
   static async getLastShipmentDate(supplierId) {
     if (!supplierId) return null;
@@ -181,13 +178,12 @@ export class ShipmentRepository {
 
   /**
    * Get carrier reliability score based on historical on-time delivery rate
-   * Returns value 0-1 where 1.0 = 100% on-time
    */
   static async getCarrierReliability(carrier) {
-    if (!carrier || carrier === 'Other') return 0.5; // Default if no carrier specified
+    if (!carrier || carrier === 'Other') return 0.5;
     try {
       const total = await Shipment.countDocuments({ carrier });
-      if (total === 0) return 0.5; // No history, return neutral score
+      if (total === 0) return 0.5;
       
       const onTime = await Shipment.countDocuments({
         carrier,
@@ -196,7 +192,7 @@ export class ShipmentRepository {
       });
       
       const onTimeRate = onTime / total;
-      return Math.max(0, Math.min(1, onTimeRate)); // Clamp to 0-1
+      return Math.max(0, Math.min(1, onTimeRate));
     } catch (error) {
       console.error(`[ShipmentRepository] Error calculating carrier reliability for ${carrier}:`, error.message);
       return 0.5;
@@ -205,17 +201,16 @@ export class ShipmentRepository {
 
   /**
    * Get average delay rate for a specific carrier
-   * Returns value 0-1 where 0 = never late, 1 = always late
    */
   static async getCarrierDelayRate(carrier) {
-    if (!carrier || carrier === 'Other') return 0.15; // Default estimate
+    if (!carrier || carrier === 'Other') return 0.15;
     try {
       const total = await Shipment.countDocuments({ 
         carrier,
         status: { $in: ['delivered', 'closed'] }
       });
       
-      if (total === 0) return 0.15; // No history
+      if (total === 0) return 0.15;
       
       const delayedCount = await Shipment.countDocuments({
         carrier,
@@ -224,7 +219,7 @@ export class ShipmentRepository {
       });
       
       const delayRate = delayedCount / total;
-      return Math.max(0, Math.min(1, delayRate)); // Clamp to 0-1
+      return Math.max(0, Math.min(1, delayRate));
     } catch (error) {
       console.error(`[ShipmentRepository] Error calculating carrier delay rate for ${carrier}:`, error.message);
       return 0.15;
@@ -233,10 +228,8 @@ export class ShipmentRepository {
 
   /**
    * Calculate route risk index based on geopolitical factors
-   * Returns 0-1 scale where 0 = safe, 1 = high risk
    */
   static calculateRouteRisk(originCountry, destinationCountry) {
-    // Simple high-risk country list (can be expanded)
     const highRiskCountries = ['North Korea', 'Iran', 'Syria', 'Venezuela'];
     const mediumRiskCountries = ['Pakistan', 'Afghanistan', 'Yemen', 'Somalia', 'Sudan'];
     
@@ -248,7 +241,6 @@ export class ShipmentRepository {
       riskScore = 0.4;
     }
     
-    // Sea route generally riskier than domestic
     if (originCountry && destinationCountry && originCountry !== destinationCountry) {
       riskScore = Math.max(riskScore, 0.3);
     }
@@ -258,7 +250,6 @@ export class ShipmentRepository {
 
   /**
    * Calculate maximum gap duration between tracking events
-   * Returns hours, 0 if no significant gaps
    */
   static calculateTrackingGapHours(trackingEvents) {
     if (!trackingEvents || trackingEvents.length < 2) return 0;
@@ -290,7 +281,7 @@ export class ShipmentRepository {
       const actDate = new Date(actualDelivery);
       const daysDiff = Math.round((actDate - estDate) / (1000 * 60 * 60 * 24));
       
-      return Math.max(0, daysDiff); // Return 0 if delivered early
+      return Math.max(0, daysDiff);
     } catch (error) {
       console.error(`[ShipmentRepository] Error calculating days in transit:`, error.message);
       return 0;

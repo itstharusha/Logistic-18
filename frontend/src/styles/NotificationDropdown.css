@@ -15,7 +15,7 @@
   right: 80px;
   width: 380px;
   max-height: 500px;
-  background: white;
+  background: var(--surface-card);
   border-radius: 12px;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.12), 0 0 1px rgba(0, 0, 0, 0.1);
   display: flex;
@@ -157,7 +157,7 @@
 }
 
 .notification-item.read {
-  background-color: white;
+  background-color: var(--surface-card);
 }
 
 .notification-item:hover {
@@ -230,7 +230,7 @@
 .view-all-btn {
   width: 100%;
   padding: 8px 12px;
-  background: white;
+  background: var(--surface-card);
   border: 1px solid #e5e7eb;
   border-radius: 6px;
   font-size: 13px;

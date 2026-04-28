@@ -105,6 +105,51 @@ def extract_shap_values(explainer, expected_features, X):
     return feature_impacts[:3]
 
 
+def compute_rule_based_score(data: dict, model_type: str) -> float:
+    """
+    Deterministic rule-based fallback scoring when ML models are not loaded.
+    Same inputs always produce the same score (no randomness).
+    """
+    score = 30.0  # Base score
+
+    if model_type == 'supplier':
+        otd = float(data.get('onTimeDeliveryRate', 80))
+        score += max(0, (100 - otd) * 0.4)  # Lower OTD = higher risk
+        score += float(data.get('defectRate', 0)) * 5
+        score += float(data.get('disputeFrequency', 0)) * 3
+        score += float(data.get('geopoliticalRiskFlag', 0)) * 10
+        score -= float(data.get('financialScore', 50)) * 0.2
+        score += float(data.get('averageDelayDays', 0)) * 2
+
+    elif model_type == 'shipment':
+        score += float(data.get('etaDeviationHours', 0)) * 1.2
+        score += float(data.get('weatherLevel', 0)) * 5
+        score += float(data.get('routeRiskIndex', 0)) * 15
+        score += (1 - float(data.get('carrierReliability', 0.5))) * 20
+        score += float(data.get('trackingGapHours', 0)) * 0.5
+        score += float(data.get('supplierRiskScore', 0)) * 0.15
+        score += float(data.get('isInternational', 0)) * 5
+
+    elif model_type == 'inventory':
+        current = float(data.get('currentStock', 100))
+        reorder = float(data.get('reorderPoint', 50))
+        safety = float(data.get('safetyStock', 20))
+        if current <= 0:
+            score += 40
+        elif current <= safety:
+            score += 30
+        elif current <= reorder:
+            score += 20
+        score += float(data.get('supplierRiskScore', 0)) * 0.2
+        score += float(data.get('isCriticalItem', 0)) * 15
+        lead = float(data.get('leadTimeDays', 5))
+        demand = float(data.get('averageDailyDemand', 1))
+        if demand > 0 and current / demand <= lead:
+            score += 25
+
+    return float(np.clip(score, 0, 100))
+
+
 @app.post("/predict/supplier")
 async def predict_supplier_risk(data: dict):
     """
@@ -113,13 +158,14 @@ async def predict_supplier_risk(data: dict):
     try:
         # If no actual model found, fall back to mock
         if supplier_model is None:
-            risk_score = np.random.uniform(0, 100)
+            risk_score = compute_rule_based_score(data, 'supplier')
             risk_tier = map_risk_tier(risk_score)
             return {
-                "riskScore": float(risk_score),
+                "riskScore": risk_score,
                 "riskTier": risk_tier,
-                "recommendations": ["Monitor onTimeDeliveryRate (Mock)", "Verify financial health (Mock)"],
-                "shapValues": [{"feature": "MockFeature", "value": 0.5, "impact": "medium"}]
+                "source": "rule_based_fallback",
+                "recommendations": ["Monitor onTimeDeliveryRate", "Verify financial health"],
+                "shapValues": []
             }
 
         # Real Inference
@@ -149,12 +195,13 @@ async def predict_shipment_risk(data: dict):
     """Predict shipment delay/cancellation risk"""
     try:
         if shipment_model is None:
-            risk_score = np.random.uniform(0, 100)
+            risk_score = compute_rule_based_score(data, 'shipment')
             risk_tier = map_risk_tier(risk_score)
             return {
-                "riskScore": float(risk_score),
+                "riskScore": risk_score,
                 "riskTier": risk_tier,
-                "recommendations": ["Monitor ETA deviation (Mock)"],
+                "source": "rule_based_fallback",
+                "recommendations": ["Monitor ETA deviation"],
                 "shapValues": []
             }
             
@@ -181,12 +228,13 @@ async def predict_inventory_risk(data: dict):
     """Predict inventory stockout/overstock risk"""
     try:
         if inventory_model is None:
-            risk_score = np.random.uniform(0, 100)
+            risk_score = compute_rule_based_score(data, 'inventory')
             risk_tier = map_risk_tier(risk_score)
             return {
-                "riskScore": float(risk_score),
+                "riskScore": risk_score,
                 "riskTier": risk_tier,
-                "recommendations": ["Review safety stock levels (Mock)"],
+                "source": "rule_based_fallback",
+                "recommendations": ["Review safety stock levels"],
                 "shapValues": []
             }
             

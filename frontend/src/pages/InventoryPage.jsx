@@ -6,6 +6,7 @@ import {
   Warehouse, BarChart3, AlertCircle, CheckCircle, Clock, Box, ArrowUpRight,
   Activity, MapPin
 } from 'lucide-react';
+import { ROLES } from '../config/rbac.constants.js';
 import {
   listInventory, getDashboard, getReorderList, getWarehouses,
   createInventoryItem, updateInventoryItem, updateStock, updatePendingOrder,
@@ -15,6 +16,7 @@ import { getActiveWarehouses } from '../redux/warehouseSlice.js';
 import { listSuppliers } from '../redux/suppliersSlice.js';
 import Layout from '../components/Layout.jsx';
 import ExplainabilityPanel from '../components/ExplainabilityPanel.jsx';
+import { validateInventoryForm } from '../utils/validation.js';
 import '../styles/pages.css';
 
 /* ─── Animated Counter Hook ─── */
@@ -98,15 +100,20 @@ export default function InventoryPage() {
     averageDailyDemand: 0,
     leadTimeDays: 7,
     demandVariance: 0,
+    safetyStock: 0,
+    reorderPoint: 0,
+    pendingOrderQty: 0,
+    incomingStockDays: 0,
     isCriticalItem: false,
   });
 
+  const [formErrors, setFormErrors] = useState({});
   const [stockValue, setStockValue] = useState(0);
   const [pendingOrderData, setPendingOrderData] = useState({ qty: 0, days: 0 });
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isLoading, setIsLoading] = useState(true);
 
-  const canEdit = user?.role === 'ORG_ADMIN' || user?.role === 'INVENTORY_MANAGER';
+  const canEdit = user?.role === ROLES.ORG_ADMIN || user?.role === ROLES.INVENTORY_MANAGER;
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -164,6 +171,15 @@ export default function InventoryPage() {
 
   const handleCreateSubmit = async (e) => {
     e.preventDefault();
+    
+    // Validate form data before submission
+    const validation = validateInventoryForm(formData);
+    if (!validation.isValid) {
+      setFormErrors(validation.errors);
+      return;
+    }
+    setFormErrors({});
+    
     await dispatch(createInventoryItem(formData));
     setShowCreateForm(false);
     setFormData({
@@ -175,8 +191,13 @@ export default function InventoryPage() {
       averageDailyDemand: 0,
       leadTimeDays: 7,
       demandVariance: 0,
+      safetyStock: 0,
+      reorderPoint: 0,
+      pendingOrderQty: 0,
+      incomingStockDays: 0,
       isCriticalItem: false,
     });
+    setFormErrors({});
     dispatch(getDashboard());
   };
 
@@ -191,12 +212,26 @@ export default function InventoryPage() {
       averageDailyDemand: item.averageDailyDemand,
       leadTimeDays: item.leadTimeDays,
       demandVariance: item.demandVariance,
+      safetyStock: item.safetyStock || 0,
+      reorderPoint: item.reorderPoint || 0,
+      pendingOrderQty: item.pendingOrderQty || 0,
+      incomingStockDays: item.incomingStockDays || 0,
       isCriticalItem: item.isCriticalItem,
     });
+    setFormErrors({});
   };
 
   const handleEditSubmit = async (e) => {
     e.preventDefault();
+    
+    // Validate form data before submission
+    const validation = validateInventoryForm(formData);
+    if (!validation.isValid) {
+      setFormErrors(validation.errors);
+      return;
+    }
+    setFormErrors({});
+    
     await dispatch(updateInventoryItem({ itemId: editingItemId, data: formData }));
     setEditingItemId(null);
     dispatch(getDashboard());
@@ -532,12 +567,41 @@ export default function InventoryPage() {
               <div className="form-group-light">
                 <label>Demand Variance</label>
                 <input type="number" name="demandVariance" value={formData.demandVariance} onChange={handleFormChange} min="0" step="0.01" />
+                {formErrors.demandVariance && <span style={{ color: '#EF4444', fontSize: '12px' }}>{formErrors.demandVariance}</span>}
+              </div>
+              <div className="form-group-light">
+                <label>Safety Stock *</label>
+                <input type="number" name="safetyStock" value={formData.safetyStock} onChange={handleFormChange} min="0" required />
+                {formErrors.safetyStock && <span style={{ color: '#EF4444', fontSize: '12px' }}>{formErrors.safetyStock}</span>}
+              </div>
+              <div className="form-group-light">
+                <label>Reorder Point *</label>
+                <input type="number" name="reorderPoint" value={formData.reorderPoint} onChange={handleFormChange} min="0" required />
+                {formErrors.reorderPoint && <span style={{ color: '#EF4444', fontSize: '12px' }}>{formErrors.reorderPoint}</span>}
+              </div>
+              <div className="form-group-light">
+                <label>Pending Order Qty</label>
+                <input type="number" name="pendingOrderQty" value={formData.pendingOrderQty} onChange={handleFormChange} min="0" />
+                {formErrors.pendingOrderQty && <span style={{ color: '#EF4444', fontSize: '12px' }}>{formErrors.pendingOrderQty}</span>}
+              </div>
+              <div className="form-group-light">
+                <label>Incoming Stock Days</label>
+                <input type="number" name="incomingStockDays" value={formData.incomingStockDays} onChange={handleFormChange} min="0" />
+                {formErrors.incomingStockDays && <span style={{ color: '#EF4444', fontSize: '12px' }}>{formErrors.incomingStockDays}</span>}
               </div>
               <div className="form-group-light" style={{ display: 'flex', alignItems: 'center', gap: '8px', paddingTop: '24px' }}>
                 <input type="checkbox" name="isCriticalItem" checked={formData.isCriticalItem} onChange={handleFormChange} id="critical-check" />
                 <label htmlFor="critical-check" style={{ margin: 0, color: 'var(--text-primary)' }}>Critical Item</label>
               </div>
             </div>
+            {Object.keys(formErrors).length > 0 && (
+              <div style={{ marginTop: '16px', padding: '12px', backgroundColor: 'rgba(239, 68, 68, 0.1)', borderRadius: '6px', borderLeft: '3px solid #EF4444' }}>
+                <p style={{ color: '#EF4444', fontSize: '12px', margin: 0, fontWeight: '600' }}>Please fix the following errors:</p>
+                {Object.entries(formErrors).map(([field, error]) => (
+                  <p key={field} style={{ color: '#EF4444', fontSize: '12px', margin: '4px 0 0 0' }}>• {error}</p>
+                ))}
+              </div>
+            )}
             <div style={{ marginTop: '20px', display: 'flex', gap: '12px' }}>
               <button type="submit" className="hero-btn hero-btn--light" style={{ background: '#E85D2F', color: 'var(--surface-card)' }}>Create Item</button>
               <button type="button" onClick={() => setShowCreateForm(false)} className="hero-btn hero-btn--dark">Cancel</button>
@@ -676,7 +740,7 @@ export default function InventoryPage() {
                           <button onClick={() => handleEditClick(item)} title="Edit" className="icon-btn-premium">
                             <Edit2 size={16} />
                           </button>
-                          {user?.role === 'ORG_ADMIN' && (
+                            {user?.role === ROLES.ORG_ADMIN && (
                             <button onClick={() => handleDelete(item._id)} title="Delete" className="icon-btn-premium" style={{ color: '#EF4444' }}>
                               <Trash2 size={16} />
                             </button>

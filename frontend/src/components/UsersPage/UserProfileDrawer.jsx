@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
   X,
   Mail,
@@ -20,7 +21,7 @@ import '../../styles/UserProfileDrawer.css';
  * UserProfileDrawer - Right-side sliding drawer with full user profile
  * Shows complete user information, activity history, and permissions
  */
-function UserProfileDrawer({ user, onClose, onEdit, onDeactivate, onActivate }) {
+function UserProfileDrawer({ user, onClose, onEdit, onDeactivate, onActivate, readOnly = false }) {
   const [expanded, setExpanded] = useState({
     basics: true,
     activity: true,
@@ -39,12 +40,12 @@ function UserProfileDrawer({ user, onClose, onEdit, onDeactivate, onActivate }) 
     }));
   };
 
-  return (
+  return createPortal(
     <div className="profile-drawer-overlay" onClick={onClose}>
       <div className="profile-drawer" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className="drawer-header">
-          <h2>User Profile</h2>
+          <h2>{readOnly ? 'My Profile' : 'User Profile'}</h2>
           <button className="drawer-close-btn" onClick={onClose} aria-label="Close">
             <X size={24} />
           </button>
@@ -117,6 +118,14 @@ function UserProfileDrawer({ user, onClose, onEdit, onDeactivate, onActivate }) 
                     {new Date(user.createdAt).toLocaleDateString()}
                   </span>
                 </div>
+                {user.timezone && (
+                  <div className="info-row">
+                    <label>
+                      <MapPin size={14} /> Timezone
+                    </label>
+                    <span className="info-value">{user.timezone}</span>
+                  </div>
+                )}
               </div>
             )}
           </section>
@@ -207,42 +216,45 @@ function UserProfileDrawer({ user, onClose, onEdit, onDeactivate, onActivate }) 
           </section>
         </div>
 
-        {/* Footer Actions */}
-        <div className="drawer-footer">
-          <button
-            className="btn-secondary-small"
-            onClick={() => {
-              onEdit(user);
-              onClose();
-            }}
-          >
-            Edit User
-          </button>
+        {/* Footer Actions — hidden in readOnly (own profile) mode */}
+        {!readOnly && (
+          <div className="drawer-footer">
+            <button
+              className="btn-secondary-small"
+              onClick={() => {
+                onEdit(user);
+                onClose();
+              }}
+            >
+              Edit User
+            </button>
 
-          {user.isActive ? (
-            <button
-              className="btn-danger-small"
-              onClick={() => {
-                onDeactivate(user._id);
-                onClose();
-              }}
-            >
-              Deactivate
-            </button>
-          ) : (
-            <button
-              className="btn-success-small"
-              onClick={() => {
-                onActivate(user._id);
-                onClose();
-              }}
-            >
-              Activate
-            </button>
-          )}
-        </div>
+            {user.isActive ? (
+              <button
+                className="btn-danger-small"
+                onClick={() => {
+                  onDeactivate(user._id);
+                  onClose();
+                }}
+              >
+                Deactivate
+              </button>
+            ) : (
+              <button
+                className="btn-success-small"
+                onClick={() => {
+                  onActivate(user._id);
+                  onClose();
+                }}
+              >
+                Activate
+              </button>
+            )}
+          </div>
+        )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 

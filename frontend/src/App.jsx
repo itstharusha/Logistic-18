@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'r
 import { useDispatch, useSelector } from 'react-redux';
 import { getMe } from './redux/authSlice.js';
 import { useTheme } from './context/ThemeContext.jsx';
+import { ROLES, PAGE_ACCESS, canAccessPage } from './config/rbac.constants.js';
 
 // Pages
 import LoginPage from './pages/LoginPage.jsx';
@@ -22,6 +23,9 @@ import AnalyticsDashboardPage from './pages/Analytics/AnalyticsDashboardPage.jsx
 import KPIPage from './pages/Analytics/KPI-page.jsx';
 import ReportsPage from './pages/Analytics/ReportsPage.jsx';
 
+// Components
+import AccessDenied from './components/AccessDenied.jsx';
+
 // Protected Route Component
 function ProtectedRoute({ children, requiredRoles = [] }) {
   const { user, isInitialized } = useSelector((state) => state.auth);
@@ -34,7 +38,7 @@ function ProtectedRoute({ children, requiredRoles = [] }) {
   }
 
   if (requiredRoles.length > 0 && !requiredRoles.includes(user.role)) {
-    return <Navigate to="/" />;
+    return <AccessDenied requiredRoles={requiredRoles} userRole={user.role} />;
   }
 
   return children;
@@ -100,7 +104,7 @@ function App() {
         <Route
           path="/users"
           element={
-            <ProtectedRoute requiredRoles={['ORG_ADMIN']}>
+            <ProtectedRoute requiredRoles={[ROLES.ORG_ADMIN]}>
               <UsersPage />
             </ProtectedRoute>
           }
@@ -110,7 +114,7 @@ function App() {
         <Route
           path="/inventory"
           element={
-            <ProtectedRoute requiredRoles={['ORG_ADMIN', 'INVENTORY_MANAGER', 'VIEWER']}>
+            <ProtectedRoute requiredRoles={[ROLES.ORG_ADMIN, ROLES.INVENTORY_MANAGER]}>
               <InventoryPage />
             </ProtectedRoute>
           }
@@ -118,7 +122,7 @@ function App() {
         <Route
           path="/warehouses"
           element={
-            <ProtectedRoute requiredRoles={['ORG_ADMIN', 'INVENTORY_MANAGER', 'VIEWER']}>
+            <ProtectedRoute requiredRoles={[ROLES.ORG_ADMIN, ROLES.INVENTORY_MANAGER]}>
               <WarehousePage />
             </ProtectedRoute>
           }
@@ -128,7 +132,7 @@ function App() {
         <Route
           path="/suppliers"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute requiredRoles={[ROLES.ORG_ADMIN, ROLES.RISK_ANALYST, ROLES.LOGISTICS_OPERATOR, ROLES.VIEWER]}>
               <SuppliersPage />
             </ProtectedRoute>
           }
@@ -136,21 +140,35 @@ function App() {
         <Route
           path="/suppliers/:id"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute requiredRoles={[ROLES.ORG_ADMIN, ROLES.RISK_ANALYST, ROLES.LOGISTICS_OPERATOR, ROLES.VIEWER]}>
               <SupplierDetailPage />
             </ProtectedRoute>
           }
         />
 
         {/* Shipment Tracking routes */}
-        <Route path="/shipments" element={<ProtectedRoute><ShipmentsPage /></ProtectedRoute>} />
-        <Route path="/shipments/:id" element={<ProtectedRoute><ShipmentDetailPage /></ProtectedRoute>} />
+        <Route
+          path="/shipments"
+          element={
+            <ProtectedRoute requiredRoles={[ROLES.ORG_ADMIN, ROLES.LOGISTICS_OPERATOR, ROLES.RISK_ANALYST, ROLES.VIEWER]}>
+              <ShipmentsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/shipments/:id"
+          element={
+            <ProtectedRoute requiredRoles={[ROLES.ORG_ADMIN, ROLES.LOGISTICS_OPERATOR, ROLES.RISK_ANALYST, ROLES.VIEWER]}>
+              <ShipmentDetailPage />
+            </ProtectedRoute>
+          }
+        />
         
         {/* Alerts route */}
         <Route
           path="/alerts"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute requiredRoles={[ROLES.ORG_ADMIN, ROLES.RISK_ANALYST, ROLES.LOGISTICS_OPERATOR, ROLES.INVENTORY_MANAGER, ROLES.VIEWER]}>
               <AlertsPage />
             </ProtectedRoute>
           }
@@ -160,7 +178,7 @@ function App() {
         <Route
           path="/analytics"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute requiredRoles={[ROLES.ORG_ADMIN, ROLES.RISK_ANALYST]}>
               <AnalyticsDashboardPage />
             </ProtectedRoute>
           }
@@ -169,7 +187,7 @@ function App() {
         <Route
           path="/analytics/kpi"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute requiredRoles={[ROLES.ORG_ADMIN, ROLES.RISK_ANALYST]}>
               <KPIPage />
             </ProtectedRoute>
           }
@@ -178,7 +196,7 @@ function App() {
         <Route
           path="/reports"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute requiredRoles={[ROLES.ORG_ADMIN, ROLES.RISK_ANALYST]}>
               <ReportsPage />
             </ProtectedRoute>
           }

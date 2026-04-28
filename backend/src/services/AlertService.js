@@ -208,13 +208,7 @@ export class AlertService {
         for (const [severity, slaMinutes] of Object.entries(SLA_MINUTES)) {
             const slaThreshold = new Date(Date.now() - slaMinutes * 60 * 1000);
 
-            const overdueAlerts = await AlertRepository.findByOrgId(
-                null, // We need to search across all orgs for cron
-                {},
-                {}
-            );
-
-            // For cron job: query directly
+            // Query alerts that have breached SLA
             const alerts = await mongoose.model('Alert').find({
                 status: 'open',
                 severity,

@@ -5,6 +5,8 @@ import { WarehouseTransferRepository } from '../repositories/WarehouseTransferRe
 import { UserRepository } from '../repositories/UserRepository.js';
 import AuditLog from '../models/AuditLog.js';
 import { NotFoundError, ValidationError, ConflictError } from '../utils/errors.js';
+import { sanitizeForML, hasFiniteNumericValues } from '../middleware/mlValidation.js';
+import { generateFeatureVersion, getCurrentFeatureVersion, createPredictionMetadata } from '../utils/featureVersioning.js';
 import axios from 'axios';
 
 const ML_SERVICE_URL = process.env.ML_SERVICE_URL || 'http://localhost:8000';
@@ -136,13 +138,19 @@ export class ShipmentService {
     console.log(`[enrichShipmentData] Starting enrichment for shipment ${shipmentId || 'new'}`);
 
     // STEP 1: Encode weatherLevel from string to numeric (0=low, 1=medium, 2=high)
+    // NOTE: ML preprocessing expects weatherLevel to already be numeric. Backend encodes it here.
+    // If weatherLevel is already numeric (from legacy data), it's passed through unchanged.
     const weatherMap = { 'low': 0, 'medium': 1, 'high': 2 };
     if (shipment.weatherLevel && typeof shipment.weatherLevel === 'string') {
       const normalized = shipment.weatherLevel.toLowerCase();
       enriched.weatherLevel = weatherMap[normalized] ?? 0;
       console.log(`[enrichShipmentData] Encoded weatherLevel "${shipment.weatherLevel}" → ${enriched.weatherLevel}`);
+    } else if (shipment.weatherLevel !== undefined) {
+      // Already numeric or other type, coerce to number
+      enriched.weatherLevel = Number(shipment.weatherLevel) ?? 0;
     } else {
-      enriched.weatherLevel = Number(enriched.weatherLevel) ?? 0;
+      // Default to 'low' (0) if missing
+      enriched.weatherLevel = 0;
     }
 
     // STEP 2: Calculate etaDeviationHours (already available as delayHours)
@@ -247,20 +255,52 @@ export class ShipmentService {
   /**
    * Predict shipment risk score using ML service
    * PHASE 2: Now enriches shipment data before prediction
+   * PHASE 3: Validates all required ML features before sending to ML service
+   * PHASE 4: Tracks feature version for reproducibility
    * 
    * @param {Object} shipment - Raw shipment data from database
    * @param {String} shipmentId - Shipment's MongoDB _id (optional, for enrichment)
-   * @returns {Promise<Object>} {riskScore, riskTier, recommendations, shapValues}
+   * @returns {Promise<Object>} {riskScore, riskTier, recommendations, shapValues, featureVersion}
    */
   static async predictRiskScore(shipment, shipmentId = null) {
     try {
       // PHASE 2: Enrich shipment with missing ML features
       const enrichedShipment = await this.enrichShipmentData(shipment, shipmentId);
+      // PHASE 3: Validate ML features before sending to ML service
+      const requiredMLFeatures = [
+        'etaDeviationHours', 'weatherLevel', 'routeRiskIndex', 'carrierReliability',
+        'trackingGapHours', 'shipmentValueUSD', 'daysInTransit', 'supplierRiskScore',
+        'isInternational', 'carrierDelayRate'
+      ];
+      
+      // Check all required features are present
+      const missingFeatures = requiredMLFeatures.filter(f => enrichedShipment[f] === undefined || enrichedShipment[f] === null);
+      if (missingFeatures.length > 0) {
+        console.warn(`[predictRiskScore] Missing ML features: ${missingFeatures.join(', ')}. Using fallback.`);
+        return this.computeRiskScore(shipment);
+      }
 
+      // Validate all values are finite numbers
+      if (!hasFiniteNumericValues(enrichedShipment)) {
+        console.warn(`[predictRiskScore] Non-finite values detected. Sanitizing for ML.`);
+      }
+      
+      // Sanitize to ensure no NaN/Infinity values slip through
+      const sanitizedShipment = sanitizeForML(enrichedShipment);
+      
+      // PHASE 4: Create feature version metadata
+      const featureVersion = getCurrentFeatureVersion('SHIPMENT');
+      const predictionMetadata = createPredictionMetadata('SHIPMENT', sanitizedShipment, featureVersion);
+      console.log(`[predictRiskScore] Prediction metadata:`, {
+        featureVersion: predictionMetadata.featureVersion,
+        featureCount: predictionMetadata.snapshot.featureCount,
+        hash: predictionMetadata.snapshot.hash,
+      });
+      
       console.log(`[predictRiskScore] Calling ML service at ${ML_SERVICE_URL}/predict/shipment`);
       const startTime = Date.now();
-
-      const response = await axios.post(`${ML_SERVICE_URL}/predict/shipment`, enrichedShipment, {
+      
+      const response = await axios.post(`${ML_SERVICE_URL}/predict/shipment`, sanitizedShipment, {
         timeout: 5000 // 5 second timeout per NFR
       });
 
@@ -271,7 +311,8 @@ export class ShipmentService {
         riskScore: response.data.riskScore,
         riskTier: response.data.riskTier,
         recommendations: response.data.recommendations || [],
-        shapValues: response.data.shapValues || []
+        shapValues: response.data.shapValues || [],
+        featureVersion: predictionMetadata.featureVersion,
       };
     } catch (error) {
       console.warn(`[predictRiskScore] ML Service failed: ${error.message || error.code || error}. Using rule-based fallback scoring.`);
@@ -304,7 +345,7 @@ export class ShipmentService {
       delaySeverity,
       status: 'registered',
     };
-    const { riskScore, riskTier, recommendations, shapValues } = await this.predictRiskScore(shipmentData, null);
+    const { riskScore, riskTier, recommendations, shapValues, featureVersion } = await this.predictRiskScore(shipmentData, null);
 
     const shipment = await ShipmentRepository.create({
       ...shipmentData,
@@ -312,6 +353,7 @@ export class ShipmentService {
       riskTier,
       recommendations,
       shapValues,
+      modelVersion: featureVersion || '1.0',
       lastScoredAt: now,
       riskHistory: [{ riskScore, riskTier, scoredAt: now }],
       trackingEvents: [{
@@ -351,7 +393,7 @@ export class ShipmentService {
     const { delayHours, delaySeverity } = this.computeDelay(merged.estimatedDelivery);
     merged.delayHours = delayHours;
     merged.delaySeverity = delaySeverity;
-    const { riskScore, riskTier, recommendations, shapValues } = await this.predictRiskScore(merged, shipmentId);
+    const { riskScore, riskTier, recommendations, shapValues, featureVersion } = await this.predictRiskScore(merged, shipmentId);
 
     const updated = await ShipmentRepository.update(orgId, shipmentId, {
       ...data,
@@ -361,6 +403,7 @@ export class ShipmentService {
       riskTier,
       recommendations,
       shapValues,
+      modelVersion: featureVersion || '1.0',
       lastScoredAt: new Date(),
     });
 
@@ -574,8 +617,9 @@ export class ShipmentService {
       const supplier = await SupplierRepository.findById(orgId, shipment.supplierId.toString());
       if (!supplier) return;
 
-      const wasOnTime = shipment.delayHours < 2;
-      const totalDeliveries = 10;
+      const wasOnTime  = shipment.delayHours < 2;
+      // Audit Fix #3: Query actual delivery count instead of hardcoded 10
+      const totalDeliveries = Math.max(1, await ShipmentRepository.countBySupplierAndStatus(shipment.supplierId, ['delivered']));
       const currentRate = supplier.onTimeDeliveryRate ?? 80;
       const newRate = Math.round(
         ((currentRate * (totalDeliveries - 1)) + (wasOnTime ? 100 : 0)) / totalDeliveries

@@ -1,66 +1,257 @@
 import mongoose from 'mongoose';
 import { Supplier, Shipment, InventoryItem } from '../models/index.js';
 import Alert from '../models/Alert.js';
+import User from '../models/User.js';
 import PDFDocument from 'pdfkit';
 
 class AnalyticsService {
   /**
-   * Dashboard (Risk Overview)
-   * - Total suppliers
-   * - High-risk suppliers
-   * - Active alerts
-   * - Recent shipments
-   * - Risk distribution 
-   * - Alert severity counts
+   * Dashboard (Risk Overview) - for DashboardPage component
+   * Returns properly structured data that matches frontend expectations.
+   * Queries ALL data across the system (not org-scoped) so the admin
+   * dashboard always reflects real system-wide metrics.
    */
   async getDashboardInfo(orgId) {
-    const orgIdObj = new mongoose.Types.ObjectId(orgId);
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-    // 1. Supplier stats
-    const supplierStats = await Supplier.aggregate([
-      { $match: { orgId: orgIdObj } },
-      {
-        $facet: {
-          total: [{ $count: 'count' }],
-          highRisk: [{ $match: { riskTier: 'High' } }, { $count: 'count' }],
-          riskDistribution: [
-            { $group: { _id: '$riskTier', count: { $sum: 1 } } }
-          ]
-        }
-      }
-    ]);
-
-    // 2. Alert stats
-    const alertStats = await Alert.aggregate([
-      { $match: { orgId: orgIdObj, status: { $in: ['open', 'acknowledged'] } } },
-      {
-        $facet: {
-          totalActive: [{ $count: 'count' }],
-          severityCounts: [
-            { $group: { _id: '$severity', count: { $sum: 1 } } }
-          ]
-        }
-      }
-    ]);
-
-    // 3. Recent shipments
-    const recentShipments = await Shipment.find({ orgId: orgIdObj })
+    // 1. Get Recent Alerts (for alerts section)
+    const recentAlerts = await Alert.find({})
       .sort({ createdAt: -1 })
       .limit(5)
-      .populate('supplierId', 'name')
+      .select('severity entityName description alertId title createdAt')
       .lean();
 
+    // 2. Get Alert Stats
+    const activeAlerts = await Alert.countDocuments({ 
+      status: { $in: ['open', 'acknowledged'] } 
+    });
+
+    // 3. Get Shipment Stats
+    const [totalShipments, delayedShipments] = await Promise.all([
+      Shipment.countDocuments({}),
+      Shipment.countDocuments({ status: 'delayed' })
+    ]);
+
+    // 4. Get Inventory Risk (at-risk count)
+    const atRiskInventory = await InventoryItem.countDocuments({
+      $expr: {
+        $lt: [
+          { $divide: [{ $ifNull: ['$currentStock', 0] }, { $max: [{ $ifNull: ['$averageDailyDemand', 1] }, 1] }] },
+          10
+        ]
+      }
+    });
+
+    // 5. Get Users Count (all users across the system)
+    const registeredUsers = await User.countDocuments({});
+
+    // 6. Calculate On-Time Delivery Rate
+    const completedShipments = await Shipment.countDocuments({
+      status: 'delivered'
+    });
+
+    const onTimeShipments = await Shipment.countDocuments({
+      status: 'delivered',
+      $expr: { $lte: ['$actualDate', '$expectedDate'] }
+    });
+
+    const onTimeRate = completedShipments > 0 ? Math.round((onTimeShipments / completedShipments) * 100) : 0;
+
+    // 7. Calculate Overall Risk Score (0-100 based on suppliers)
+    const supplierStats = await Supplier.aggregate([
+      {
+        $group: {
+          _id: '$riskTier',
+          count: { $sum: 1 }
+        }
+      }
+    ]);
+
+    const totalSuppliers = supplierStats.reduce((sum, s) => sum + s.count, 0);
+    const highRiskCount = supplierStats.find(s => s._id === 'high' || s._id === 'High')?.count || 0;
+    const mediumRiskCount = supplierStats.find(s => s._id === 'medium' || s._id === 'Medium')?.count || 0;
+    
+    let riskScore = 0;
+    if (totalSuppliers > 0) {
+      riskScore = Math.round(
+        ((highRiskCount * 100 + mediumRiskCount * 50) / (totalSuppliers * 100)) * 100
+      );
+    }
+
+    // 8. Get Risk Trend for Chart (last 30 days)
+    const riskTrendData = await Alert.aggregate([
+      {
+        $match: {
+          createdAt: { $gte: thirtyDaysAgo }
+        }
+      },
+      {
+        $group: {
+          _id: {
+            year: { $year: '$createdAt' },
+            month: { $month: '$createdAt' },
+            day: { $dayOfMonth: '$createdAt' }
+          },
+          count: { $sum: 1 }
+        }
+      },
+      { $sort: { '_id.year': 1, '_id.month': 1, '_id.day': 1 } }
+    ]);
+
+    const trendData = riskTrendData.map(item => {
+      return Math.round((item.count / 5) * 100); // Scale to percentage
+    }).slice(-30);
+
+    const trendLabels = riskTrendData.map(item => {
+      return `${item._id.month}/${item._id.day}`;
+    }).slice(-30);
+
+    // 9. Calculate trend direction and change
+    let trendDirection = 'stable';
+    let trendChange = 0;
+    if (trendData.length >= 7) {
+      const lastWeek = trendData.slice(-7);
+      const avgLast7 = lastWeek.reduce((a, b) => a + b, 0) / 7;
+      const prev7 = trendData.slice(-14, -7);
+      const avgPrev7 = prev7.length > 0 ? prev7.reduce((a, b) => a + b, 0) / 7 : avgLast7;
+      trendChange = avgPrev7 > 0 ? Math.round(((avgLast7 - avgPrev7) / avgPrev7) * 100) : 0;
+      trendDirection = trendChange > 0 ? 'up' : trendChange < 0 ? 'down' : 'stable';
+    }
+
+    // 10. Active Users — real users from the database
+    const activeUsersRaw = await User.find({ isActive: true })
+      .sort({ lastActiveAt: -1 })
+      .limit(5)
+      .select('name email role lastActiveAt systemImpactScore')
+      .lean();
+
+    const avatarColors = ['#E85D2F', '#2DB87A', '#3B82F6', '#8B5CF6', '#F59E0B'];
+    const activeUsers = activeUsersRaw.map((u, i) => ({
+      _id: u._id,
+      name: u.name,
+      email: u.email,
+      role: u.role?.replace(/_/g, ' ') || 'Viewer',
+      roleCode: u.role || 'VIEWER',
+      avatarColor: avatarColors[i % avatarColors.length],
+      rating: u.systemImpactScore > 0 ? (u.systemImpactScore / 20).toFixed(1) : null,
+      lastActiveAt: u.lastActiveAt,
+    }));
+
+    // 11. Risk Breakdown — highest-risk entity in each category
+    const highestRiskSupplier = await Supplier.findOne({})
+      .sort({ riskScore: -1 })
+      .select('name riskScore riskTier')
+      .lean();
+
+    const highestRiskShipment = await Shipment.findOne({})
+      .sort({ riskScore: -1 })
+      .select('shipmentNumber riskScore riskTier')
+      .lean();
+
+    const highestRiskInventory = await InventoryItem.findOne({})
+      .sort({ riskScore: -1 })
+      .select('sku riskScore riskTier')
+      .lean();
+
+    const breakdown = {
+      supplierRisk: highestRiskSupplier
+        ? `${highestRiskSupplier.name} (${highestRiskSupplier.riskScore})`
+        : 'No suppliers',
+      shipmentRisk: highestRiskShipment
+        ? `${highestRiskShipment.shipmentNumber} (${highestRiskShipment.riskScore})`
+        : 'No shipments',
+      inventoryRisk: highestRiskInventory
+        ? `${highestRiskInventory.sku} (${highestRiskInventory.riskScore})`
+        : 'No inventory',
+    };
+
+    // 12. Analytics Dashboard Page specific formats
+    
+    // a. Risk Trend (array of { date, score })
+    const riskTrend = trendData.length > 0 ? trendData.map((score, index) => ({
+      date: trendLabels[index],
+      score: Math.min(score, 100)
+    })) : [{ date: 'No data', score: 50 }];
+
+    // b. Alerts by Severity (array of { name, value, color })
+    const alertsSeverityMap = await Alert.aggregate([
+      { $match: { status: { $in: ['open', 'acknowledged'] } } },
+      { $group: { _id: '$severity', count: { $sum: 1 } } }
+    ]);
+    const SEVERITY_COLORS = { 'Critical': '#ef4444', 'High': '#f97316', 'Medium': '#eab308', 'Low': '#22c55e' };
+    const alertsBySeverity = ['Critical', 'High', 'Medium', 'Low'].map(severity => {
+      const lowerSeverity = severity.toLowerCase();
+      const found = alertsSeverityMap.find(a => String(a._id).toLowerCase() === lowerSeverity);
+      return {
+        name: severity,
+        value: found ? found.count : 0,
+        color: SEVERITY_COLORS[severity]
+      };
+    });
+
+    // c. Shipment Delays (array of { carrier, delays })
+    const shipmentDelaysData = await Shipment.aggregate([
+      { $match: { status: 'delayed' } },
+      { $group: { _id: '$carrier', delays: { $sum: 1 } } },
+      { $sort: { delays: -1 } },
+      { $limit: 10 }
+    ]);
+    const shipmentDelays = shipmentDelaysData.map(item => ({
+      carrier: item._id || 'Unknown',
+      delays: item.delays
+    }));
+
+    // d. Inventory Risk (array of { name, stock, threshold, risk })
+    const inventoryRiskItems = await InventoryItem.find({
+      $expr: {
+        $lt: [
+          { $divide: [{ $ifNull: ['$currentStock', 0] }, { $max: [{ $ifNull: ['$averageDailyDemand', 1] }, 1] }] },
+          10
+        ]
+      }
+    }).limit(10).lean();
+    
+    const inventoryRisk = inventoryRiskItems.map(item => ({
+      name: item.sku || 'Unknown Product',
+      stock: Number((item.currentStock || 0).toFixed(2)),
+      threshold: Number(((item.averageDailyDemand || 1) * 10).toFixed(2)),
+      risk: (item.currentStock / (item.averageDailyDemand || 1)) < 5 ? 'high' : 'medium'
+    }));
+
+    // e. KPIs
+    const kpis = {
+      overallRiskScore: { value: riskScore, delta: `${trendChange > 0 ? '+' : ''}${trendChange}` },
+      activeAlerts: { value: activeAlerts, delta: '0' },
+      delayedShipments: { value: delayedShipments, delta: '0' },
+      atRiskInventory: { value: atRiskInventory, delta: '0' }
+    };
+
     return {
-      supplierStats: {
-        total: supplierStats[0]?.total[0]?.count || 0,
-        highRisk: supplierStats[0]?.highRisk[0]?.count || 0,
-        riskDistribution: supplierStats[0]?.riskDistribution || []
+      // For DashboardPage.jsx
+      overview: {
+        riskScore,
+        activeAlerts,
+        delayedShipments,
+        atRiskInventory,
+        registeredUsers,
+        onTimeRate
       },
-      alertStats: {
-        active: alertStats[0]?.totalActive[0]?.count || 0,
-        severityCounts: alertStats[0]?.severityCounts || []
+      trendChart: {
+        data: trendData.length > 0 ? trendData : [50],
+        labels: trendLabels.length > 0 ? trendLabels : ['No data']
       },
-      recentShipments
+      alerts: recentAlerts,
+      activeUsers,
+      breakdown,
+      trendDirection,
+      trendChange,
+      // For AnalyticsDashboardPage.jsx
+      riskTrend,
+      alertsBySeverity,
+      shipmentDelays,
+      inventoryRisk,
+      kpis
     };
   }
 
@@ -68,7 +259,7 @@ class AnalyticsService {
    * Supplier Performance Report
    */
   async getSupplierPerformance(orgId, filters = {}) {
-    const matchStage = { orgId: new mongoose.Types.ObjectId(orgId) };
+    const matchStage = {};
     
     if (filters.supplierId) {
       matchStage._id = new mongoose.Types.ObjectId(filters.supplierId);
@@ -131,9 +322,7 @@ class AnalyticsService {
    * Shipment Delay Analysis
    */
   async getShipmentDelays(orgId, filters = {}) {
-    const matchStage = { 
-      orgId: new mongoose.Types.ObjectId(orgId)
-    };
+    const matchStage = {};
 
     if (filters.carrier) matchStage.carrierName = filters.carrier;
     if (filters.supplierId) matchStage.supplierId = new mongoose.Types.ObjectId(filters.supplierId);
@@ -183,7 +372,7 @@ class AnalyticsService {
    * Inventory Risk Report
    */
   async getInventoryRisk(orgId, filters = {}) {
-    const matchStage = { orgId: new mongoose.Types.ObjectId(orgId) };
+    const matchStage = {};
 
     if (filters.riskTier) matchStage.riskTier = filters.riskTier;
 
@@ -244,7 +433,7 @@ class AnalyticsService {
    * Alert Summary
    */
   async getAlertSummary(orgId, filters = {}) {
-    const matchStage = { orgId: new mongoose.Types.ObjectId(orgId) };
+    const matchStage = {};
 
     if (filters.severity) matchStage.severity = filters.severity;
     if (filters.status) matchStage.status = filters.status;
@@ -276,7 +465,6 @@ class AnalyticsService {
    * KPI Drilldown
    */
   async getKpiDrilldown(orgId, type, days) {
-    const orgIdObj = new mongoose.Types.ObjectId(orgId);
     const dateLimit = new Date();
     dateLimit.setDate(dateLimit.getDate() - (parseInt(days) || 30));
 
@@ -286,7 +474,7 @@ class AnalyticsService {
     // Abstracting trend calculation based on metric
     if (type === 'alerts') {
       const data = await Alert.aggregate([
-        { $match: { orgId: orgIdObj, createdAt: { $gte: dateLimit } } },
+        { $match: { createdAt: { $gte: dateLimit } } },
         { $group: {
             _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
             value: { $sum: 1 }
@@ -297,7 +485,7 @@ class AnalyticsService {
       trend = data.map(d => ({ date: d._id, value: d.value }));
     } else if (type === 'shipments') {
       const data = await Shipment.aggregate([
-        { $match: { orgId: orgIdObj, createdAt: { $gte: dateLimit } } },
+        { $match: { createdAt: { $gte: dateLimit } } },
         { $group: {
             _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
             value: { $sum: 1 }

@@ -13,28 +13,31 @@ import express from 'express';
 import { authenticate, authorize } from '../middleware/auth.js';
 import { validate, validateObjectId, sanitizeQuery } from '../middleware/validation.js';
 import { ShipmentController } from '../controllers/ShipmentController.js';
+import { ROLES } from '../config/rbac.constants.js';
 
 const router = express.Router();
 
-// List all shipments for the org (all roles can view)
-router.get('/', authenticate, sanitizeQuery, ShipmentController.listShipments);
+// List all shipments for the org
+// Requires: ORG_ADMIN, LOGISTICS_OPERATOR, RISK_ANALYST
+router.get('/', authenticate, authorize([ROLES.ORG_ADMIN, ROLES.LOGISTICS_OPERATOR, ROLES.RISK_ANALYST, ROLES.VIEWER]), sanitizeQuery, ShipmentController.listShipments);
 
 // Register a new shipment — restricted to operators and admins
 router.post('/',
     authenticate,
-    authorize(['ORG_ADMIN', 'LOGISTICS_OPERATOR']),
+    authorize([ROLES.ORG_ADMIN, ROLES.LOGISTICS_OPERATOR]),
     validate('createShipment'),
     ShipmentController.createShipment
 );
 
-// Get a single shipment's full detail (all roles can view)
-router.get('/:shipmentId', authenticate, validateObjectId('shipmentId'), ShipmentController.getShipment);
+// Get a single shipment's full detail
+// Requires: ORG_ADMIN, LOGISTICS_OPERATOR, RISK_ANALYST
+router.get('/:shipmentId', authenticate, authorize([ROLES.ORG_ADMIN, ROLES.LOGISTICS_OPERATOR, ROLES.RISK_ANALYST, ROLES.VIEWER]), validateObjectId('shipmentId'), ShipmentController.getShipment);
 
 // Update shipment fields — restricted to operators and admins
 router.put('/:shipmentId',
     authenticate,
     validateObjectId('shipmentId'),
-    authorize(['ORG_ADMIN', 'LOGISTICS_OPERATOR']),
+    authorize([ROLES.ORG_ADMIN, ROLES.LOGISTICS_OPERATOR]),
     validate('updateShipment'),
     ShipmentController.updateShipment
 );
@@ -43,12 +46,12 @@ router.put('/:shipmentId',
 router.patch('/:shipmentId/status',
     authenticate,
     validateObjectId('shipmentId'),
-    authorize(['ORG_ADMIN', 'LOGISTICS_OPERATOR']),
+    authorize([ROLES.ORG_ADMIN, ROLES.LOGISTICS_OPERATOR]),
     validate('updateShipmentStatus'),
     ShipmentController.updateStatus
 );
 
 // Get the ordered tracking events timeline for the detail page
-router.get('/:shipmentId/tracking', authenticate, validateObjectId('shipmentId'), ShipmentController.getTrackingEvents);
+router.get('/:shipmentId/tracking', authenticate, authorize([ROLES.ORG_ADMIN, ROLES.LOGISTICS_OPERATOR, ROLES.RISK_ANALYST, ROLES.VIEWER]), validateObjectId('shipmentId'), ShipmentController.getTrackingEvents);
 
 export default router;
