@@ -1,1 +1,0 @@
-{"sessionId":"cdb015","location":"AuthController.js:login","message":"login request received at backend","data":{"email":"admin@demo.org","origin":"http://localhost:5174","host":"localhost:5000"},"timestamp":1772725483867,"hypothesisId":"B-C"}
