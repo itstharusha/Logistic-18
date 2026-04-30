@@ -156,7 +156,7 @@ const shipmentSchema = new mongoose.Schema(
       {
         feature: String,
         value: Number,
-        impact: Number,
+        impact: { type: String, enum: ['low', 'medium', 'high'], default: 'low' },
       },
     ],
     modelVersion: { type: String, default: '1.0' },

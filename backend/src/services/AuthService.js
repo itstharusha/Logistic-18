@@ -9,7 +9,7 @@ import {
 import { AuthenticationError, ConflictError } from '../utils/errors.js';
 
 export class AuthService {
-  // User registration
+  // User registration (single-organization mode)
   static async register(userData) {
     // Check if user already exists
     const existingUser = await UserRepository.findByEmail(userData.email);
@@ -17,19 +17,28 @@ export class AuthService {
       throw new ConflictError('User with this email already exists');
     }
 
-    // Create a new organization for the user
-    // Use the username part of the email as the org name (e.g., "john.doe" from "john.doe@example.com")
-    const emailUsername = userData.email.split('@')[0];
-    const orgName = `${emailUsername}-org-${Date.now()}`;
+    // Single-organization mode: attach the new user to the existing org.
+    // If no org exists yet (first run), create the canonical Logistics18 org.
+    let organisation = await Organisation.findOne();
+    if (!organisation) {
+      organisation = await Organisation.create({
+        name: 'Logistics18',
+        industry: 'Logistics & Supply Chain',
+        country: 'US',
+        timezone: 'America/New_York',
+        planTier: 'ENTERPRISE',
+      });
+    }
 
-    const organisation = await Organisation.create({
-      name: orgName,
-      planTier: 'STARTER',
-    });
+    // First user becomes ORG_ADMIN; subsequent users default to VIEWER unless caller
+    // explicitly specified a role (admin-created users can pass `role`).
+    const userCount = await UserRepository.countByOrgId(organisation._id);
+    const defaultRole = userCount === 0 ? 'ORG_ADMIN' : (userData.role || 'VIEWER');
 
-    // Create new user with the auto-created organization
+    // Create new user attached to the single organization
     const user = await UserRepository.create({
       ...userData,
+      role: defaultRole,
       orgId: organisation._id,
       passwordHash: userData.password, // Will be hashed by User model's pre-save hook
     });

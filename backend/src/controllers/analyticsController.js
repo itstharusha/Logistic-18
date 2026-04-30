@@ -98,7 +98,7 @@ export const downloadReport = asyncHandler(async (req, res) => {
     res.setHeader('Content-Disposition', `attachment; filename="${report.module}_report.csv"`);
     return res.status(200).send(csvStr);
   } else if (report.format === 'pdf') {
-    const pdfBuffer = await analyticsService.generatePDF(title, data);
+    const pdfBuffer = await analyticsService.generatePDF(title, data, report.module);
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename="${report.module}_report.pdf"`);
     return res.status(200).send(pdfBuffer);

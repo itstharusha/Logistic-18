@@ -54,27 +54,49 @@ def map_risk_tier(score):
     else:
         return "critical"
 
+def _ensure_features(df: pd.DataFrame, feature_order: list, defaults: dict | None = None) -> pd.DataFrame:
+    """
+    Guarantees every feature in `feature_order` exists as a numeric column.
+    Missing columns are added with the provided default (0 if not specified)
+    so inference does not crash when a caller omits an optional input.
+    """
+    df_out = df.copy()
+    defaults = defaults or {}
+    for col in feature_order:
+        if col not in df_out.columns:
+            df_out[col] = defaults.get(col, 0)
+        df_out[col] = pd.to_numeric(df_out[col], errors='coerce').fillna(defaults.get(col, 0))
+    return df_out
+
+
 def preprocess_supplier_data(df: pd.DataFrame, is_training=True):
     """
     Cleans and encodes supplier risk data.
+    Missing optional features (totalShipments, daysSinceLastShip, etc.) default to 0
+    so single-record inference works even when only the core form fields are sent.
     """
     df_clean = df.copy()
-    
-    # Encode categoryRisk if it's string (Services=0, Finished Goods=1, Components=2, Raw Materials=3)
+
+    # Encode categoryRisk if it's a string (services=0, finished_goods=1, components=2, raw_materials=3)
     if 'categoryRisk' in df_clean.columns and df_clean['categoryRisk'].dtype == 'object':
         category_map = {
-            'services': 0, 'finished goods': 1, 'components': 2, 'raw materials': 3
+            'services': 0, 'finished goods': 1, 'finished_goods': 1,
+            'components': 2, 'raw materials': 3, 'raw_materials': 3,
         }
         df_clean['categoryRisk'] = df_clean['categoryRisk'].str.lower().map(category_map).fillna(1)
-        
-    # Ensure correct types and fill missing values
-    for col in SUPPLIER_FEATURE_ORDER:
-        if col in df_clean.columns:
-            df_clean[col] = pd.to_numeric(df_clean[col], errors='coerce').fillna(0)
 
-    # Return expected columns in exact order
+    # If caller passed `category` rather than `categoryRisk`, mirror it
+    if 'categoryRisk' not in df_clean.columns and 'category' in df_clean.columns:
+        category_map = {
+            'services': 0, 'finished goods': 1, 'finished_goods': 1,
+            'components': 2, 'raw materials': 3, 'raw_materials': 3,
+        }
+        df_clean['categoryRisk'] = df_clean['category'].astype(str).str.lower().map(category_map).fillna(1)
+
+    df_clean = _ensure_features(df_clean, SUPPLIER_FEATURE_ORDER)
+
     features = df_clean[SUPPLIER_FEATURE_ORDER]
-    
+
     if is_training:
         target = df_clean['riskScore'] if 'riskScore' in df_clean.columns else None
         return features, target
@@ -86,21 +108,16 @@ def preprocess_shipment_data(df: pd.DataFrame, is_training=True):
     Cleans and encodes shipment risk data.
     """
     df_clean = df.copy()
-    
-    # Encode weatherLevel (Low=0, Medium=1, High=2)
-    # NOTE: Backend (ShipmentService.js) already encodes weatherLevel to numeric before sending to ML.
-    # This check handles legacy data or external inputs where weatherLevel might still be a string.
-    # If weatherLevel is already numeric (normal case), this block is skipped and data passes through.
+
+    # Encode weatherLevel (low=0, medium=1, high=2) if still a string
     if 'weatherLevel' in df_clean.columns and df_clean['weatherLevel'].dtype == 'object':
         weather_map = {'low': 0, 'medium': 1, 'high': 2}
         df_clean['weatherLevel'] = df_clean['weatherLevel'].str.lower().map(weather_map).fillna(0)
-        
-    for col in SHIPMENT_FEATURE_ORDER:
-        if col in df_clean.columns:
-            df_clean[col] = pd.to_numeric(df_clean[col], errors='coerce').fillna(0)
+
+    df_clean = _ensure_features(df_clean, SHIPMENT_FEATURE_ORDER, defaults={'carrierReliability': 0.85})
 
     features = df_clean[SHIPMENT_FEATURE_ORDER]
-    
+
     if is_training:
         target = df_clean['riskScore'] if 'riskScore' in df_clean.columns else None
         return features, target
@@ -112,13 +129,11 @@ def preprocess_inventory_data(df: pd.DataFrame, is_training=True):
     Cleans and encodes inventory risk data.
     """
     df_clean = df.copy()
-    
-    for col in INVENTORY_FEATURE_ORDER:
-        if col in df_clean.columns:
-            df_clean[col] = pd.to_numeric(df_clean[col], errors='coerce').fillna(0)
+
+    df_clean = _ensure_features(df_clean, INVENTORY_FEATURE_ORDER)
 
     features = df_clean[INVENTORY_FEATURE_ORDER]
-    
+
     if is_training:
         target = df_clean['riskScore'] if 'riskScore' in df_clean.columns else None
         return features, target

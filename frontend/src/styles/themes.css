@@ -23,8 +23,8 @@
   --text-inverse-dim: #3a3e3a;
 
   /* Borders — subtle white glows */
-  --border-light:    rgba(255, 255, 255, 0.10);
-  --border-medium:   rgba(255, 255, 255, 0.15);
+  --border-light:    rgba(255, 255, 255, 0.25);
+  --border-medium:   rgba(255, 255, 255, 0.35);
   --border-dark:     rgba(255, 255, 255, 0.06);
 
   /* Shadows — deeper for dark glass */
@@ -95,7 +95,20 @@
 [data-theme="night"] textarea:focus {
   background: rgba(255, 255, 255, 0.09) !important;
   border-color: var(--brand-primary) !important;
-  box-shadow: 0 0 0 3px rgba(232, 93, 47, 0.15) !important;
+  box-shadow: 0 0 0 4px rgba(235, 126, 88, 0.35) !important;
+}
+
+[data-theme="night"] input:focus-visible,
+[data-theme="night"] select:focus-visible,
+[data-theme="night"] textarea:focus-visible,
+[data-theme="night"] button:focus-visible {
+  outline: 2px solid var(--brand-primary);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(235, 126, 88, 0.35) !important;
+}
+
+[data-theme="night"] button:not(:disabled):hover {
+  filter: brightness(1.15);
 }
 
 [data-theme="night"] select option {
@@ -110,10 +123,11 @@
 
 /* Modal */
 [data-theme="night"] .modal-panel {
-  background: rgba(12, 14, 12, 0.92);
+  background: #141614;
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
-  border: 1px solid rgba(255, 255, 255, 0.10);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
 [data-theme="night"] .modal-overlay {

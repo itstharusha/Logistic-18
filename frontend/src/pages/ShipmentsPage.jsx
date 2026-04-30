@@ -585,6 +585,7 @@ export default function ShipmentsPage() {
               <thead>
                 <tr>
                   <th>Shipment</th>
+                  <th>Type</th>
                   <th>Carrier</th>
                   <th>Route</th>
                   <th>ETA</th>
@@ -612,6 +613,12 @@ export default function ShipmentsPage() {
                           <span className="user-name supplier-name-link">{s.shipmentNumber}</span>
                           <span className="user-email">{s.trackingNumber || '—'}</span>
                         </div>
+                      </div>
+                    </td>
+                    <td>
+                      <div className="role-chip" style={{ background: s.shipmentType === 'internal_transfer' ? 'rgba(139, 92, 246, 0.15)' : 'rgba(59,130,246,0.15)', color: s.shipmentType === 'internal_transfer' ? '#8b5cf6' : '#3b82f6' }}>
+                        <Package size={13} />
+                        <span>{s.shipmentType === 'internal_transfer' ? 'Internal Transfer' : 'External'}</span>
                       </div>
                     </td>
                     <td>

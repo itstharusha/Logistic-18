@@ -1,0 +1,231 @@
+/* ═══ ACCESS DENIED PAGE ═══ */
+
+.access-denied-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: var(--surface-deep);
+  padding: 20px;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.access-denied-wrapper {
+  width: 100%;
+  max-width: 500px;
+}
+
+.access-denied-content {
+  background: var(--surface-card);
+  border-radius: 16px;
+  padding: 48px 40px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+  text-align: center;
+  animation: slideUp 0.5s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Icon */
+.access-denied-icon {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 32px;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.access-denied-icon svg {
+  color: #c7253e;
+  filter: drop-shadow(0 2px 8px rgba(199, 37, 62, 0.15));
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.05);
+  }
+}
+
+/* Title */
+.access-denied-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 12px 0;
+  letter-spacing: -0.5px;
+}
+
+/* Description */
+.access-denied-description {
+  font-size: 15px;
+  color: var(--text-secondary);
+  margin: 0 0 28px 0;
+  line-height: 1.6;
+}
+
+/* Info Section */
+.access-denied-info {
+  background: var(--surface-card-alt);
+  border-left: 4px solid #c7253e;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 28px;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.info-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.info-label {
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  min-width: 120px;
+}
+
+.info-value {
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 500;
+  padding: 6px 12px;
+  background: var(--surface-card);
+  border-radius: 6px;
+  border: 1px solid var(--border-light);
+  flex: 1;
+  min-width: 150px;
+  text-align: right;
+}
+
+/* Actions */
+.access-denied-actions {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+}
+
+.btn-primary,
+.btn-secondary {
+  flex: 1;
+  min-width: 140px;
+  padding: 11px 20px;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.btn-primary {
+  background: var(--text-primary);
+  color: var(--text-inverse);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.btn-primary:hover {
+  background: var(--brand-primary);
+  color: var(--text-inverse);
+  box-shadow: 0 6px 16px rgba(232, 93, 47, 0.25);
+  transform: translateY(-2px);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+.btn-secondary {
+  background: var(--surface-card);
+  color: var(--text-primary);
+  border: 2px solid var(--border-light);
+}
+
+.btn-secondary:hover {
+  background: var(--surface-card-alt);
+  border-color: #c7253e;
+  color: #c7253e;
+}
+
+.btn-secondary:active {
+  background: var(--surface-dark);
+}
+
+/* Footer Note */
+.access-denied-note {
+  font-size: 13px;
+  color: #8a8e8a;
+  margin: 0;
+  line-height: 1.5;
+  font-style: italic;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .access-denied-content {
+    padding: 32px 24px;
+  }
+
+  .access-denied-title {
+    font-size: 24px;
+  }
+
+  .access-denied-description {
+    font-size: 14px;
+  }
+
+  .access-denied-icon {
+    margin-bottom: 24px;
+  }
+
+  .access-denied-icon svg {
+    width: 48px;
+    height: 48px;
+  }
+
+  .info-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .info-value {
+    width: 100%;
+    text-align: left;
+  }
+
+  .access-denied-actions {
+    flex-direction: column;
+  }
+
+  .btn-primary,
+  .btn-secondary {
+    width: 100%;
+  }
+}

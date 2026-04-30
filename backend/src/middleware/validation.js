@@ -22,12 +22,14 @@ import joi from 'joi';
  * The password pattern requires at least one uppercase, one lowercase, one digit.
  */
 export const schemas = {
-  // User registration — orgId is auto-created by backend
+  // User registration — single-organization mode; first user becomes ORG_ADMIN.
+  // Optional `role` is only honored when supplied; self-registration ignores it.
   register: joi.object({
     name: joi.string().min(2).max(100).required(),
     email: joi.string().email().required(),
     password: joi.string().min(8).max(50).required()
       .pattern(/(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9])/), // password strength
+    role: joi.string().valid('VIEWER', 'LOGISTICS_OPERATOR', 'INVENTORY_MANAGER', 'RISK_ANALYST', 'ORG_ADMIN').optional(),
   }),
 
   // User login — only email + password needed
@@ -404,6 +406,7 @@ export const schemas = {
     entityId: joi.string().required().messages({
       'any.required': 'Entity ID is required',
     }),
+    entityName: joi.string().allow('', null).max(200).optional(),
     severity: joi.string().valid('low', 'medium', 'high', 'critical').optional().default('medium').messages({
       'any.only': 'Severity must be one of: low, medium, high, critical',
     }),
@@ -431,14 +434,16 @@ export const schemas = {
 
   // Generate report
   generateReport: joi.object({
-    type: joi.string().valid('summary', 'detailed', 'comparison', 'trend', 'weekly', 'monthly', 'custom').optional().messages({
+    type: joi.string().valid('summary', 'detailed', 'comparison', 'trend', 'weekly', 'monthly', 'custom').required().messages({
+      'any.required': 'Report type is required',
       'any.only': 'Type must be one of: summary, detailed, comparison, trend, weekly, monthly, custom',
     }),
     format: joi.string().valid('pdf', 'csv').required().messages({
       'any.required': 'Report format is required',
       'any.only': 'Format must be either pdf or csv',
     }),
-    module: joi.string().valid('dashboard', 'overall', 'supplier_risk', 'shipments', 'shipment_tracking', 'inventory', 'alerts').optional().messages({
+    module: joi.string().valid('dashboard', 'overall', 'supplier_risk', 'shipments', 'shipment_tracking', 'inventory', 'alerts').required().messages({
+      'any.required': 'Report module is required',
       'any.only': 'Module must be one of: dashboard, overall, supplier_risk, shipments, shipment_tracking, inventory, alerts',
     }),
     severity: joi.string().valid('low', 'medium', 'high', 'critical', 'all').optional().messages({

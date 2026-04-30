@@ -51,9 +51,9 @@ async def load_models():
             inventory_model = joblib.load(f'{model_path}/inventory_model.joblib')
             inventory_explainer = shap.TreeExplainer(inventory_model)
             
-        print("✓ Models and SHAP Explainers loaded successfully")
+        print("[OK] Models and SHAP Explainers loaded successfully")
     except Exception as e:
-        print(f"⚠ Warning loading models: {e}")
+        print(f"[WARN] Loading models failed: {e}")
 
 @app.get("/health")
 async def health_check():

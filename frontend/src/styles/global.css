@@ -8,8 +8,9 @@
 
 :root {
   /* Colors from design guide */
-  --brand-primary: #E85D2F;
-  --brand-primary-dim: #C94D22;
+  --brand-primary: #D1491E; /* Contrast 4.5+ */
+  --brand-primary-dim: #B33D18;
+  --brand-primary-light: #FCECE8;
   --surface-deep: #edf0ec;
   --surface-dark: #ffffff;
   --surface-mid: #f5f7f4;
@@ -17,7 +18,7 @@
   --surface-card-alt: #f8faf7;
   --text-primary: #1a1c1a;
   --text-secondary: #5a5e5a;
-  --text-tertiary: #6b706b;
+  --text-tertiary: #5E635E; /* Adjusted for contrast */
   --text-inverse: #ffffff;
   --text-inverse-dim: #f2f4f0;
   /* Updated for WCAG AA 4.5:1 contrast */
@@ -27,10 +28,18 @@
 
   /* Risk colors */
   --risk-low: #2DB87A;
+  --risk-low-text: #1B8556;
+  --risk-low-bg: #E6F7EF;
   --risk-medium: #D48A00;
+  --risk-medium-text: #966100;
+  --risk-medium-bg: #FCF4E5;
   /* Darkened for WCAG AA contrast */
   --risk-high: #E8572F;
+  --risk-high-text: #C43813;
+  --risk-high-bg: #FBEAE6;
   --risk-critical: #C7253E;
+  --risk-critical-text: #A81B2F;
+  --risk-critical-bg: #F9E9EB;
 
   /* Spacing */
   --space-1: 4px;
@@ -133,8 +142,16 @@ button:focus-visible {
   outline-offset: 2px;
 }
 
+button:not(:disabled):hover {
+  transform: translateY(-1px);
+  filter: brightness(0.95);
+}
+
 button:disabled {
-  opacity: 0.6;
+  opacity: 1;
+  background-color: var(--surface-deep);
+  color: var(--text-tertiary);
+  border: 1px solid var(--border-light);
   cursor: not-allowed;
 }
 
@@ -146,6 +163,15 @@ textarea {
   border-radius: 8px;
   padding: var(--space-3);
   font-size: 14px;
+}
+
+input:disabled,
+select:disabled,
+textarea:disabled {
+  opacity: 1;
+  background-color: var(--surface-deep);
+  color: var(--text-tertiary);
+  cursor: not-allowed;
 }
 
 input:focus,
@@ -210,7 +236,10 @@ textarea:focus-visible {
 }
 
 .btn-primary:disabled {
-  opacity: 0.6;
+  opacity: 1;
+  background-color: var(--surface-deep);
+  color: var(--text-tertiary);
+  border: 1px solid var(--border-light);
   cursor: not-allowed;
 }
 
@@ -252,7 +281,10 @@ textarea:focus-visible {
 }
 
 .btn-secondary:disabled {
-  opacity: 0.6;
+  opacity: 1;
+  background-color: var(--surface-deep);
+  color: var(--text-tertiary);
+  border-color: var(--border-light);
   cursor: not-allowed;
 }
 

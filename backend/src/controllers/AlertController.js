@@ -97,7 +97,7 @@ export class AlertController {
     static async createAlert(req, res) {
         try {
             const { orgId } = req.user;
-            const { entityType, entityId, severity, title, description, mitigationRecommendation } = req.validatedBody || req.body;
+            const { entityType, entityId, entityName, severity, title, description, mitigationRecommendation } = req.validatedBody || req.body;
 
             if (!entityType || !entityId || !title) {
                 return res.status(400).json({ error: 'entityType, entityId, and title are required' });
@@ -112,7 +112,7 @@ export class AlertController {
             }
 
             const result = await AlertService.createAlert(
-                { orgId, entityType, entityId, severity, title, description, mitigationRecommendation },
+                { orgId, entityType, entityId, entityName, severity, title, description, mitigationRecommendation },
                 req.user
             );
 

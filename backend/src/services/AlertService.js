@@ -29,7 +29,7 @@ export class AlertService {
      * FR-AL-06: Cooldown logic — suppress duplicates
      */
     static async createAlert(alertData, reqUser) {
-        const { orgId, entityType, entityId, severity, title, description, mitigationRecommendation } = alertData;
+        const { orgId, entityType, entityId, entityName, severity, title, description, mitigationRecommendation } = alertData;
 
         // FR-AL-06: Cooldown check — suppress duplicate alerts within window
         const existingAlert = await AlertRepository.findActiveDuplicate(orgId, entityType, entityId);
@@ -57,6 +57,7 @@ export class AlertService {
             orgId,
             entityType,
             entityId,
+            entityName,
             severity: severity || 'medium',
             title,
             description,
@@ -142,6 +143,8 @@ export class AlertService {
 
         const updated = await AlertRepository.updateStatus(alertId, orgId, {
             status: 'acknowledged',
+            acknowledgedBy: userId,
+            acknowledgedAt: new Date(),
         });
 
         // Audit log
@@ -216,9 +219,21 @@ export class AlertService {
             });
 
             for (const alert of alerts) {
-                await AlertRepository.updateStatus(alert._id, alert.orgId, {
+                const reason = `SLA breach: unacknowledged after ${slaMinutes} minutes`;
+                const escalatedAt = new Date();
+
+                await mongoose.model('Alert').findByIdAndUpdate(alert._id, {
                     status: 'escalated',
-                    escalatedAt: new Date(),
+                    escalatedAt: alert.escalatedAt || escalatedAt,
+                    updatedAt: escalatedAt,
+                    $inc: { escalationCount: 1 },
+                    $push: {
+                        escalationHistory: {
+                            escalatedAt,
+                            reason,
+                            slaExceeded: true,
+                        },
+                    },
                 });
 
                 // Audit log
@@ -228,10 +243,10 @@ export class AlertService {
                     entityType: 'ALERT',
                     entityId: alert._id,
                     oldValue: { status: 'open', severity },
-                    newValue: { status: 'escalated', reason: `SLA breach: unacknowledged after ${slaMinutes} minutes` },
+                    newValue: { status: 'escalated', reason },
                 }).catch(err => console.error('Audit log error:', err));
 
-                results.push({ alertId: alert._id, severity, escalatedAt: new Date() });
+                results.push({ alertId: alert._id, severity, escalatedAt });
             }
         }
 

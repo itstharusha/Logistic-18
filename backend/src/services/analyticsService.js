@@ -53,7 +53,7 @@ class AnalyticsService {
 
     const onTimeShipments = await Shipment.countDocuments({
       status: 'delivered',
-      $expr: { $lte: ['$actualDate', '$expectedDate'] }
+      $expr: { $lte: ['$actualDelivery', '$estimatedDelivery'] }
     });
 
     const onTimeRate = completedShipments > 0 ? Math.round((onTimeShipments / completedShipments) * 100) : 0;
@@ -192,7 +192,7 @@ class AnalyticsService {
 
     // c. Shipment Delays (array of { carrier, delays })
     const shipmentDelaysData = await Shipment.aggregate([
-      { $match: { status: 'delayed' } },
+      { $match: { status: { $in: ['delayed', 'rerouted'] } } },
       { $group: { _id: '$carrier', delays: { $sum: 1 } } },
       { $sort: { delays: -1 } },
       { $limit: 10 }
@@ -324,7 +324,7 @@ class AnalyticsService {
   async getShipmentDelays(orgId, filters = {}) {
     const matchStage = {};
 
-    if (filters.carrier) matchStage.carrierName = filters.carrier;
+    if (filters.carrier) matchStage.carrier = filters.carrier;
     if (filters.supplierId) matchStage.supplierId = new mongoose.Types.ObjectId(filters.supplierId);
     if (filters.startDate || filters.endDate) {
       matchStage.createdAt = {};
@@ -335,15 +335,15 @@ class AnalyticsService {
     const delays = await Shipment.aggregate([
       { $match: matchStage },
       {
-         $addFields: {
-            isDelayed: {
-               $cond: {
-                  if: { $and: [ { $gt: ['$actualDate', null] }, { $gt: ['$expectedDate', null] } ] },
-                  then: { $gt: ['$actualDate', '$expectedDate'] },
-                  else: { $eq: ['$status', 'delayed'] } // fallback
-               }
+        $addFields: {
+          isDelayed: {
+            $cond: {
+              if: { $and: [{ $gt: ['$actualDelivery', null] }, { $gt: ['$estimatedDelivery', null] }] },
+              then: { $gt: ['$actualDelivery', '$estimatedDelivery'] },
+              else: { $eq: ['$status', 'delayed'] }
             }
-         }
+          }
+        }
       },
       { $match: { isDelayed: true } },
       {
@@ -357,8 +357,7 @@ class AnalyticsService {
       { $unwind: { path: '$supplierInfo', preserveNullAndEmptyArrays: true } },
       {
         $group: {
-          // Schema doesn't have route or delay reason, using carrierName instead as proxy
-          _id: '$carrierName',
+          _id: '$carrier',
           count: { $sum: 1 },
           averageRiskScore: { $avg: '$riskScore' }
         }
@@ -416,7 +415,7 @@ class AnalyticsService {
       {
         $project: {
           sku: 1,
-          name: 1,
+          productName: 1,
           daysOfCover: 1,
           status: 1,
           riskScore: 1,
@@ -540,44 +539,230 @@ class AnalyticsService {
   }
 
   /**
-   * Generate PDF buffer
+   * Generate PDF buffer with human-readable formatting per module type
    */
-  async generatePDF(title, data) {
+  async generatePDF(title, data, module = 'overall') {
     return new Promise((resolve, reject) => {
       try {
-        const doc = new PDFDocument({ margin: 50 });
+        const doc = new PDFDocument({ margin: 50, size: 'A4' });
         const buffers = [];
-
-        doc.on('data', buffers.push.bind(buffers));
+        doc.on('data', b => buffers.push(b));
         doc.on('end', () => resolve(Buffer.concat(buffers)));
 
-        // Title and Date
-        doc.fontSize(20).text(title, { align: 'center' });
-        doc.moveDown();
-        doc.fontSize(12).text(`Generated on: ${new Date().toLocaleString()}`, { align: 'right' });
-        doc.moveDown(2);
+        const LEFT = 50;
+        const RIGHT = doc.page.width - 50;
+        const WIDTH = RIGHT - LEFT;
 
-        // Simple formatting to display data
+        const checkPage = (space = 80) => {
+          if (doc.y > doc.page.height - 80 - space) doc.addPage();
+        };
+
+        const sectionHeader = (text) => {
+          checkPage(60);
+          doc.moveDown(0.8);
+          doc.fontSize(12).fillColor('#1e3a5f').font('Helvetica-Bold').text(text.toUpperCase(), LEFT);
+          doc.moveDown(0.2);
+          doc.moveTo(LEFT, doc.y).lineTo(RIGHT, doc.y).strokeColor('#1e3a5f').stroke();
+          doc.moveDown(0.5);
+          doc.fillColor('#000000').font('Helvetica').fontSize(10);
+        };
+
+        const row = (label, value) => {
+          checkPage(20);
+          const v = (value === null || value === undefined) ? '—' : String(value);
+          doc.font('Helvetica-Bold').fontSize(10).text(`${label}:  `, LEFT, doc.y, { continued: true, width: WIDTH });
+          doc.font('Helvetica').text(v);
+        };
+
+        // ── Header ──
+        doc.fontSize(20).fillColor('#1e3a5f').font('Helvetica-Bold')
+          .text(title, LEFT, doc.y, { align: 'center', width: WIDTH });
+        doc.moveDown(0.4);
+        doc.fontSize(10).fillColor('#555555').font('Helvetica')
+          .text(`Generated on: ${new Date().toLocaleString()}`, LEFT, doc.y, { align: 'center', width: WIDTH });
+        doc.moveDown(0.5);
+        doc.moveTo(LEFT, doc.y).lineTo(RIGHT, doc.y).strokeColor('#1e3a5f').lineWidth(2).stroke();
+        doc.lineWidth(1).fillColor('#000000');
+        doc.moveDown(1);
+
         if (!data || data.length === 0) {
-          doc.text('No data available for this report.');
+          doc.fontSize(11).font('Helvetica').text('No data available for this report.');
+          doc.end();
+          return;
+        }
+
+        // ── Overall / Dashboard ──
+        if (module === 'overall' || module === 'dashboard') {
+          const d = data[0];
+          const ov = d.overview || {};
+          const kpis = d.kpis || {};
+
+          sectionHeader('Key Performance Indicators');
+          row('Overall Risk Score', `${ov.riskScore ?? kpis.overallRiskScore?.value ?? '—'} / 100`);
+          row('Active Alerts', ov.activeAlerts ?? kpis.activeAlerts?.value ?? '—');
+          row('Delayed Shipments', ov.delayedShipments ?? kpis.delayedShipments?.value ?? '—');
+          row('Inventory Items at Risk', ov.atRiskInventory ?? kpis.atRiskInventory?.value ?? '—');
+          row('Registered Users', ov.registeredUsers ?? '—');
+          row('On-Time Delivery Rate', `${ov.onTimeRate ?? '—'}%`);
+          const tc = d.trendChange ?? 0;
+          row('Risk Trend', `${d.trendDirection ?? 'stable'} (${tc >= 0 ? '+' : ''}${tc}% vs previous period)`);
+
+          const br = d.breakdown || {};
+          if (br.supplierRisk || br.shipmentRisk || br.inventoryRisk) {
+            sectionHeader('Highest Risk Entities');
+            row('Highest Risk Supplier', br.supplierRisk || '—');
+            row('Highest Risk Shipment', br.shipmentRisk || '—');
+            row('Highest Risk Inventory Item', br.inventoryRisk || '—');
+          }
+
+          if (d.alertsBySeverity && d.alertsBySeverity.length > 0) {
+            sectionHeader('Active Alerts by Severity');
+            for (const a of d.alertsBySeverity) {
+              row(a.name, a.value === 0 ? 'None' : `${a.value} alert(s)`);
+            }
+          }
+
+          sectionHeader('Recent Alerts');
+          const alerts = d.alerts || [];
+          if (alerts.length === 0) {
+            doc.font('Helvetica').fontSize(10).text('No recent alerts.');
+          } else {
+            for (const alert of alerts) {
+              checkPage(55);
+              const date = alert.createdAt
+                ? new Date(alert.createdAt).toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+                : '—';
+              const sev = (alert.severity || 'unknown').toUpperCase();
+              doc.font('Helvetica-Bold').fontSize(10).fillColor('#1e3a5f')
+                .text(`[${sev}]  ${alert.title || 'Alert'}`, LEFT);
+              doc.font('Helvetica').fontSize(9).fillColor('#333333')
+                .text(alert.description || '—', LEFT + 10, doc.y, { width: WIDTH - 10 });
+              doc.fontSize(8).fillColor('#888888').text(`Date: ${date}`, LEFT + 10);
+              doc.fillColor('#000000').moveDown(0.5);
+            }
+          }
+
+          if (d.inventoryRisk && d.inventoryRisk.length > 0) {
+            sectionHeader('Inventory at Risk');
+            const C = [LEFT, LEFT + 130, LEFT + 210, LEFT + 290, LEFT + 360];
+            const hY = doc.y;
+            doc.font('Helvetica-Bold').fontSize(9).fillColor('#444444');
+            doc.text('SKU / Item',   C[0], hY, { width: 80 });
+            doc.text('Stock',        C[1], hY, { width: 80 });
+            doc.text('Threshold',    C[2], hY, { width: 80 });
+            doc.text('Risk Level',   C[3], hY, { width: 80 });
+            doc.fillColor('#000000').font('Helvetica').fontSize(9);
+            doc.moveDown(0.5);
+            for (const item of d.inventoryRisk) {
+              checkPage(18);
+              const rY = doc.y;
+              doc.text(item.name || '—',                      C[0], rY, { width: 80 });
+              doc.text(String(item.stock ?? '—'),             C[1], rY, { width: 80 });
+              doc.text(String(item.threshold ?? '—'),         C[2], rY, { width: 80 });
+              doc.text((item.risk || '—').toUpperCase(),      C[3], rY, { width: 80 });
+              doc.moveDown(0.3);
+            }
+          }
+
+          if (d.shipmentDelays && d.shipmentDelays.length > 0) {
+            sectionHeader('Shipment Delays by Carrier');
+            for (const item of d.shipmentDelays) {
+              row(item.carrier || 'Unknown', `${item.delays} delay(s)`);
+            }
+          }
+
+          if (d.activeUsers && d.activeUsers.length > 0) {
+            sectionHeader('Active Users');
+            for (const u of d.activeUsers) {
+              checkPage(20);
+              doc.font('Helvetica-Bold').fontSize(10).text(u.name || '—', LEFT, doc.y, { continued: true, width: WIDTH });
+              doc.font('Helvetica').fillColor('#555555')
+                .text(`  |  ${u.role || u.roleCode || '—'}  |  ${u.email || '—'}`);
+              doc.fillColor('#000000');
+            }
+          }
+
+        // ── Supplier Risk ──
+        } else if (module === 'supplier_risk') {
+          sectionHeader('Supplier Performance Summary');
+          for (const item of data) {
+            checkPage(70);
+            doc.font('Helvetica-Bold').fontSize(11).fillColor('#1e3a5f').text(item.name || 'Unknown Supplier', LEFT);
+            doc.fillColor('#000000').font('Helvetica').fontSize(10);
+            row('Category', item.category || '—');
+            row('Risk Score', item.riskScore != null ? `${item.riskScore} / 100` : '—');
+            row('Risk Tier', item.riskTier || '—');
+            row('Total Shipments', item.totalShipments ?? '—');
+            row('On-Time Delivery', item.onTimeDeliveryPercentage != null ? `${Math.round(item.onTimeDeliveryPercentage)}%` : '—');
+            doc.moveDown(0.7);
+          }
+
+        // ── Shipments ──
+        } else if (module === 'shipments' || module === 'shipment_tracking') {
+          sectionHeader('Shipment Delay Analysis by Carrier');
+          for (const item of data) {
+            checkPage(40);
+            row('Carrier', item._id || item.carrier || 'Unknown');
+            row('Total Delays', item.count ?? item.delays ?? '—');
+            row('Average Risk Score', item.averageRiskScore != null ? Math.round(item.averageRiskScore) : '—');
+            doc.moveDown(0.5);
+          }
+
+        // ── Inventory ──
+        } else if (module === 'inventory') {
+          sectionHeader('Inventory Risk Assessment');
+          for (const item of data) {
+            checkPage(70);
+            doc.font('Helvetica-Bold').fontSize(11).fillColor('#1e3a5f')
+              .text(`${item.sku || '—'}  —  ${item.productName || ''}`, LEFT);
+            doc.fillColor('#000000').font('Helvetica').fontSize(10);
+            row('Days of Cover', item.daysOfCover != null ? item.daysOfCover.toFixed(1) : '—');
+            row('Status', item.status || '—');
+            row('Risk Score', item.riskScore != null ? `${item.riskScore} / 100` : '—');
+            row('Risk Tier', item.riskTier || '—');
+            row('Supplier', item.supplierName || '—');
+            doc.moveDown(0.7);
+          }
+
+        // ── Alerts ──
+        } else if (module === 'alerts') {
+          sectionHeader('Alert Summary by Severity and Status');
+          for (const item of data) {
+            checkPage(25);
+            row(`${(item.severity || '—').toUpperCase()} — ${item.status || '—'}`, `${item.count} alert(s)`);
+          }
+
+        // ── Generic fallback ──
         } else {
           for (let i = 0; i < data.length; i++) {
+            checkPage(60);
             const item = data[i];
-            doc.fontSize(14).text(`Item ${i + 1}`, { underline: true });
-            doc.fontSize(10);
+            if (data.length > 1) {
+              doc.font('Helvetica-Bold').fontSize(12).fillColor('#1e3a5f').text(`Entry ${i + 1}`, LEFT);
+              doc.fillColor('#000000').font('Helvetica').fontSize(10);
+              doc.moveDown(0.3);
+            }
             for (const [key, val] of Object.entries(item)) {
-              let displayVal = val;
-              if (typeof val === 'object' && val !== null) {
-                displayVal = JSON.stringify(val);
+              checkPage(20);
+              let displayVal;
+              if (val === null || val === undefined) {
+                displayVal = '—';
+              } else if (Array.isArray(val)) {
+                displayVal = val.length === 0 ? '(none)' :
+                  typeof val[0] === 'object'
+                    ? val.map(v => Object.values(v).filter(x => typeof x !== 'object').join(', ')).join(' | ')
+                    : val.join(', ');
+              } else if (typeof val === 'object') {
+                displayVal = Object.entries(val)
+                  .map(([k, v]) => `${k}: ${typeof v === 'object' ? JSON.stringify(v) : v}`)
+                  .join('  |  ');
+              } else {
+                displayVal = String(val);
               }
-              doc.text(`${key}: ${displayVal}`);
+              const label = key.replace(/([A-Z])/g, ' $1').replace(/^./, s => s.toUpperCase());
+              row(label, displayVal);
             }
-            doc.moveDown();
-            
-            // Add a new page if close to bottom
-            if (doc.y > 700 && i < data.length - 1) {
-              doc.addPage();
-            }
+            doc.moveDown(0.8);
           }
         }
 

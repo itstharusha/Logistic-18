@@ -2,7 +2,7 @@ import Shipment from '../models/Shipment.js';
 
 export class ShipmentRepository {
   static async findAll(orgId, { search, status, carrier, skip = 0, limit = 50 } = {}) {
-    const query = {};
+    const query = { orgId };
 
     if (status && status !== 'all') query.status = status;
     if (carrier && carrier !== 'all') query.carrier = carrier;

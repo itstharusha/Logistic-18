@@ -39,6 +39,12 @@ const alertSchema = new mongoose.Schema(
       required: true,
     },
 
+    // The name/number of the triggering entity (e.g., supplier name, tracking number)
+    entityName: {
+      type: String,
+      required: false,
+    },
+
     // How critical is this alert
     severity: {
       type: String,
@@ -74,13 +80,30 @@ const alertSchema = new mongoose.Schema(
       default: 'open',
     },
 
+    // Who acknowledged this alert and when
+    acknowledgedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    acknowledgedAt: Date,
+
     // Who resolved this alert
     resolvedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     resolvedAt: Date,
-    resolutionNote: String, // Free-text explanation of how it was resolved
+    resolutionNote: String,
 
-    // When the alert was escalated (for SLA tracking)
+    // When the alert was first escalated (for SLA tracking)
     escalatedAt: Date,
+
+    // How many times this alert has been escalated
+    escalationCount: { type: Number, default: 0 },
+
+    // Full audit trail of every escalation event
+    escalationHistory: [
+      {
+        escalatedAt: { type: Date, default: Date.now },
+        reason: { type: String, default: '' },
+        slaExceeded: { type: Boolean, default: true },
+        _id: false,
+      },
+    ],
 
     // Anti-spam: prevents a duplicate alert for the same entity
     // before this deadline expires

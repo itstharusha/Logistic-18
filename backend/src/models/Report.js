@@ -13,20 +13,20 @@ const reportSchema = new mongoose.Schema(
       ref: 'User', 
       required: true 
     },
-    type: { 
-      type: String, 
-      enum: ['weekly', 'monthly', 'custom'], 
-      required: true 
+    type: {
+      type: String,
+      enum: ['summary', 'detailed', 'comparison', 'trend', 'weekly', 'monthly', 'custom'],
+      required: true
     },
-    format: { 
-      type: String, 
-      enum: ['pdf', 'csv'], 
-      required: true 
+    format: {
+      type: String,
+      enum: ['pdf', 'csv'],
+      required: true
     },
-    module: { 
-      type: String, 
-      enum: ['overall', 'supplier_risk', 'shipment_tracking', 'inventory', 'alerts'], 
-      required: true 
+    module: {
+      type: String,
+      enum: ['dashboard', 'overall', 'supplier_risk', 'shipments', 'shipment_tracking', 'inventory', 'alerts'],
+      required: true
     },
     severity: { 
       type: String, 

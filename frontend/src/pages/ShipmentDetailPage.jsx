@@ -327,7 +327,15 @@ export default function ShipmentDetailPage() {
               <Truck size={24} />
             </div>
             <div>
-              <h1 style={{ marginBottom: 4 }}>{shipment?.shipmentNumber}</h1>
+                <h1 style={{ marginBottom: 4, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  {shipment?.shipmentNumber}
+                  {shipment?.shipmentType === 'internal_transfer' && (
+                    <span className="role-chip" style={{ fontSize: '13px', background: 'rgba(139, 92, 246, 0.15)', color: '#8b5cf6', fontWeight: 600 }}>
+                      <Package size={13} />
+                      <span style={{ fontWeight: 600 }}>Internal Transfer</span>
+                    </span>
+                  )}
+                </h1>
               <div style={{ display: 'flex', gap: 'var(--space-3)', alignItems: 'center', flexWrap: 'wrap' }}>
                 <StatusPill status={shipment?.status} />
                 {shipment?.delaySeverity && <DelaySeverityChip severity={shipment.delaySeverity} />}
@@ -688,6 +696,16 @@ export default function ShipmentDetailPage() {
                 {typeof shipment.supplierId === 'object'
                   ? shipment.supplierId.name
                   : shipment.supplierId}
+              </span>
+            </div>
+          )}
+          {shipment?.shipmentType === 'internal_transfer' && shipment?.warehouseTransferId && (
+            <div className="profile-detail-row">
+              <span className="profile-detail-label"><Package size={14} /> Linked Transfer</span>
+              <span className="profile-detail-value">
+                {typeof shipment.warehouseTransferId === 'object'
+                  ? shipment.warehouseTransferId.transferNumber || shipment.warehouseTransferId._id
+                  : shipment.warehouseTransferId}
               </span>
             </div>
           )}

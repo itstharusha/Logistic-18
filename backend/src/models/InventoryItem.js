@@ -120,7 +120,7 @@ const inventoryItemSchema = new mongoose.Schema(
       {
         feature: String,
         value: Number,
-        impact: Number,
+        impact: { type: String, enum: ['low', 'medium', 'high'], default: 'low' },
       },
     ],
     lastScoredAt: Date,
