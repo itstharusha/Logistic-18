@@ -6,6 +6,7 @@ import { AlertService } from './AlertService.js';
 import AuditLog from '../models/AuditLog.js';
 import { sanitizeForML, hasFiniteNumericValues } from '../middleware/mlValidation.js';
 import { generateFeatureVersion, getCurrentFeatureVersion, createPredictionMetadata } from '../utils/featureVersioning.js';
+import { NotFoundError, ConflictError } from '../utils/errors.js';
 import axios from 'axios';
 
 const ML_SERVICE_URL = process.env.ML_SERVICE_URL || 'http://localhost:8000';
@@ -16,7 +17,7 @@ export class InventoryService {
     // Check if SKU already exists in organization
     const existingItem = await InventoryRepository.findBySku(itemData.sku, itemData.orgId);
     if (existingItem) {
-      throw new Error('SKU already exists in this organization');
+      throw new ConflictError('SKU already exists in this organization');
     }
 
     // Create the item
@@ -72,7 +73,7 @@ export class InventoryService {
   static async getItem(itemId, orgId) {
     const item = await InventoryRepository.findById(itemId, orgId);
     if (!item) {
-      throw new Error('Inventory item not found');
+      throw new NotFoundError('Inventory item not found');
     }
     return item;
   }
@@ -97,14 +98,14 @@ export class InventoryService {
   static async updateItem(itemId, orgId, updateData, userId) {
     const existingItem = await InventoryRepository.findById(itemId, orgId);
     if (!existingItem) {
-      throw new Error('Inventory item not found');
+      throw new NotFoundError('Inventory item not found');
     }
 
     // If SKU is being changed, check uniqueness
     if (updateData.sku && updateData.sku !== existingItem.sku) {
       const skuExists = await InventoryRepository.findBySku(updateData.sku, orgId);
       if (skuExists) {
-        throw new Error('SKU already exists in this organization');
+        throw new ConflictError('SKU already exists in this organization');
       }
     }
 
@@ -167,7 +168,7 @@ export class InventoryService {
   static async updateStock(itemId, orgId, newStock, userId) {
     const existingItem = await InventoryRepository.findById(itemId, orgId);
     if (!existingItem) {
-      throw new Error('Inventory item not found');
+      throw new NotFoundError('Inventory item not found');
     }
 
     const oldStock = existingItem.currentStock;
@@ -213,7 +214,7 @@ export class InventoryService {
   static async updatePendingOrder(itemId, orgId, pendingQty, incomingDays, userId) {
     const existingItem = await InventoryRepository.findById(itemId, orgId);
     if (!existingItem) {
-      throw new Error('Inventory item not found');
+      throw new NotFoundError('Inventory item not found');
     }
 
     const item = await InventoryRepository.updatePendingOrder(itemId, orgId, pendingQty, incomingDays);
@@ -245,7 +246,7 @@ export class InventoryService {
   static async getForecast(itemId, orgId) {
     const item = await InventoryRepository.findById(itemId, orgId);
     if (!item) {
-      throw new Error('Inventory item not found');
+      throw new NotFoundError('Inventory item not found');
     }
 
     const daysUntilStockout = item.getDaysUntilStockout();
@@ -345,7 +346,7 @@ export class InventoryService {
   static async deleteItem(itemId, orgId, userId) {
     const item = await InventoryRepository.findById(itemId, orgId);
     if (!item) {
-      throw new Error('Inventory item not found');
+      throw new NotFoundError('Inventory item not found');
     }
 
     const warehouseId = item.warehouseId;

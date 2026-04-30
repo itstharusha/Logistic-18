@@ -1,6 +1,7 @@
 import { WarehouseRepository } from '../repositories/WarehouseRepository.js';
 import { InventoryRepository } from '../repositories/InventoryRepository.js';
 import AuditLog from '../models/AuditLog.js';
+import { NotFoundError, ConflictError, ValidationError } from '../utils/errors.js';
 
 export class WarehouseService {
   // Create a new warehouse
@@ -8,7 +9,7 @@ export class WarehouseService {
     // Check if code already exists in organization
     const existingWarehouse = await WarehouseRepository.findByCode(warehouseData.code, warehouseData.orgId);
     if (existingWarehouse) {
-      throw new Error('Warehouse code already exists in this organization');
+      throw new ConflictError('Warehouse code already exists in this organization');
     }
 
     // Create the warehouse
@@ -31,7 +32,7 @@ export class WarehouseService {
   static async getWarehouse(warehouseId, orgId) {
     const warehouse = await WarehouseRepository.findById(warehouseId, orgId);
     if (!warehouse) {
-      throw new Error('Warehouse not found');
+      throw new NotFoundError('Warehouse not found');
     }
     return warehouse;
   }
@@ -58,14 +59,14 @@ export class WarehouseService {
   static async updateWarehouse(warehouseId, orgId, updateData, userId) {
     const existingWarehouse = await WarehouseRepository.findById(warehouseId, orgId);
     if (!existingWarehouse) {
-      throw new Error('Warehouse not found');
+      throw new NotFoundError('Warehouse not found');
     }
 
     // If code is being changed, check uniqueness
     if (updateData.code && updateData.code !== existingWarehouse.code) {
       const codeExists = await WarehouseRepository.findByCode(updateData.code, orgId);
       if (codeExists) {
-        throw new Error('Warehouse code already exists in this organization');
+        throw new ConflictError('Warehouse code already exists in this organization');
       }
     }
 
@@ -90,13 +91,13 @@ export class WarehouseService {
   static async deleteWarehouse(warehouseId, orgId, userId) {
     const warehouse = await WarehouseRepository.findById(warehouseId, orgId);
     if (!warehouse) {
-      throw new Error('Warehouse not found');
+      throw new NotFoundError('Warehouse not found');
     }
 
     // Check if any inventory items are using this warehouse
     const itemsInWarehouse = await InventoryRepository.countByWarehouse(warehouseId, orgId);
     if (itemsInWarehouse > 0) {
-      throw new Error(`Cannot delete warehouse: ${itemsInWarehouse} inventory items are assigned to it. Transfer or delete items first.`);
+      throw new ValidationError(`Cannot delete warehouse: ${itemsInWarehouse} inventory items are assigned to it. Transfer or delete items first.`);
     }
 
     await WarehouseRepository.delete(warehouseId, orgId);
@@ -118,7 +119,7 @@ export class WarehouseService {
   static async setDefaultWarehouse(warehouseId, orgId, userId) {
     const warehouse = await WarehouseRepository.findById(warehouseId, orgId);
     if (!warehouse) {
-      throw new Error('Warehouse not found');
+      throw new NotFoundError('Warehouse not found');
     }
 
     const updatedWarehouse = await WarehouseRepository.setDefaultWarehouse(warehouseId, orgId);
@@ -144,7 +145,7 @@ export class WarehouseService {
   static async getWarehouseWithInventory(warehouseId, orgId) {
     const warehouse = await WarehouseRepository.findById(warehouseId, orgId);
     if (!warehouse) {
-      throw new Error('Warehouse not found');
+      throw new NotFoundError('Warehouse not found');
     }
 
     // Get inventory items in this warehouse

@@ -1,12 +1,13 @@
 import { UserRepository } from '../repositories/UserRepository.js';
 import AuditLog from '../models/AuditLog.js';
+import { NotFoundError, ConflictError, ValidationError } from '../utils/errors.js';
 
 export class UserService {
   // Get user profile
   static async getProfile(userId) {
     const user = await UserRepository.findById(userId);
     if (!user) {
-      throw new Error('User not found');
+      throw new NotFoundError('User not found');
     }
     return user;
   }
@@ -17,13 +18,13 @@ export class UserService {
     if (updateData.email) {
       const existingUser = await UserRepository.findByEmail(updateData.email);
       if (existingUser && existingUser._id.toString() !== userId) {
-        throw new Error('Email is already in use by another user');
+        throw new ConflictError('Email is already in use by another user');
       }
     }
 
     const user = await UserRepository.update(userId, updateData);
     if (!user) {
-      throw new Error('User not found');
+      throw new NotFoundError('User not found');
     }
 
     // Log audit
@@ -56,7 +57,7 @@ export class UserService {
   static async assignRole(userId, orgId, newRole, assignedByUserId) {
     const user = await UserRepository.findById(userId);
     if (!user) {
-      throw new Error('User not found');
+      throw new NotFoundError('User not found');
     }
 
     const oldRole = user.role;
@@ -81,7 +82,7 @@ export class UserService {
   static async deactivateUser(userId, orgId, deactivatedByUserId) {
     const user = await UserRepository.deactivate(userId);
     if (!user) {
-      throw new Error('User not found');
+      throw new NotFoundError('User not found');
     }
 
     // Invalidate all tokens
@@ -104,7 +105,7 @@ export class UserService {
   static async activateUser(userId, orgId, activatedByUserId) {
     const user = await UserRepository.activate(userId);
     if (!user) {
-      throw new Error('User not found');
+      throw new NotFoundError('User not found');
     }
 
     // Log audit
@@ -167,11 +168,11 @@ export class UserService {
     // Check if user already exists
     const existingUser = await UserRepository.findByEmail(userData.email);
     if (existingUser) {
-      throw new Error('User with this email already exists');
+      throw new ConflictError('User with this email already exists');
     }
 
     if (!userData.password || userData.password.length < 6) {
-      throw new Error('Password must be at least 6 characters long');
+      throw new ValidationError('Password must be at least 6 characters long');
     }
 
     // Create user with provided password
@@ -213,7 +214,7 @@ export class UserService {
     // Check if user already exists
     const existingUser = await UserRepository.findByEmail(userData.email);
     if (existingUser) {
-      throw new Error('User with this email already exists');
+      throw new ConflictError('User with this email already exists');
     }
 
     // Create user with temporary password

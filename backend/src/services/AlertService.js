@@ -1,6 +1,7 @@
 import { AlertRepository } from '../repositories/AlertRepository.js';
 import AuditLog from '../models/AuditLog.js';
 import mongoose from 'mongoose';
+import { NotFoundError, ValidationError } from '../utils/errors.js';
 
 // Role mapping: entityType → role for auto-assignment
 const ENTITY_ROLE_MAP = {
@@ -117,7 +118,7 @@ export class AlertService {
     static async getAlertById(alertId, orgId) {
         const alert = await AlertRepository.findById(alertId, orgId);
         if (!alert) {
-            throw new Error('Alert not found');
+            throw new NotFoundError('Alert not found');
         }
         return alert;
     }
@@ -130,15 +131,15 @@ export class AlertService {
         const alert = await AlertRepository.findById(alertId, orgId);
 
         if (!alert) {
-            throw new Error('Alert not found');
+            throw new NotFoundError('Alert not found');
         }
 
         if (alert.status === 'resolved') {
-            throw new Error('Cannot acknowledge a resolved alert');
+            throw new ValidationError('Cannot acknowledge a resolved alert');
         }
 
         if (alert.status === 'acknowledged') {
-            throw new Error('Alert is already acknowledged');
+            throw new ValidationError('Alert is already acknowledged');
         }
 
         const updated = await AlertRepository.updateStatus(alertId, orgId, {
@@ -169,15 +170,15 @@ export class AlertService {
         const alert = await AlertRepository.findById(alertId, orgId);
 
         if (!alert) {
-            throw new Error('Alert not found');
+            throw new NotFoundError('Alert not found');
         }
 
         if (alert.status === 'resolved') {
-            throw new Error('Alert is already resolved');
+            throw new ValidationError('Alert is already resolved');
         }
 
         if (!resolutionNote || resolutionNote.trim().length === 0) {
-            throw new Error('Resolution note is required');
+            throw new ValidationError('Resolution note is required');
         }
 
         const updated = await AlertRepository.updateStatus(alertId, orgId, {

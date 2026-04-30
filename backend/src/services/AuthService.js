@@ -6,7 +6,7 @@ import {
   generateRefreshToken,
   verifyRefreshToken,
 } from '../middleware/auth.js';
-import { AuthenticationError, ConflictError } from '../utils/errors.js';
+import { AuthenticationError, ConflictError, NotFoundError } from '../utils/errors.js';
 
 export class AuthService {
   // User registration (single-organization mode)
@@ -124,7 +124,7 @@ export class AuthService {
       if (decoded.version !== user.refreshTokenVersion) {
         // Token reuse detected - invalidate all tokens
         await UserRepository.invalidateRefreshTokens(userId);
-        throw new Error('Token reuse detected - unauthorized');
+        throw new AuthenticationError('Token reuse detected - unauthorized');
       }
 
       // Generate new tokens
@@ -173,13 +173,13 @@ export class AuthService {
     const user = await UserRepository.findById(userId).select('+passwordHash');
 
     if (!user) {
-      throw new Error('User not found');
+      throw new NotFoundError('User not found');
     }
 
     // Verify current password
     const isPasswordValid = await user.comparePassword(currentPassword);
     if (!isPasswordValid) {
-      throw new Error('Current password is incorrect');
+      throw new AuthenticationError('Current password is incorrect');
     }
 
     // Update password
