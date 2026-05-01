@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import {
-  Users, Briefcase, Bell, BarChart3, MapPin, AlertTriangle,
+  Users, Briefcase, Bell, BarChart3, AlertTriangle,
   ArrowUpRight, Building2, Truck, Archive, CheckCircle2, Star,
   BarChart2, Activity
 } from 'lucide-react';
@@ -301,7 +301,7 @@ export default function DashboardPage() {
             <Line ref={chartRef} data={chartData} options={chartOptions} />
             <div className={`chart-callout ${chartReady ? 'visible' : ''}`}>
               <div className="callout-dot"></div>
-              <span>Trend {dashboardData?.trendDirection === 'up' ? '↑' : '↓'} {dashboardData?.trendChange || '+0'}%</span>
+              <span>Trend {dashboardData?.trendDirection === 'up' ? '↑' : dashboardData?.trendDirection === 'down' ? '↓' : '→'} {dashboardData?.trendChange ?? 0}%</span>
             </div>
           </div>
         </div>

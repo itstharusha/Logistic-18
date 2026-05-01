@@ -87,7 +87,8 @@ export default function KPIPage() {
   }, [kpiData, metric]);
 
   const delta = useMemo(() => {
-    if (!stats?.current || !stats?.previous) return null;
+    if (stats?.current == null || stats?.previous == null) return null;
+    if (stats.previous === 0) return stats.current > 0 ? 100 : 0;
     return Math.round(((stats.current - stats.previous) / stats.previous) * 100 * 10) / 10;
   }, [stats]);
 

@@ -15,7 +15,7 @@
   right: 80px;
   width: 380px;
   max-height: 500px;
-  background: var(--surface-card);
+  background: #ffffff;
   border-radius: 12px;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.12), 0 0 1px rgba(0, 0, 0, 0.1);
   display: flex;
@@ -157,7 +157,7 @@
 }
 
 .notification-item.read {
-  background-color: var(--surface-card);
+  background-color: #ffffff;
 }
 
 .notification-item:hover {
@@ -230,7 +230,7 @@
 .view-all-btn {
   width: 100%;
   padding: 8px 12px;
-  background: var(--surface-card);
+  background: #ffffff;
   border: 1px solid #e5e7eb;
   border-radius: 6px;
   font-size: 13px;
@@ -269,4 +269,77 @@
   .notification-items {
     max-height: calc(70vh - 120px);
   }
+}
+
+/* ── Night theme overrides ── */
+[data-theme="night"] .notification-dropdown-content {
+  background: #1a1c1a;
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6), 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="night"] .notification-header {
+  background: rgba(255, 255, 255, 0.04);
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="night"] .notification-title {
+  color: #e8ece8;
+}
+
+[data-theme="night"] .notification-item {
+  border-bottom-color: rgba(255, 255, 255, 0.06);
+}
+
+[data-theme="night"] .notification-item.unread {
+  background-color: rgba(59, 130, 246, 0.10);
+}
+
+[data-theme="night"] .notification-item.read {
+  background-color: transparent;
+}
+
+[data-theme="night"] .notification-item:hover {
+  background-color: rgba(255, 255, 255, 0.06);
+}
+
+[data-theme="night"] .notification-entity {
+  color: #a8b0a8;
+}
+
+[data-theme="night"] .message-text {
+  color: #e8ece8;
+}
+
+[data-theme="night"] .message-time {
+  color: #6b7280;
+}
+
+[data-theme="night"] .notification-empty {
+  color: #a8b0a8;
+}
+
+[data-theme="night"] .notification-empty svg {
+  color: rgba(255, 255, 255, 0.2);
+}
+
+[data-theme="night"] .notification-empty p {
+  color: #a8b0a8;
+}
+
+[data-theme="night"] .notification-footer {
+  background: rgba(255, 255, 255, 0.03);
+  border-top-color: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="night"] .view-all-btn {
+  background: transparent;
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #60a5fa;
+}
+
+[data-theme="night"] .view-all-btn:hover {
+  background-color: rgba(59, 130, 246, 0.15);
+  border-color: rgba(59, 130, 246, 0.5);
+  color: #93c5fd;
 }

@@ -109,6 +109,9 @@ export class AuthService {
         email: user.email,
         role: user.role,
         orgId: user.orgId,
+        isActive: user.isActive,
+        createdAt: user.createdAt,
+        lastActiveAt: user.lastActiveAt,
       },
     };
   }

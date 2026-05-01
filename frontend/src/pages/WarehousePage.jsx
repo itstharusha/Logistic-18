@@ -408,10 +408,10 @@ export default function WarehousePage() {
 
       {/* Tabs */}
       <div style={{ display: 'flex', gap: '8px', marginBottom: '20px' }}>
-        <button onClick={() => setActiveTab('warehouses')} className="tab-btn-light" style={{ background: activeTab === 'warehouses' ? 'var(--text-primary)' : 'var(--surface-card)', color: activeTab === 'warehouses' ? 'var(--surface-card)' : 'var(--text-primary)' }}>
+        <button onClick={() => setActiveTab('warehouses')} className="tab-btn-light" style={{ background: activeTab === 'warehouses' ? 'var(--brand-primary)' : 'transparent', color: activeTab === 'warehouses' ? '#ffffff' : 'var(--text-primary)' }}>
           <Warehouse size={16} style={{ marginRight: '6px' }} /> Warehouses
         </button>
-        <button onClick={() => setActiveTab('transfers')} className="tab-btn-light" style={{ background: activeTab === 'transfers' ? 'var(--text-primary)' : 'var(--surface-card)', color: activeTab === 'transfers' ? 'var(--surface-card)' : 'var(--text-primary)' }}>
+        <button onClick={() => setActiveTab('transfers')} className="tab-btn-light" style={{ background: activeTab === 'transfers' ? 'var(--brand-primary)' : 'transparent', color: activeTab === 'transfers' ? '#ffffff' : 'var(--text-primary)' }}>
           <ArrowRightLeft size={16} style={{ marginRight: '6px' }} /> Transfers
         </button>
       </div>

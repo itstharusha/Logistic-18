@@ -88,47 +88,62 @@ const CustomTooltip = ({ active, payload, label }) => {
   return null;
 };
 
-const InventoryRiskTable = ({ data }) => {
+const InventoryRiskTable = ({ data, loading }) => {
+  if (loading) {
+    return (
+      <div className="ad-chart-card glass-card ad-chart-narrow">
+        <h3 className="ad-chart-title">Inventory at Risk</h3>
+        <Skeleton height={220} borderRadius={12} />
+      </div>
+    );
+  }
+
   if (!data || data.length === 0) {
     return (
-      <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-        No inventory risk data available.
+      <div className="ad-chart-card glass-card ad-chart-narrow">
+        <h3 className="ad-chart-title">Inventory at Risk</h3>
+        <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+          No inventory risk data available.
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-sm text-left">
-        <thead>
-          <tr className="border-b border-gray-200 dark:border-gray-700">
-            <th className="pb-3 pr-4 font-semibold text-gray-600 dark:text-gray-400">Product</th>
-            <th className="pb-3 pr-4 font-semibold text-gray-600 dark:text-gray-400">Stock</th>
-            <th className="pb-3 pr-4 font-semibold text-gray-600 dark:text-gray-400">Threshold</th>
-            <th className="pb-3 font-semibold text-gray-600 dark:text-gray-400">Risk Level</th>
-          </tr>
-        </thead>
-        <tbody>
-          {data.map((item, index) => (
-            <tr key={index} className="border-b border-gray-100 dark:border-gray-800 last:border-0">
-              <td className="py-3 pr-4 text-gray-800 dark:text-gray-200">{item.name}</td>
-              <td className="py-3 pr-4 text-gray-700 dark:text-gray-300">{item.stock}</td>
-              <td className="py-3 pr-4 text-gray-700 dark:text-gray-300">{item.threshold}</td>
-              <td className="py-3">
-                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                  item.risk === 'high'
-                    ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
-                    : item.risk === 'medium'
-                    ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
-                    : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-                }`}>
-                  {item.risk}
-                </span>
-              </td>
+    <div className="ad-chart-card glass-card ad-chart-narrow">
+      <h3 className="ad-chart-title">Inventory at Risk</h3>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm text-left">
+          <thead>
+            <tr className="border-b border-gray-200 dark:border-gray-700">
+              <th className="pb-3 pr-4 font-semibold text-gray-600 dark:text-gray-400">Product</th>
+              <th className="pb-3 pr-4 font-semibold text-gray-600 dark:text-gray-400">Stock</th>
+              <th className="pb-3 pr-4 font-semibold text-gray-600 dark:text-gray-400">Threshold</th>
+              <th className="pb-3 font-semibold text-gray-600 dark:text-gray-400">Risk Level</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {data.map((item, index) => (
+              <tr key={index} className="border-b border-gray-100 dark:border-gray-800 last:border-0">
+                <td className="py-3 pr-4 text-gray-800 dark:text-gray-200">{item.name}</td>
+                <td className="py-3 pr-4 text-gray-700 dark:text-gray-300">{item.stock}</td>
+                <td className="py-3 pr-4 text-gray-700 dark:text-gray-300">{item.threshold}</td>
+                <td className="py-3">
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                    item.risk === 'high'
+                      ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                      : item.risk === 'medium'
+                      ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
+                      : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                  }`}>
+                    {item.risk}
+                  </span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 };
@@ -611,7 +626,7 @@ export default function AnalyticsDashboardPage() {
                                         tickLine={false}
                                     />
                                     <YAxis
-                                        domain={[40, 100]}
+                                        domain={[0, 100]}
                                         tick={{ fill: 'var(--text-muted)', fontSize: 11 }}
                                         axisLine={false}
                                         tickLine={false}

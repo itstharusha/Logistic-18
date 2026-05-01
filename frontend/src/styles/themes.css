@@ -544,4 +544,50 @@
   flex-shrink: 0;
 }
 
+/* ── hero-btn--light night mode: keep dark text on white button ── */
+[data-theme="night"] .hero-btn--light {
+  color: #1a1c1a;
+}
+
+[data-theme="night"] .hero-btn:hover {
+  background: rgba(255, 255, 255, 0.92);
+  color: #1a1c1a;
+}
+
+/* ── tab-btn-light night mode: softer border ── */
+[data-theme="night"] .tab-btn-light {
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+[data-theme="night"] .tab-btn-light:hover {
+  border-color: rgba(255, 255, 255, 0.30);
+}
+
+/* ── Urgent alert cards — dark background so CSS variable text stays readable ── */
+[data-theme="night"] .urgent-alert-card {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+[data-theme="night"] .urgent-alert-card:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(232, 93, 47, 0.35);
+}
+
+[data-theme="night"] .urgent-alert-footer {
+  border-top-color: rgba(255, 255, 255, 0.08);
+}
+
+/* ── Alert feed & SLA cards — replace hardcoded light hover/section bg ── */
+[data-theme="night"] .feed-card-main:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+[data-theme="night"] .sla-info-section {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
 

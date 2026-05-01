@@ -612,13 +612,13 @@ export default function InventoryPage() {
 
       {/* Tabs */}
       <div style={{ display: 'flex', gap: '8px', marginBottom: '20px' }}>
-        <button onClick={() => handleTabChange('all')} className="tab-btn-light" style={{ background: activeTab === 'all' ? 'var(--text-primary)' : 'var(--surface-card)' , color: activeTab === 'all' ? 'var(--surface-card)' : 'var(--text-primary)' }}>
+        <button onClick={() => handleTabChange('all')} className="tab-btn-light" style={{ background: activeTab === 'all' ? 'var(--brand-primary)' : 'transparent', color: activeTab === 'all' ? '#ffffff' : 'var(--text-primary)' }}>
           <Archive size={16} style={{ marginRight: '6px' }} /> All Items
         </button>
-        <button onClick={() => handleTabChange('reorder')} className="tab-btn-light" style={{ background: activeTab === 'reorder' ? 'var(--text-primary)' : 'var(--surface-card)', color: activeTab === 'reorder' ? 'var(--surface-card)' : 'var(--text-primary)' }}>
+        <button onClick={() => handleTabChange('reorder')} className="tab-btn-light" style={{ background: activeTab === 'reorder' ? 'var(--brand-primary)' : 'transparent', color: activeTab === 'reorder' ? '#ffffff' : 'var(--text-primary)' }}>
           <ShoppingCart size={16} style={{ marginRight: '6px' }} /> Reorder List
         </button>
-        <button onClick={() => handleTabChange('critical')} className="tab-btn-light" style={{ background: activeTab === 'critical' ? 'var(--text-primary)' : 'var(--surface-card)', color: activeTab === 'critical' ? 'var(--surface-card)' : 'var(--text-primary)' }}>
+        <button onClick={() => handleTabChange('critical')} className="tab-btn-light" style={{ background: activeTab === 'critical' ? 'var(--brand-primary)' : 'transparent', color: activeTab === 'critical' ? '#ffffff' : 'var(--text-primary)' }}>
           <AlertTriangle size={16} style={{ marginRight: '6px' }} /> Critical Items
         </button>
       </div>

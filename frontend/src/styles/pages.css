@@ -241,7 +241,7 @@
 
 .hero-btn--light {
   background: rgba(255, 255, 255, 0.94);
-  color: var(--text-primary);
+  color: #1a1c1a;
 }
 
 .hero-btn--dark {

@@ -39,6 +39,8 @@ export default function KPICard({
   color = 'var(--brand-primary)',
   loading = false,
   unit = '',
+  clickable = false,
+  onClick,
 }) {
   // deltaPositiveIsGood: green when positive (e.g. metrics you WANT to increase)
   // default false: green when negative (e.g. risk score going down is good)
@@ -50,7 +52,11 @@ export default function KPICard({
       : '—';
 
   return (
-    <div className="an-kpi-card glass-card">
+    <div
+      className={`an-kpi-card glass-card${clickable ? ' an-kpi-card--clickable' : ''}`}
+      onClick={clickable ? onClick : undefined}
+      style={clickable ? { cursor: 'pointer' } : undefined}
+    >
       {loading ? (
         <>
           <Skeleton width={44} height={44} borderRadius={12} />

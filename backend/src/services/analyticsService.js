@@ -219,12 +219,33 @@ class AnalyticsService {
       risk: (item.currentStock / (item.averageDailyDemand || 1)) < 5 ? 'high' : 'medium'
     }));
 
-    // e. KPIs
+    // e. KPIs — with period-over-period deltas (last 30 days vs previous 30 days)
+    const sixtyDaysAgo = new Date();
+    sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+
+    const calcDelta = (current, previous) => {
+      if (previous === 0) return current > 0 ? 100 : 0;
+      return Math.round(((current - previous) / previous) * 100);
+    };
+
+    const [alertsCurrent, alertsPrev, delayedCurrent, delayedPrev] = await Promise.all([
+      Alert.countDocuments({
+        status: { $in: ['open', 'acknowledged'] },
+        createdAt: { $gte: thirtyDaysAgo }
+      }),
+      Alert.countDocuments({
+        status: { $in: ['open', 'acknowledged'] },
+        createdAt: { $gte: sixtyDaysAgo, $lt: thirtyDaysAgo }
+      }),
+      Shipment.countDocuments({ status: 'delayed', createdAt: { $gte: thirtyDaysAgo } }),
+      Shipment.countDocuments({ status: 'delayed', createdAt: { $gte: sixtyDaysAgo, $lt: thirtyDaysAgo } })
+    ]);
+
     const kpis = {
-      overallRiskScore: { value: riskScore, delta: `${trendChange > 0 ? '+' : ''}${trendChange}` },
-      activeAlerts: { value: activeAlerts, delta: '0' },
-      delayedShipments: { value: delayedShipments, delta: '0' },
-      atRiskInventory: { value: atRiskInventory, delta: '0' }
+      overallRiskScore: { value: riskScore, delta: trendChange },
+      activeAlerts: { value: activeAlerts, delta: calcDelta(alertsCurrent, alertsPrev) },
+      delayedShipments: { value: delayedShipments, delta: calcDelta(delayedCurrent, delayedPrev) },
+      atRiskInventory: { value: atRiskInventory, delta: 0 }
     };
 
     return {
@@ -493,8 +514,45 @@ class AnalyticsService {
         { $sort: { _id: 1 } }
       ]);
       trend = data.map(d => ({ date: d._id, value: d.value }));
-    } else {
-      /* no historical data tracking natively yet */
+    } else if (type === 'risk') {
+      // Derive risk score trend from alert volume (same approach as getDashboardInfo trendChart)
+      const data = await Alert.aggregate([
+        { $match: { createdAt: { $gte: dateLimit } } },
+        {
+          $group: {
+            _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
+            count: { $sum: 1 }
+          }
+        },
+        { $sort: { _id: 1 } }
+      ]);
+      trend = data.map(d => ({
+        date: d._id,
+        value: Math.min(Math.round((d.count / 5) * 100), 100)
+      }));
+    } else if (type === 'inventory') {
+      // Count at-risk inventory items (< 10 days cover) updated each day
+      const data = await InventoryItem.aggregate([
+        {
+          $match: {
+            updatedAt: { $gte: dateLimit },
+            $expr: {
+              $lt: [
+                { $divide: [{ $ifNull: ['$currentStock', 0] }, { $max: [{ $ifNull: ['$averageDailyDemand', 1] }, 1] }] },
+                10
+              ]
+            }
+          }
+        },
+        {
+          $group: {
+            _id: { $dateToString: { format: '%Y-%m-%d', date: '$updatedAt' } },
+            value: { $sum: 1 }
+          }
+        },
+        { $sort: { _id: 1 } }
+      ]);
+      trend = data.map(d => ({ date: d._id, value: d.value }));
     }
 
     if (trend.length > 0) {
