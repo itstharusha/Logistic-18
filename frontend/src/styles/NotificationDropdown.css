@@ -177,7 +177,10 @@
 }
 
 .entity-icon {
-  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: inherit;
 }
 
 /* Message content */
@@ -193,6 +196,16 @@
   line-height: 1.4;
   word-wrap: break-word;
   overflow-wrap: break-word;
+}
+
+.message-entity-name {
+  margin: 2px 0 0;
+  font-size: 11px;
+  color: #6b7280;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .message-time {
@@ -309,6 +322,10 @@
 
 [data-theme="night"] .message-text {
   color: #e8ece8;
+}
+
+[data-theme="night"] .message-entity-name {
+  color: #8b9a8b;
 }
 
 [data-theme="night"] .message-time {

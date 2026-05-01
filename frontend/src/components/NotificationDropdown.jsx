@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { AlertTriangle, CheckCircle2, AlertCircle, Clock, Loader } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, AlertCircle, Clock, Loader, Package, BarChart2, Factory, Warehouse, Settings, Bell } from 'lucide-react';
 import {
   fetchAlerts,
   closeNotificationDropdown,
@@ -17,15 +17,20 @@ const SEVERITY_COLORS = {
   critical: '#991B1B',
 };
 
-// Entity type to icon mapping
+// Entity type to Lucide icon component mapping
 const ENTITY_ICONS = {
-  shipment: '📦',
-  inventory: '📊',
-  supplier: '🏭',
-  warehouse: '🏢',
-  system: '⚙️',
-  default: '🔔',
+  shipment: Package,
+  inventory: BarChart2,
+  supplier: Factory,
+  warehouse: Warehouse,
+  system: Settings,
+  default: Bell,
 };
+
+function EntityIcon({ entityType }) {
+  const Icon = ENTITY_ICONS[entityType?.toLowerCase()] || ENTITY_ICONS.default;
+  return <Icon size={16} strokeWidth={1.8} />;
+}
 
 function NotificationDropdown() {
   const dispatch = useDispatch();
@@ -119,20 +124,24 @@ function NotificationDropdown() {
                     if (e.key === 'Enter') handleAlertClick(alert._id);
                   }}
                 >
-                  {/* Entity icon and entity type */}
+                  {/* Entity icon and type */}
                   <div className="notification-entity">
                     <span className="entity-icon">
-                      {ENTITY_ICONS[alert.entity?.toLowerCase()] ||
-                        ENTITY_ICONS.default}
+                      <EntityIcon entityType={alert.entityType} />
                     </span>
                     <span className="entity-type">
-                      {alert.entity || 'System'}
+                      {alert.entityType
+                        ? alert.entityType.charAt(0).toUpperCase() + alert.entityType.slice(1)
+                        : 'System'}
                     </span>
                   </div>
 
-                  {/* Message */}
+                  {/* Title + entity name + time */}
                   <div className="notification-message">
-                    <p className="message-text">{alert.message}</p>
+                    <p className="message-text">{alert.title || alert.description || 'Alert'}</p>
+                    {alert.entityName && (
+                      <p className="message-entity-name">{alert.entityName}</p>
+                    )}
                     <span className="message-time">
                       {formatTimeAgo(alert.createdAt)}
                     </span>
