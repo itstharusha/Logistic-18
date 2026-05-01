@@ -66,9 +66,15 @@
   padding: var(--space-8) 0;
   display: flex;
   justify-content: space-between;
-  align-items: flex-end;
+  align-items: center;
   margin-bottom: var(--space-6);
   border-bottom: 1px solid var(--border-light);
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.header-content {
+  flex: 1;
 }
 
 .page-header-premium h1 {
@@ -86,7 +92,9 @@
 
 .header-actions {
   display: flex;
-  gap: var(--space-3);
+  gap: 10px;
+  align-items: center;
+  z-index: 10;
 }
 
 .action-btn-premium {
@@ -99,6 +107,40 @@
   border-radius: 12px;
   font-weight: 600;
   transition: all 0.2s ease;
+}
+
+.action-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 6px;
+  font-weight: 500;
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+  position: relative;
+  z-index: 11;
+}
+
+.action-btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.action-btn-secondary span {
+  display: inline;
+}
+
+.action-btn-secondary svg {
+  stroke-width: 2;
+  flex-shrink: 0;
 }
 
 .hero-datetime {
@@ -121,7 +163,7 @@
 
 .hero-date {
   font-size: 13px;
-  color: rgba(255, 255, 255, 0.7);
+  color: rgba(255, 255, 255, 0.95);
   font-weight: 500;
 }
 
@@ -146,7 +188,7 @@
 .hero-location {
   font-family: var(--font-body);
   font-size: 13px;
-  color: rgba(255, 255, 255, 0.70);
+  color: rgba(255, 255, 255, 0.95);
   position: relative;
   z-index: 1;
 }
@@ -274,7 +316,7 @@
 .card-subtitle {
   font-family: var(--font-body);
   font-size: 12px;
-  color: #9A9E9A;
+  color: #535853;
   display: block;
   margin-top: 2px;
 }
@@ -338,13 +380,13 @@
 
 .alert-pill--med {
   background: transparent;
-  color: #5A5E5A;
+  color: #3A3E3A;
   border: 1.5px solid #C8CCC5;
 }
 
 .alert-pill--low {
   background: transparent;
-  color: #5A5E5A;
+  color: #3A3E3A;
   border: 1.5px solid #C8CCC5;
 }
 
@@ -368,7 +410,7 @@
 .alert-desc {
   font-family: var(--font-body);
   font-size: 12px;
-  color: #5A5E5A;
+  color: #3A3E3A;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -377,7 +419,7 @@
 .alert-code {
   font-family: var(--font-mono);
   font-size: 11px;
-  color: #9A9E9A;
+  color: #535853;
   white-space: nowrap;
   flex-shrink: 0;
 }
@@ -424,13 +466,13 @@
 .metric-value small {
   font-size: 12px;
   font-weight: 400;
-  color: #5A5E5A;
+  color: #3A3E3A;
 }
 
 .metric-label {
   font-family: var(--font-body);
   font-size: 11px;
-  color: #5A5E5A;
+  color: #3A3E3A;
   line-height: 1.3;
 }
 
@@ -530,7 +572,7 @@
 .action-desc {
   font-family: var(--font-body);
   font-size: 11px;
-  color: #9A9E9A;
+  color: #535853;
 }
 
 .action-badge {
@@ -550,7 +592,7 @@
   font-size: 11px;
   font-weight: 500;
   text-transform: uppercase;
-  color: #9A9E9A;
+  color: #535853;
   letter-spacing: 0.07em;
   margin-bottom: 14px;
 }
@@ -576,7 +618,7 @@
 .breakdown-label {
   font-family: var(--font-body);
   font-size: 13px;
-  color: #5A5E5A;
+  color: #3A3E3A;
   flex: 1;
 }
 
@@ -672,7 +714,7 @@
 .user-role {
   font-family: var(--font-body);
   font-size: 11px;
-  color: #5A5E5A;
+  color: #3A3E3A;
 }
 
 .user-rating {
@@ -696,7 +738,7 @@
 .user-badge {
   font-family: var(--font-mono);
   font-size: 11px;
-  color: #9A9E9A;
+  color: #535853;
   white-space: nowrap;
   flex-shrink: 0;
 }
@@ -1233,3 +1275,696 @@
     flex-direction: column;
   }
 }
+
+/* ═══════════════════════════════════════════════
+   Supplier Risk Module Styles
+═══════════════════════════════════════════════ */
+
+/* ── Risk Tier Chips ── */
+.risk-tier-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.risk-tier-chip.tier-low {
+  background: rgba(45, 184, 122, 0.12);
+  color: var(--risk-low);
+  border: 1px solid rgba(45, 184, 122, 0.25);
+}
+
+.risk-tier-chip.tier-medium {
+  background: rgba(212, 138, 0, 0.12);
+  color: var(--risk-medium);
+  border: 1px solid rgba(212, 138, 0, 0.25);
+}
+
+.risk-tier-chip.tier-high {
+  background: rgba(232, 87, 47, 0.12);
+  color: var(--risk-high);
+  border: 1px solid rgba(232, 87, 47, 0.25);
+}
+
+.risk-tier-chip.tier-critical {
+  background: rgba(199, 37, 62, 0.12);
+  color: var(--risk-critical);
+  border: 1px solid rgba(199, 37, 62, 0.25);
+}
+
+/* ── Supplier Status Pills ── */
+.supplier-status-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.supplier-status-pill.status-active {
+  background: rgba(45, 184, 122, 0.12);
+  color: var(--risk-low);
+}
+
+.supplier-status-pill.status-under_watch {
+  background: rgba(212, 138, 0, 0.12);
+  color: var(--risk-medium);
+}
+
+.supplier-status-pill.status-high_risk {
+  background: rgba(232, 87, 47, 0.12);
+  color: var(--risk-high);
+}
+
+.supplier-status-pill.status-suspended {
+  background: rgba(199, 37, 62, 0.12);
+  color: var(--risk-critical);
+}
+
+/* ── Risk Score Bar ── */
+.risk-score-bar-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 110px;
+}
+
+.risk-score-bar {
+  flex: 1;
+  height: 6px;
+  background: var(--border-light);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.risk-score-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.risk-score-fill.tier-low { background: var(--risk-low); }
+.risk-score-fill.tier-medium { background: var(--risk-medium); }
+.risk-score-fill.tier-high { background: var(--risk-high); }
+.risk-score-fill.tier-critical { background: var(--risk-critical); }
+
+.risk-score-number {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+  min-width: 24px;
+  text-align: right;
+}
+
+/* ── Filter Tabs ── */
+.filter-tabs-row {
+  display: flex;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-6);
+  border-bottom: 1px solid var(--border-light);
+  flex-wrap: wrap;
+}
+
+.filter-tabs {
+  display: flex;
+  gap: var(--space-1);
+  background: var(--surface-card-alt);
+  border-radius: 10px;
+  padding: 3px;
+}
+
+.filter-tab {
+  padding: 5px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--duration-normal) var(--ease-smooth);
+  white-space: nowrap;
+}
+
+.filter-tab:hover {
+  color: var(--text-primary);
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.filter-tab.active {
+  background: white;
+  color: var(--text-primary);
+  box-shadow: var(--shadow-sm);
+  font-weight: 600;
+}
+
+.filter-tab.tier-filter.active.tier-low { color: var(--risk-low); }
+.filter-tab.tier-filter.active.tier-medium { color: var(--risk-medium); }
+.filter-tab.tier-filter.active.tier-high { color: var(--risk-high); }
+.filter-tab.tier-filter.active.tier-critical { color: var(--risk-critical); }
+
+/* ── Compare Checkbox ── */
+.compare-checkbox {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--brand-primary);
+  cursor: pointer;
+}
+
+.row-selected {
+  background: rgba(232, 93, 47, 0.04) !important;
+}
+
+/* ── Supplier Avatar Accent ── */
+.supplier-avatar {
+  background: linear-gradient(135deg, var(--brand-primary), var(--brand-primary-dim)) !important;
+  color: white !important;
+}
+
+/* ── Modal ── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: var(--space-4);
+  animation: fadeIn 0.15s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.modal-panel {
+  background: white;
+  border-radius: 20px;
+  padding: var(--space-8);
+  max-width: 480px;
+  width: 100%;
+  box-shadow: var(--shadow-premium);
+  animation: fadeUp 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-4);
+}
+
+.modal-header h3 {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.modal-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  transition: all var(--duration-fast) var(--ease-smooth);
+}
+
+.modal-close:hover {
+  background: var(--surface-card-alt);
+  color: var(--text-primary);
+}
+
+.modal-subtitle {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: var(--space-4);
+}
+
+/* ── Status Option List ── */
+.status-option-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.status-option-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border-light);
+  border-radius: 12px;
+  background: white;
+  cursor: pointer;
+  transition: all var(--duration-normal) var(--ease-smooth);
+  text-align: left;
+}
+
+.status-option-btn:hover:not(:disabled) {
+  border-color: var(--brand-primary);
+  background: rgba(232, 93, 47, 0.03);
+}
+
+.status-option-btn:disabled {
+  opacity: 0.7;
+  cursor: default;
+  background: var(--surface-card-alt);
+}
+
+.current-label {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  font-weight: 500;
+}
+
+/* ── Comparison Panel ── */
+.comparison-panel {
+  max-width: 900px;
+  width: 95%;
+}
+
+.comparison-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--space-4);
+  margin-top: var(--space-4);
+}
+
+.comparison-card {
+  background: var(--surface-card);
+  border-radius: 16px;
+  padding: var(--space-6);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  border: 1px solid var(--border-light);
+}
+
+.comparison-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  text-align: left;
+  width: 100%;
+  margin-bottom: var(--space-4);
+}
+
+.comparison-score {
+  font-size: 48px;
+  font-weight: 900;
+  line-height: 1;
+  margin: var(--space-2) 0;
+}
+
+.comparison-score.tier-low { color: var(--risk-low); }
+.comparison-score.tier-medium { color: var(--risk-medium); }
+.comparison-score.tier-high { color: var(--risk-high); }
+.comparison-score.tier-critical { color: var(--risk-critical); }
+
+.comparison-label {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.comparison-metrics {
+  width: 100%;
+  margin-top: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.comparison-metric-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--border-light);
+  font-size: 13px;
+}
+
+.comparison-metric-row span { color: var(--text-secondary); }
+.comparison-metric-row strong { color: var(--text-primary); }
+
+/* ── Detail Page ── */
+.detail-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+  font-size: 14px;
+}
+
+.back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 500;
+  padding: 6px 12px;
+  border-radius: 8px;
+  transition: all var(--duration-fast) var(--ease-smooth);
+}
+
+.back-btn:hover {
+  background: var(--surface-card-alt);
+  color: var(--text-primary);
+}
+
+.breadcrumb-sep { color: var(--text-tertiary); }
+.breadcrumb-current { color: var(--text-primary); font-weight: 600; }
+
+/* ── Detail Top Grid ── */
+.detail-top-grid {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: var(--space-6);
+  margin-bottom: var(--space-6);
+}
+
+.gauge-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.metrics-mini-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-4);
+  align-content: start;
+}
+
+/* ── Gauge ── */
+.risk-gauge-wrap {
+  display: flex;
+  justify-content: center;
+  padding: var(--space-4) 0 var(--space-2);
+}
+
+/* ── Geopolitical risk flag ── */
+.geo-risk-flag {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  background: rgba(212, 138, 0, 0.08);
+  border: 1px solid rgba(212, 138, 0, 0.2);
+  border-radius: 8px;
+  padding: var(--space-2) var(--space-3);
+  margin-top: var(--space-4);
+  font-size: 12px;
+  color: var(--risk-medium);
+}
+
+/* ── Profile Details ── */
+.profile-details-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 0;
+  padding: 0 var(--space-6) var(--space-4);
+}
+
+.profile-detail-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: var(--space-4);
+  border-bottom: 1px solid var(--border-light);
+}
+
+.profile-detail-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-tertiary);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.profile-detail-value {
+  font-size: 14px;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+/* ── Override Score Change Display ── */
+.score-change {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.score-old { color: var(--text-tertiary); }
+.score-arrow { color: var(--text-tertiary); }
+.score-new { font-weight: 700; }
+
+/* ── Error dismiss button ── */
+.error-card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  background: rgba(199, 37, 62, 0.08);
+  color: var(--risk-critical);
+  padding: var(--space-3) var(--space-4);
+  border-radius: 10px;
+  border-left: 3px solid var(--risk-critical);
+  font-size: 14px;
+}
+
+.error-dismiss {
+  margin-left: auto;
+  color: var(--risk-critical);
+  opacity: 0.6;
+  padding: 2px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+}
+
+.error-dismiss:hover { opacity: 1; }
+
+/* ── Success Card ── */
+.success-card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  background: rgba(45, 184, 122, 0.08);
+  color: var(--risk-low);
+  padding: var(--space-3) var(--space-4);
+  border-radius: 10px;
+  border-left: 3px solid var(--risk-low);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* ── Form section label ── */
+.form-section-label {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-tertiary);
+  margin-bottom: var(--space-3);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--border-light);
+}
+
+/* ── Form subtitle ── */
+.form-subtitle {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: var(--space-4);
+}
+
+/* ── Clickable supplier name in list ── */
+.supplier-name-link {
+  transition: color var(--duration-normal) var(--ease-smooth);
+}
+.user-identity:hover .supplier-name-link {
+  color: var(--brand-primary);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* ── Responsive Supplier ── */
+@media (max-width: 1024px) {
+  .detail-top-grid {
+    grid-template-columns: 1fr;
+  }
+  .metrics-mini-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* ═══ Shipment Module Styles ═══ */
+
+/* ── Shipment Status Pills ── */
+.shipment-status-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
+.shipment-status-registered { background: rgba(156,163,175,0.12); color: #9ca3af; border: 1px solid rgba(156,163,175,0.25); }
+.shipment-status-in_transit  { background: rgba(59,130,246,0.12);  color: #3b82f6; border: 1px solid rgba(59,130,246,0.25); }
+.shipment-status-delayed     { background: rgba(212,138,0,0.12);   color: #D48A00; border: 1px solid rgba(212,138,0,0.25); }
+.shipment-status-rerouted    { background: rgba(139,92,246,0.12);  color: #8b5cf6; border: 1px solid rgba(139,92,246,0.25); }
+.shipment-status-delivered   { background: rgba(45,184,122,0.12);  color: #2DB87A; border: 1px solid rgba(45,184,122,0.25); }
+.shipment-status-closed      { background: rgba(107,114,128,0.12); color: #6b7280; border: 1px solid rgba(107,114,128,0.25); }
+
+/* ── Status option buttons in modal ── */
+.shipment-status-option-in_transit,
+.shipment-status-option-delayed,
+.shipment-status-option-rerouted,
+.shipment-status-option-delivered,
+.shipment-status-option-closed {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: transparent;
+  border: 1px solid var(--border-light);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-smooth);
+  margin-bottom: var(--space-2);
+}
+
+.shipment-status-option-in_transit:hover  { background: rgba(59,130,246,0.06);  border-color: rgba(59,130,246,0.3); }
+.shipment-status-option-delayed:hover     { background: rgba(212,138,0,0.06);   border-color: rgba(212,138,0,0.3); }
+.shipment-status-option-rerouted:hover    { background: rgba(139,92,246,0.06);  border-color: rgba(139,92,246,0.3); }
+.shipment-status-option-delivered:hover   { background: rgba(45,184,122,0.06);  border-color: rgba(45,184,122,0.3); }
+.shipment-status-option-closed:hover      { background: rgba(107,114,128,0.06); border-color: rgba(107,114,128,0.3); }
+
+/* ── Tracking Events Timeline ── */
+.tracking-timeline {
+  padding: var(--space-4) var(--space-6) var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.tracking-event {
+  display: flex;
+  gap: var(--space-4);
+  position: relative;
+  padding-bottom: var(--space-5);
+}
+
+.tracking-event:not(:last-child)::before {
+  content: '';
+  position: absolute;
+  left: 17px;
+  top: 36px;
+  bottom: 0;
+  width: 2px;
+  background: var(--border-light);
+}
+
+.tracking-event-dot {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  opacity: 0.85;
+  z-index: 1;
+}
+
+.tracking-event-latest .tracking-event-dot {
+  opacity: 1;
+  box-shadow: 0 0 0 4px rgba(255,255,255,0.08);
+}
+
+.tracking-event-content {
+  flex: 1;
+  padding-top: 6px;
+}
+
+.tracking-event-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  margin-bottom: 2px;
+}
+
+/* ─── Responsive Shipment ─── */
+@media (max-width: 768px) {
+  .filter-tabs-row {
+    flex-direction: column;
+  }
+  .comparison-grid {
+    grid-template-columns: 1fr;
+  }
+  .metrics-mini-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .detail-top-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.bulk-actions-bar { margin-bottom: 20px; padding: 16px; background: rgba(232, 93, 47, 0.1); border-radius: 8px; display: flex; gap: 12px; align-items: center; border: 1px solid rgba(232, 93, 47, 0.3); } .bulk-actions-text { flex: 1; color: #EAEAEA; font-weight: 500; } .bulk-action-admin { background: rgba(232, 93, 47, 0.2) !important; color: #E85D2F !important; } .bulk-action-analyst { background: rgba(16, 185, 129, 0.2) !important; color: #10b981 !important; } .bulk-action-activate { background: rgba(45, 184, 122, 0.2) !important; color: #2DB87A !important; } .bulk-action-deactivate { background: rgba(239, 68, 68, 0.2) !important; color: #ef4444 !important; }
+
+
+.kanban-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; padding: 20px; } .kanban-card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 16px; cursor: pointer; transition: all 0.2s; } .kanban-card.selected { box-shadow: 0 0 0 2px #E85D2F; opacity: 1; } .kanban-card:not(.selected) { opacity: 0.9; } .kanban-card:hover { background: rgba(255,255,255,0.1); } .kanban-card-header { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 12px; } .kanban-card-info { flex: 1; } .kanban-card-name { font-weight: 600; color: #EAEAEA; margin-bottom: 2px; } .kanban-card-email { font-size: 12px; color: var(--text-secondary); } .kanban-card-tags { margin-bottom: 12px; } .role-chip-kanban { display: inline-flex; align-items: center; gap: 4px; background: rgba(232, 93, 47, 0.2); color: #E85D2F; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 500; cursor: pointer; } .status-pill-kanban { display: inline-block; margin-left: 8px; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 500; } .kanban-card-actions { display: flex; gap: 8px; }
+
+
+.empty-canvas-search { padding: var(--space-12) 0; } .btn-ghost-margin { margin-top: var(--space-4); }
+
+
+.metric-icon-primary { background: rgba(232, 93, 47, 0.1); color: var(--brand-primary); border: none; } .metric-icon-success { background: rgba(45, 184, 122, 0.1); color: var(--risk-low); border: none; } .metric-icon-info { background: rgba(59, 130, 246, 0.1); color: #3b82f6; border: none; }
+
+
+.glass-panel-margin { margin-bottom: var(--space-6); }
+
+
+.page-header-flex { display: flex; justify-content: space-between; }
+
+
+.header-actions-flex { display: flex; gap: 10px; }
+
+
+.cursor-pointer { cursor: pointer; } .table-th-checkbox { width: 40px; }
+
+.role-info-icon {
+    margin-left: 4px;
+    opacity: 0.6;
+}
+.kanban-user-email {
+    color: var(--text-secondary);
+    font-size: 13px;
+}
+
+
+
+

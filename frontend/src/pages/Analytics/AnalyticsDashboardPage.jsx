@@ -45,7 +45,9 @@ import {
     selectLoading,
     selectError,
 } from '../../redux/analyticsSlice.js';
-import apiClient from '../../utils/apiClient';
+import apiClient from '../../utils/apiClient.js';
+import Layout from '../../components/Layout.jsx';
+import KpiCard from '../../components/KPICard.jsx';
 import '../../styles/analyticsDashboard.css';
 
 // ─── RBAC ───────────────────────────────────────────────────────────────────
@@ -60,197 +62,82 @@ function getStoredUserRole() {
     }
 }
 
-// ─── MOCK DATA ───────────────────────────────────────────────────────────────
-const MOCK_DATA = {
-    kpis: {
-        overallRiskScore: { value: 72, delta: -4.2 },
-        activeAlerts: { value: 38, delta: 12.5 },
-        delayedShipments: { value: 14, delta: -7.8 },
-        atRiskInventory: { value: 23, delta: 3.1 },
-    },
-    riskTrend: [
-        { date: 'Jan 20', score: 68 },
-        { date: 'Jan 27', score: 74 },
-        { date: 'Feb 03', score: 71 },
-        { date: 'Feb 10', score: 82 },
-        { date: 'Feb 17', score: 77 },
-        { date: 'Feb 24', score: 69 },
-        { date: 'Mar 02', score: 72 },
-    ],
-    alertsBySeverity: [
-        { name: 'Low', value: 12 },
-        { name: 'Medium', value: 18 },
-        { name: 'High', value: 6 },
-        { name: 'Critical', value: 2 },
-    ],
-    shipmentDelays: [
-        { carrier: 'FedEx', delays: 5 },
-        { carrier: 'UPS', delays: 7 },
-        { carrier: 'DHL', delays: 2 },
-    ],
-    inventoryRisk: [
-        { sku: 'SKU-1042', name: 'Hydraulic Seal Kit', daysOfCover: 4, status: 'critical' },
-        { sku: 'SKU-2310', name: 'Conveyor Belt V2', daysOfCover: 9, status: 'high' },
-        { sku: 'SKU-0871', name: 'Alloy Fasteners M8', daysOfCover: 18, status: 'medium' },
-        { sku: 'SKU-3314', name: 'Control PCB Unit', daysOfCover: 32, status: 'low' },
-        { sku: 'SKU-1190', name: 'Pneumatic Valve', daysOfCover: 3, status: 'critical' },
-        { sku: 'SKU-4421', name: 'Bearing Assembly', daysOfCover: 14, status: 'medium' },
-    ],
+const CustomTooltip = ({ active, payload, label }) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 shadow-lg">
+        <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{label}</p>
+        {payload.map((entry, index) => (
+          <p key={index} className="text-sm" style={{ color: entry.color }}>
+            {entry.name}: {entry.value}
+          </p>
+        ))}
+      </div>
+    );
+  }
+  return null;
 };
 
-const SEVERITY_COLORS = {
-    Low: '#2DB87A',
-    Medium: '#F5A623',
-    High: '#E8572F',
-    Critical: '#C7253E',
+const InventoryRiskTable = ({ data }) => {
+  if (!data || data.length === 0) {
+    return (
+      <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+        No inventory risk data available.
+      </div>
+    );
+  }
+
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-sm text-left">
+        <thead>
+          <tr className="border-b border-gray-200 dark:border-gray-700">
+            <th className="pb-3 pr-4 font-semibold text-gray-600 dark:text-gray-400">Product</th>
+            <th className="pb-3 pr-4 font-semibold text-gray-600 dark:text-gray-400">Stock</th>
+            <th className="pb-3 pr-4 font-semibold text-gray-600 dark:text-gray-400">Threshold</th>
+            <th className="pb-3 font-semibold text-gray-600 dark:text-gray-400">Risk Level</th>
+          </tr>
+        </thead>
+        <tbody>
+          {data.map((item, index) => (
+            <tr key={index} className="border-b border-gray-100 dark:border-gray-800 last:border-0">
+              <td className="py-3 pr-4 text-gray-800 dark:text-gray-200">{item.name}</td>
+              <td className="py-3 pr-4 text-gray-700 dark:text-gray-300">{item.stock}</td>
+              <td className="py-3 pr-4 text-gray-700 dark:text-gray-300">{item.threshold}</td>
+              <td className="py-3">
+                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                  item.risk === 'high'
+                    ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                    : item.risk === 'medium'
+                    ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
+                    : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                }`}>
+                  {item.risk}
+                </span>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
 };
 
-// ─── SKELETON ────────────────────────────────────────────────────────────────
-function Skeleton({ width, height, borderRadius = 8 }) {
-    return (
-        <div
-            className="ad-skeleton"
-            style={{
-                width: width || '100%',
-                height: height || 16,
-                borderRadius,
-            }}
-        />
-    );
-}
+const Skeleton = ({ width = '100%', height = '20px', borderRadius = '4px' }) => {
+  return (
+    <div
+      style={{
+        width,
+        height,
+        borderRadius,
+        background: 'linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%)',
+        backgroundSize: '200% 100%',
+        animation: 'loading 1.5s infinite',
+      }}
+    />
+  );
+};
 
-// ─── KPI CARD ────────────────────────────────────────────────────────────────
-function KpiCard({
-    icon: Icon,
-    label,
-    value,
-    description,
-    delta,
-    loading,
-    color,
-    improvementWhenDown = true,
-    onClick,
-    clickable = false,
-}) {
-    const isPositive = delta !== undefined
-        ? (improvementWhenDown ? delta < 0 : delta > 0)
-        : false;
-
-    const cardClassName = `ad-kpi-card glass-card ${clickable ? 'ad-kpi-card-clickable' : ''}`;
-
-    return (
-        <div
-            className={cardClassName}
-            onClick={clickable ? onClick : undefined}
-            role={clickable ? 'button' : undefined}
-            tabIndex={clickable ? 0 : undefined}
-            onKeyDown={
-                clickable
-                    ? (e) => {
-                          if (e.key === 'Enter' || e.key === ' ') {
-                              e.preventDefault();
-                              onClick?.();
-                          }
-                      }
-                    : undefined
-            }
-            title={clickable ? `Go to ${label} KPI page` : undefined}
-        >
-            {loading ? (
-                <>
-                    <Skeleton width={44} height={44} borderRadius={12} />
-                    <Skeleton width={100} height={48} borderRadius={8} />
-                    <Skeleton width="65%" height={14} />
-                    <Skeleton width="80%" height={12} />
-                    <Skeleton width={70} height={22} borderRadius={20} />
-                </>
-            ) : (
-                <>
-                    <div className="ad-kpi-icon" style={{ ['--icon-color']: color }}>
-                        <Icon size={22} strokeWidth={1.75} />
-                    </div>
-
-                    <div className="ad-kpi-value">
-                        {value?.toLocaleString() ?? '—'}
-                    </div>
-
-                    <div className="ad-kpi-label">{label}</div>
-
-                    <p className="ad-kpi-desc">{description}</p>
-
-                    {delta !== undefined && (
-                        <div className={`ad-kpi-delta ${isPositive ? 'positive' : 'negative'}`}>
-                            {isPositive ? <ChevronDown size={13} /> : <ChevronUp size={13} />}
-                            {Math.abs(delta)}%
-                        </div>
-                    )}
-                </>
-            )}
-        </div>
-    );
-}
-
-// ─── INVENTORY TABLE ─────────────────────────────────────────────────────────
-function InventoryRiskTable({ data, loading }) {
-    return (
-        <div className="ad-chart-card glass-card">
-            <h3 className="ad-chart-title">Inventory Risk Summary</h3>
-
-            {loading ? (
-                <div className="ad-table-skeleton">
-                    {Array.from({ length: 5 }).map((_, i) => (
-                        <Skeleton key={i} height={40} borderRadius={8} />
-                    ))}
-                </div>
-            ) : (
-                <div className="ad-table-wrapper">
-                    <table className="ad-inv-table">
-                        <thead>
-                            <tr>
-                                <th>SKU</th>
-                                <th>Item Name</th>
-                                <th>Days of Cover</th>
-                                <th>Risk Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {data.map((row) => (
-                                <tr key={row.sku}>
-                                    <td className="ad-sku">{row.sku}</td>
-                                    <td>{row.name}</td>
-                                    <td className="ad-days">{row.daysOfCover}d</td>
-                                    <td>
-                                        <span className={`ad-badge ad-badge-${row.status}`}>
-                                            {row.status.charAt(0).toUpperCase() + row.status.slice(1)}
-                                        </span>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            )}
-        </div>
-    );
-}
-
-// ─── CUSTOM TOOLTIP ──────────────────────────────────────────────────────────
-function CustomTooltip({ active, payload, label }) {
-    if (!active || !payload || !payload.length) return null;
-
-    return (
-        <div className="ad-chart-tooltip">
-            {label && <p className="ad-tooltip-label">{label}</p>}
-            {payload.map((entry, i) => (
-                <p key={i} style={{ color: entry.color || '#fff' }}>
-                    {entry.name}: <strong>{entry.value}</strong>
-                </p>
-            ))}
-        </div>
-    );
-}
-
-// ─── MAIN PAGE ───────────────────────────────────────────────────────────────
 export default function AnalyticsDashboardPage() {
     const navigate = useNavigate();
     const dispatch = useDispatch();
@@ -281,7 +168,7 @@ export default function AnalyticsDashboardPage() {
     const loading = useSelector(selectLoading);
     const reduxError = useSelector(selectError);
 
-    const [usingMock, setUsingMock] = useState(false);
+    
 
     const [paused, setPaused] = useState(false);
     const [lastUpdated, setLastUpdated] = useState(null);
@@ -324,13 +211,13 @@ export default function AnalyticsDashboardPage() {
                 .unwrap()
                 .then(() => {
                     if (isMounted.current) {
-                        setUsingMock(false);
+                        
                         setLastUpdated(new Date());
                     }
                 })
                 .catch(() => {
                     if (isMounted.current) {
-                        setUsingMock(true);
+                        
                         setLastUpdated(new Date());
                     }
                 });
@@ -405,20 +292,20 @@ export default function AnalyticsDashboardPage() {
         return () => clearInterval(intervalRef.current);
     }, [paused, appliedFilters, fetchData, checkHealth]);
 
-    const riskTrend = useMemo(() => data?.riskTrend ?? MOCK_DATA.riskTrend, [data]);
+    const riskTrend = useMemo(() => data?.riskTrend ?? [], [data]);
     const alertsBySeverity = useMemo(
-        () => data?.alertsBySeverity ?? MOCK_DATA.alertsBySeverity,
+        () => data?.alertsBySeverity ?? [],
         [data]
     );
     const shipmentDelays = useMemo(
-        () => data?.shipmentDelays ?? MOCK_DATA.shipmentDelays,
+        () => data?.shipmentDelays ?? [],
         [data]
     );
     const inventoryRisk = useMemo(
-        () => data?.inventoryRisk ?? MOCK_DATA.inventoryRisk,
+        () => data?.inventoryRisk ?? [],
         [data]
     );
-    const kpis = useMemo(() => data?.kpis ?? MOCK_DATA.kpis, [data]);
+    const kpis = useMemo(() => data?.kpis ?? {}, [data]);
 
     const alertsTotal = useMemo(() => {
         return alertsBySeverity.reduce((acc, item) => acc + item.value, 0);
@@ -454,7 +341,7 @@ export default function AnalyticsDashboardPage() {
     }
 
     return (
-        <div className="ad-root">
+        <Layout>
             <div className="ad-page">
                 <header className="ad-header">
                     <div className="ad-header-left">
@@ -537,14 +424,9 @@ export default function AnalyticsDashboardPage() {
                     </div>
                 </header>
 
-                {usingMock && (
-                    <div className="ad-banner ad-banner-warn">
-                        <Filter size={15} />
-                        <span>Displaying mock data — API unavailable</span>
-                    </div>
-                )}
+                
 
-                {reduxError && !usingMock && (
+                {reduxError && (
                     <div className="ad-banner ad-banner-error">
                         <X size={15} />
                         <span>{reduxError}</span>
@@ -899,6 +781,6 @@ export default function AnalyticsDashboardPage() {
                     <InventoryRiskTable data={inventoryRisk} loading={loading} />
                 </div>
             </div>
-        </div>
+        </Layout>
     );
 }

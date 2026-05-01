@@ -1,45 +1,54 @@
+/**
+ * shipmentRoutes.js — Express Router for Shipment Management API
+ *
+ * Responsibility:
+ *   Defines all HTTP routes for the shipment module and maps them to the
+ *   appropriate ShipmentController handler, with authentication, RBAC,
+ *   Joi validation, and ObjectId param validation middleware.
+ *
+ *   Base path: /api/shipments (mounted in app.js)
+ */
+
 import express from 'express';
 import { authenticate, authorize } from '../middleware/auth.js';
+import { validate, validateObjectId, sanitizeQuery } from '../middleware/validation.js';
+import { ShipmentController } from '../controllers/ShipmentController.js';
 
 const router = express.Router();
 
-// ==========================================
-// SHIPMENT TRACKING MODULE (Umayanthi)
-// ==========================================
+// List all shipments for the org (all roles can view)
+router.get('/', authenticate, sanitizeQuery, ShipmentController.listShipments);
 
-router.get('/', authenticate, (req, res) => {
-  res.status(501).json({ 
-    message: 'Shipment list endpoint - implemented by Umayanthi',
-    status: 'NOT_IMPLEMENTED_YET' 
-  });
-});
+// Register a new shipment — restricted to operators and admins
+router.post('/',
+    authenticate,
+    authorize(['ORG_ADMIN', 'LOGISTICS_OPERATOR']),
+    validate('createShipment'),
+    ShipmentController.createShipment
+);
 
-router.post('/', authenticate, authorize(['ORG_ADMIN', 'LOGISTICS_OPERATOR']), (req, res) => {
-  res.status(501).json({ 
-    message: 'Register shipment endpoint - implemented by Umayanthi',
-    status: 'NOT_IMPLEMENTED_YET' 
-  });
-});
+// Get a single shipment's full detail (all roles can view)
+router.get('/:shipmentId', authenticate, validateObjectId('shipmentId'), ShipmentController.getShipment);
 
-router.get('/:shipmentId', authenticate, (req, res) => {
-  res.status(501).json({ 
-    message: 'Get shipment detail endpoint - implemented by Umayanthi',
-    status: 'NOT_IMPLEMENTED_YET' 
-  });
-});
+// Update shipment fields — restricted to operators and admins
+router.put('/:shipmentId',
+    authenticate,
+    validateObjectId('shipmentId'),
+    authorize(['ORG_ADMIN', 'LOGISTICS_OPERATOR']),
+    validate('updateShipment'),
+    ShipmentController.updateShipment
+);
 
-router.put('/:shipmentId', authenticate, authorize(['ORG_ADMIN', 'LOGISTICS_OPERATOR']), (req, res) => {
-  res.status(501).json({ 
-    message: 'Update shipment endpoint - implemented by Umayanthi',
-    status: 'NOT_IMPLEMENTED_YET' 
-  });
-});
+// Advance the shipment status through the workflow state machine
+router.patch('/:shipmentId/status',
+    authenticate,
+    validateObjectId('shipmentId'),
+    authorize(['ORG_ADMIN', 'LOGISTICS_OPERATOR']),
+    validate('updateShipmentStatus'),
+    ShipmentController.updateStatus
+);
 
-router.get('/:shipmentId/tracking', authenticate, (req, res) => {
-  res.status(501).json({ 
-    message: 'Get tracking information endpoint - implemented by Umayanthi',
-    status: 'NOT_IMPLEMENTED_YET' 
-  });
-});
+// Get the ordered tracking events timeline for the detail page
+router.get('/:shipmentId/tracking', authenticate, validateObjectId('shipmentId'), ShipmentController.getTrackingEvents);
 
 export default router;

@@ -1,34 +1,61 @@
 import React, { useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { getMe } from './redux/authSlice.js';
+import { useTheme } from './context/ThemeContext.jsx';
 
 // Pages
 import LoginPage from './pages/LoginPage.jsx';
 import RegisterPage from './pages/RegisterPage.jsx';
 import DashboardPage from './pages/DashboardPage.jsx';
 import UsersPage from './pages/UsersPage.jsx';
+import InventoryPage from './pages/InventoryPage.jsx';
+import WarehousePage from './pages/WarehousePage.jsx';
+import SuppliersPage from './pages/SuppliersPage.jsx';
+import SupplierDetailPage from './pages/SupplierDetailPage.jsx';
+import ShipmentsPage from './pages/ShipmentsPage.jsx';
+import ShipmentDetailPage from './pages/ShipmentDetailPage.jsx';
+import AlertsPage from './pages/AlertsPage.jsx';
 
-// Analytics Pages (YOUR MODULE)
+// Analytics Pages (Senadeera's module)
 import AnalyticsDashboardPage from './pages/Analytics/AnalyticsDashboardPage.jsx';
 import KPIPage from './pages/Analytics/KPI-page.jsx';
 import ReportsPage from './pages/Analytics/ReportsPage.jsx';
 
 // Protected Route Component
 function ProtectedRoute({ children, requiredRoles = [] }) {
-  const { user, accessToken, isInitialized } = useSelector((state) => state.auth);
+  const { user, isInitialized } = useSelector((state) => state.auth);
+  const accessToken = localStorage.getItem('accessToken');
 
   if (!isInitialized) return null;
 
-  if (!accessToken) {
-    return <Navigate to="/login" replace />;
+  if (!accessToken || !user) {
+    return <Navigate to="/login" />;
   }
 
-  if (requiredRoles.length > 0 && user && !requiredRoles.includes(user.role)) {
-    return <Navigate to="/" replace />;
+  if (requiredRoles.length > 0 && !requiredRoles.includes(user.role)) {
+    return <Navigate to="/" />;
   }
 
   return children;
+}
+
+function ThemeApplicator() {
+  const location = useLocation();
+  const { theme } = useTheme();
+
+  useEffect(() => {
+    const root = document.documentElement;
+    const isAuthPage = location.pathname === '/login' || location.pathname === '/register';
+    
+    if (isAuthPage || theme === 'default') {
+      root.removeAttribute('data-theme');
+    } else {
+      root.setAttribute('data-theme', theme);
+    }
+  }, [location.pathname, theme]);
+
+  return null;
 }
 
 function App() {
@@ -36,10 +63,12 @@ function App() {
   const { isInitialized, accessToken } = useSelector((state) => state.auth);
 
   useEffect(() => {
-    if (accessToken && !isInitialized) {
+    if (accessToken) {
       dispatch(getMe());
+    } else {
+      dispatch({ type: 'auth/getMe/rejected' });
     }
-  }, [dispatch, accessToken, isInitialized]);
+  }, [dispatch, accessToken]);
 
   if (accessToken && !isInitialized) {
     return (
@@ -52,12 +81,13 @@ function App() {
 
   return (
     <Router>
+      <ThemeApplicator />
       <Routes>
         {/* Public Routes */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
 
-        {/* Main Dashboard */}
+        {/* Protected Routes */}
         <Route
           path="/"
           element={
@@ -67,7 +97,6 @@ function App() {
           }
         />
 
-        {/* Users Management */}
         <Route
           path="/users"
           element={
@@ -77,13 +106,57 @@ function App() {
           }
         />
 
-        {/* Other modules (group members) */}
-        <Route path="/suppliers" element={<div className="temp-page">Suppliers page - implemented by Rifshadh</div>} />
-        <Route path="/shipments" element={<div className="temp-page">Shipments page - implemented by Umayanthi</div>} />
-        <Route path="/inventory" element={<div className="temp-page">Inventory page - implemented by Wijemanna</div>} />
-        <Route path="/alerts" element={<div className="temp-page">Alerts page - implemented by Kulatunga</div>} />
+        {/* Inventory routes */}
+        <Route
+          path="/inventory"
+          element={
+            <ProtectedRoute requiredRoles={['ORG_ADMIN', 'INVENTORY_MANAGER', 'VIEWER']}>
+              <InventoryPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/warehouses"
+          element={
+            <ProtectedRoute requiredRoles={['ORG_ADMIN', 'INVENTORY_MANAGER', 'VIEWER']}>
+              <WarehousePage />
+            </ProtectedRoute>
+          }
+        />
 
-        {/* ANALYTICS MODULE (YOUR PART) */}
+        {/* Supplier routes */}
+        <Route
+          path="/suppliers"
+          element={
+            <ProtectedRoute>
+              <SuppliersPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/suppliers/:id"
+          element={
+            <ProtectedRoute>
+              <SupplierDetailPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Shipment Tracking routes */}
+        <Route path="/shipments" element={<ProtectedRoute><ShipmentsPage /></ProtectedRoute>} />
+        <Route path="/shipments/:id" element={<ProtectedRoute><ShipmentDetailPage /></ProtectedRoute>} />
+        
+        {/* Alerts route */}
+        <Route
+          path="/alerts"
+          element={
+            <ProtectedRoute>
+              <AlertsPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Analytics Routes (Senadeera's module) */}
         <Route
           path="/analytics"
           element={
@@ -112,7 +185,7 @@ function App() {
         />
 
         {/* 404 */}
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </Router>
   );

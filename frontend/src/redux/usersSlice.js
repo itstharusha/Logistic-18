@@ -50,6 +50,68 @@ export const activateUser = createAsyncThunk(
   }
 );
 
+export const bulkAssignRole = createAsyncThunk(
+  'users/bulkAssignRole',
+  async ({ userIds, role }, { rejectWithValue }) => {
+    try {
+      const response = await userAPI.bulkAssignRole({ userIds, role });
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.error || 'Failed to bulk assign role');
+    }
+  }
+);
+
+export const bulkDeactivateUsers = createAsyncThunk(
+  'users/bulkDeactivateUsers',
+  async ({ userIds }, { rejectWithValue }) => {
+    try {
+      const response = await userAPI.bulkDeactivateUsers({ userIds });
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.error || 'Failed to bulk deactivate users');
+    }
+  }
+);
+
+export const bulkActivateUsers = createAsyncThunk(
+  'users/bulkActivateUsers',
+  async ({ userIds }, { rejectWithValue }) => {
+    try {
+      const response = await userAPI.bulkActivateUsers({ userIds });
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.error || 'Failed to bulk activate users');
+    }
+  }
+);
+
+export const getUserActivityLog = createAsyncThunk(
+  'users/getUserActivityLog',
+  async ({ userId, params }, { rejectWithValue }) => {
+    try {
+      const response = await userAPI.getActivityLog(userId, params);
+      return response.data; // should return { data, pagination }
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.error || 'Failed to get activity log');
+    }
+  }
+);
+
+export const createUser = createAsyncThunk(
+  'users/createUser',
+  async (data, { rejectWithValue }) => {
+    try {
+      const response = await userAPI.createUser(data);
+      return response.data;
+    } catch (error) {
+      console.error('Create user API error:', error);
+      const errorMsg = error.response?.data?.error || error.response?.data?.message || error.message || 'Failed to create user';
+      return rejectWithValue(errorMsg);
+    }
+  }
+);
+
 export const inviteUser = createAsyncThunk(
   'users/inviteUser',
   async (data, { rejectWithValue }) => {
@@ -151,6 +213,18 @@ const usersSlice = createSlice({
         if (index !== -1) state.users[index] = action.payload;
       })
       .addCase(activateUser.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      // Create user
+      .addCase(createUser.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(createUser.fulfilled, (state) => {
+        state.loading = false;
+        state.message = 'User created successfully';
+      })
+      .addCase(createUser.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       })

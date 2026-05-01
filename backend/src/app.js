@@ -1,12 +1,17 @@
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
 import { connectDB } from './config/database.js';
 import { requestLogger, errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 
+// Import placeholder models to register them with mongoose
+import './models/index.js';
+
 // Import routes
 import authRoutes from './routes/authRoutes.js';
+import { ShipmentService } from './services/ShipmentService.js';
 import userRoutes from './routes/userRoutes.js';
 import supplierRoutes from './routes/supplierRoutes.js';
 import shipmentRoutes from './routes/shipmentRoutes.js';
@@ -27,6 +32,7 @@ app.use(cors({
 }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
+app.use(cookieParser());
 
 // Request logger
 app.use(requestLogger);
@@ -86,6 +92,9 @@ const startServer = async () => {
     // Connect to MongoDB
     await connectDB();
 
+    // Start shipment delay detection cron (every 15 min)
+    ShipmentService.startPollingCron();
+
     // Start Express server
     const server = app.listen(PORT, () => {
       console.log(`✓ Logistic 18 Backend running on http://localhost:${PORT}`);
@@ -118,3 +127,4 @@ const startServer = async () => {
 startServer();
 
 export default app;
+

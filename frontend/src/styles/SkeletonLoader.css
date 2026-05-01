@@ -1,0 +1,139 @@
+/* Skeleton Loader Styles */
+.skeleton-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+  padding: 20px;
+}
+
+.skeleton-card {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 16px;
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* Header Section */
+.skeleton-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+
+.skeleton-avatar {
+  width: 48px;
+  height: 48px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.skeleton-text-group {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Text Skeleton */
+.skeleton-text {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  height: 12px;
+}
+
+.skeleton-name {
+  width: 80%;
+  height: 14px;
+  margin-bottom: 2px;
+}
+
+.skeleton-email {
+  width: 90%;
+  height: 12px;
+}
+
+/* Badges Section */
+.skeleton-badges {
+  display: flex;
+  gap: 8px;
+  margin: 8px 0;
+}
+
+.skeleton-badge {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  height: 24px;
+  width: 60px;
+  flex-shrink: 0;
+}
+
+/* Last Active Section */
+.skeleton-last-active {
+  width: 100%;
+  height: 12px;
+  margin: 8px 0;
+}
+
+/* Actions Section */
+.skeleton-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.skeleton-button {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  height: 32px;
+}
+
+/* Shimmer variant (if preferred) */
+.skeleton-card.shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.05) 0%,
+    rgba(255, 255, 255, 0.1) 50%,
+    rgba(255, 255, 255, 0.05) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .skeleton-grid {
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 12px;
+    padding: 12px;
+  }
+
+  .skeleton-card {
+    padding: 12px;
+  }
+}

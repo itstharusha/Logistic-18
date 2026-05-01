@@ -1,0 +1,15 @@
+{
+  "domain": "inventory",
+  "best_parameters": {
+    "learning_rate": 0.2,
+    "max_depth": 5,
+    "n_estimators": 150,
+    "subsample": 0.6
+  },
+  "best_cv_r2_score": 0.9970170975024732,
+  "validation_r2": 0.9976213461800078,
+  "validation_rmse": 1.3653299897821312,
+  "validation_mae": 0.9211276417559385,
+  "total_grid_combinations": 81,
+  "cv_folds": 5
+}

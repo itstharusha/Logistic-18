@@ -1,5 +1,6 @@
 import express from 'express';
 import { authenticate, authorize } from '../middleware/auth.js';
+import { validate } from '../middleware/validation.js';
 import * as analyticsController from '../controllers/analyticsController.js';
 
 const router = express.Router();
@@ -15,31 +16,8 @@ router.get('/shipments/delays', authenticate, analyticsController.getShipmentDel
 router.get('/inventory/risk', authenticate, analyticsController.getInventoryRisk);
 router.get('/alerts/summary', authenticate, analyticsController.getAlertSummary);
 
-// TEMP: fake authenticated user for local report testing only
-router.post(
-  '/generate',
-  (req, res, next) => {
-    req.user = {
-      userId: '65f1a2b3c4d5e6f7890abc12',
-      orgId: '65f1a2b3c4d5e6f7890abc34',
-      role: 'ORG_ADMIN',
-    };
-    next();
-  },
-  analyticsController.generateReport
-);
+router.post('/generate', authenticate, validate('generateReport'), analyticsController.generateReport);
 
-router.get(
-  '/:reportId/download',
-  (req, res, next) => {
-    req.user = {
-      userId: '65f1a2b3c4d5e6f7890abc12',
-      orgId: '65f1a2b3c4d5e6f7890abc34',
-      role: 'ORG_ADMIN',
-    };
-    next();
-  },
-  analyticsController.downloadReport
-);
+router.get('/:reportId/download', authenticate, analyticsController.downloadReport);
 
 export default router;

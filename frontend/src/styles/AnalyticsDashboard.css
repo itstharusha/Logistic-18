@@ -5,7 +5,7 @@
    ───────────────────────────────────────────────────────────────────────────── */
 
 /* ── GOOGLE FONT ──────────────────────────────────────────────────────────── */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Syne:wght@700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
 /* ── CSS VARIABLES ────────────────────────────────────────────────────────── */
 :root {
@@ -50,27 +50,11 @@
 *::before,
 *::after {
   box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
-
-/* ── ROOT WRAPPER ─────────────────────────────────────────────────────────── */
-.ad-root {
-  min-height: 100vh;
-  background:
-    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(232, 93, 47, 0.09) 0%, transparent 60%),
-    radial-gradient(ellipse 60% 40% at 90% 80%, rgba(45, 90, 232, 0.06) 0%, transparent 55%),
-    linear-gradient(160deg, #0e0f14 0%, #111318 50%, #0c0d12 100%);
-  font-family: 'Inter', system-ui, sans-serif;
-  color: var(--text-primary);
-  -webkit-font-smoothing: antialiased;
 }
 
 /* ── PAGE FADE-IN ─────────────────────────────────────────────────────────── */
 .ad-page {
-  max-width: 1440px;
-  margin: 0 auto;
-  padding: 32px 28px 60px;
+  width: 100%;
   animation: adFadeIn 0.45s ease both;
 }
 
@@ -106,7 +90,7 @@
 }
 
 .ad-title {
-  font-family: 'Syne', sans-serif;
+  font-family: var(--font-display, 'Inter', sans-serif);
   font-size: 26px;
   font-weight: 800;
   letter-spacing: -0.4px;
@@ -430,7 +414,7 @@
 }
 
 .ad-kpi-value {
-  font-family: 'Syne', sans-serif;
+  font-family: var(--font-display, 'Inter', sans-serif);
   font-size: 42px;
   font-weight: 800;
   line-height: 1;
@@ -525,7 +509,7 @@
 
 /* Donut center text (injected via SVG text) */
 .donut-total-label {
-  font-family: 'Syne', sans-serif;
+  font-family: var(--font-display, 'Inter', sans-serif);
   font-size: 24px;
   font-weight: 800;
   fill: var(--text-primary);
@@ -577,7 +561,7 @@
   color: var(--text-primary);
 }
 
-/* ✅ FIX: don't use Syne as mono */
+/* ✅ FIX: don't use display font as mono */
 .ad-sku {
   font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace);
   font-size: 12px;
@@ -659,6 +643,11 @@
   100% { background-position: -200% center; }
 }
 
+@keyframes loading {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .ad-skeleton {
     animation: none;
@@ -693,7 +682,7 @@
 }
 
 .ad-access-denied-inner h2 {
-  font-family: 'Syne', sans-serif;
+  font-family: var(--font-display, 'Inter', sans-serif);
   font-size: 26px;
   font-weight: 800;
   color: var(--text-primary);
@@ -713,7 +702,7 @@
   padding: 1px 7px;
   font-size: 12px;
   color: var(--text-secondary);
-  font-family: 'Syne', monospace;
+  font-family: var(--font-mono, monospace);
 }
 
 /* ── RESPONSIVE CLAMP ────────────────────────────────────────────────────── */

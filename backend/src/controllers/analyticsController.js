@@ -55,7 +55,7 @@ export const getAlertSummary = asyncHandler(async (req, res) => {
 });
 
 export const generateReport = asyncHandler(async (req, res) => {
-  const { type, format, module, severity, include, dateRange } = req.body;
+  const { type, format, module, severity, include, dateRange } = req.validatedBody || req.body;
   const orgId = req.user.orgId;
 
   if (!type || !format || !module) {

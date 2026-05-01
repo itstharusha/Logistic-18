@@ -84,9 +84,61 @@ export class UserController {
     });
   });
 
+  // POST /api/users/bulk/assign-role
+  static bulkAssignRole = asyncHandler(async (req, res) => {
+    const { userIds, role } = req.body;
+    if (!Array.isArray(userIds) || userIds.length === 0) {
+      return res.status(400).json({ error: 'userIds array is required' });
+    }
+    const results = await UserService.bulkAssignRole(userIds, req.user.orgId, role, req.user.userId);
+    res.json({ message: 'Bulk assign role completed', results });
+  });
+
+  // POST /api/users/bulk/deactivate
+  static bulkDeactivateUsers = asyncHandler(async (req, res) => {
+    const { userIds } = req.body;
+    if (!Array.isArray(userIds) || userIds.length === 0) {
+      return res.status(400).json({ error: 'userIds array is required' });
+    }
+    const results = await UserService.bulkDeactivateUsers(userIds, req.user.orgId, req.user.userId);
+    res.json({ message: 'Bulk deactivate completed', results });
+  });
+
+  // POST /api/users/bulk/activate
+  static bulkActivateUsers = asyncHandler(async (req, res) => {
+    const { userIds } = req.body;
+    if (!Array.isArray(userIds) || userIds.length === 0) {
+      return res.status(400).json({ error: 'userIds array is required' });
+    }
+    const results = await UserService.bulkActivateUsers(userIds, req.user.orgId, req.user.userId);
+    res.json({ message: 'Bulk activate completed', results });
+  });
+
+  // POST /api/users/create
+  static createUser = asyncHandler(async (req, res) => {
+    const { name, email, role, password } = req.validatedBody || req.body;
+
+    const result = await UserService.createUser(
+      {
+        name,
+        email,
+        role: role || 'VIEWER',
+        password,
+        orgId: req.user.orgId,
+      },
+      req.user.userId
+    );
+
+    res.status(201).json({
+      message: 'User created successfully',
+      user: result.user,
+      note: 'User account is ready to use',
+    });
+  });
+
   // POST /api/users/invite
   static inviteUser = asyncHandler(async (req, res) => {
-    const { name, email, role } = req.body;
+    const { name, email, role } = req.validatedBody || req.body;
 
     const result = await UserService.inviteUser(
       {

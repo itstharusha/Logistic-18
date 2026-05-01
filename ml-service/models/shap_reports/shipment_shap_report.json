@@ -1,0 +1,192 @@
+{
+  "domain": "shipment",
+  "total_samples_analyzed": 10000,
+  "feature_importance": [
+    {
+      "Feature": "supplierRiskScore",
+      "Mean |SHAP|": 16.56169319152832,
+      "Rank": 7
+    },
+    {
+      "Feature": "etaDeviationHours",
+      "Mean |SHAP|": 3.770374298095703,
+      "Rank": 8
+    },
+    {
+      "Feature": "weatherLevel",
+      "Mean |SHAP|": 3.7243077754974365,
+      "Rank": 1
+    },
+    {
+      "Feature": "carrierReliability",
+      "Mean |SHAP|": 2.926344156265259,
+      "Rank": 4
+    },
+    {
+      "Feature": "shipmentValueUSD",
+      "Mean |SHAP|": 1.798401117324829,
+      "Rank": 9
+    },
+    {
+      "Feature": "isInternational",
+      "Mean |SHAP|": 1.699739694595337,
+      "Rank": 5
+    },
+    {
+      "Feature": "routeRiskIndex",
+      "Mean |SHAP|": 1.6587886810302734,
+      "Rank": 2
+    },
+    {
+      "Feature": "daysInTransit",
+      "Mean |SHAP|": 1.198857307434082,
+      "Rank": 3
+    },
+    {
+      "Feature": "trackingGapHours",
+      "Mean |SHAP|": 0.5435141324996948,
+      "Rank": 6
+    },
+    {
+      "Feature": "carrierDelayRate",
+      "Mean |SHAP|": 0.5204313397407532,
+      "Rank": 10
+    }
+  ],
+  "top_5_features": [
+    "supplierRiskScore",
+    "etaDeviationHours",
+    "weatherLevel",
+    "carrierReliability",
+    "shipmentValueUSD"
+  ],
+  "sample_explanations": [
+    {
+      "sample_index": 0,
+      "risk_score": 1100.324462890625,
+      "risk_tier": "critical",
+      "top_3_features": [
+        {
+          "feature": "supplierRiskScore",
+          "shap_value": 14.306199073791504,
+          "feature_value": 82.16,
+          "impact": "high"
+        },
+        {
+          "feature": "weatherLevel",
+          "shap_value": -6.637439727783203,
+          "feature_value": 0.0,
+          "impact": "high"
+        },
+        {
+          "feature": "carrierReliability",
+          "shap_value": -3.5547149181365967,
+          "feature_value": 38.56,
+          "impact": "high"
+        }
+      ]
+    },
+    {
+      "sample_index": 2500,
+      "risk_score": 543.8648681640625,
+      "risk_tier": "critical",
+      "top_3_features": [
+        {
+          "feature": "supplierRiskScore",
+          "shap_value": -9.619261741638184,
+          "feature_value": 46.53,
+          "impact": "high"
+        },
+        {
+          "feature": "weatherLevel",
+          "shap_value": -5.1656813621521,
+          "feature_value": 0.0,
+          "impact": "high"
+        },
+        {
+          "feature": "etaDeviationHours",
+          "shap_value": -3.1799700260162354,
+          "feature_value": 20.15,
+          "impact": "high"
+        }
+      ]
+    },
+    {
+      "sample_index": 5000,
+      "risk_score": 1773.4918212890625,
+      "risk_tier": "critical",
+      "top_3_features": [
+        {
+          "feature": "supplierRiskScore",
+          "shap_value": 21.389156341552734,
+          "feature_value": 93.39,
+          "impact": "high"
+        },
+        {
+          "feature": "etaDeviationHours",
+          "shap_value": 7.1324615478515625,
+          "feature_value": 115.86,
+          "impact": "high"
+        },
+        {
+          "feature": "carrierReliability",
+          "shap_value": 6.266165256500244,
+          "feature_value": 8.36,
+          "impact": "high"
+        }
+      ]
+    },
+    {
+      "sample_index": 7500,
+      "risk_score": 1650.265380859375,
+      "risk_tier": "critical",
+      "top_3_features": [
+        {
+          "feature": "supplierRiskScore",
+          "shap_value": 21.001428604125977,
+          "feature_value": 86.18,
+          "impact": "high"
+        },
+        {
+          "feature": "etaDeviationHours",
+          "shap_value": 5.515892505645752,
+          "feature_value": 99.5,
+          "impact": "high"
+        },
+        {
+          "feature": "carrierReliability",
+          "shap_value": 5.019591808319092,
+          "feature_value": 18.04,
+          "impact": "high"
+        }
+      ]
+    },
+    {
+      "sample_index": 9999,
+      "risk_score": 1263.007080078125,
+      "risk_tier": "critical",
+      "top_3_features": [
+        {
+          "feature": "supplierRiskScore",
+          "shap_value": 13.778292655944824,
+          "feature_value": 75.78,
+          "impact": "high"
+        },
+        {
+          "feature": "weatherLevel",
+          "shap_value": 4.301717281341553,
+          "feature_value": 2.0,
+          "impact": "high"
+        },
+        {
+          "feature": "carrierReliability",
+          "shap_value": -2.9667699337005615,
+          "feature_value": 45.28,
+          "impact": "high"
+        }
+      ]
+    }
+  ],
+  "explainer_type": "TreeExplainer",
+  "model_type": "XGBRegressor"
+}

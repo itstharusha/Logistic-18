@@ -2,16 +2,8 @@
    reports-page.css — Report Generation & Download page styles
    ───────────────────────────────────────────────────────────────────────────── */
 
-.rp-root {
-  min-height: 100vh;
-  font-family: var(--font-ui, 'DM Sans', system-ui, sans-serif);
-  color: var(--text-primary, #eaeaea);
-}
-
 .rp-page {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 32px 28px 60px;
+  width: 100%;
   animation: rpFadeIn 0.4s ease both;
 }
 
@@ -61,7 +53,7 @@
 }
 
 .rp-title {
-  font-family: var(--font-display, 'Syne', sans-serif);
+  font-family: var(--font-display, 'Inter', sans-serif);
   font-size: 26px;
   font-weight: 800;
   letter-spacing: -0.4px;
@@ -127,7 +119,7 @@
 }
 
 .rp-latest-title {
-  font-family: var(--font-display, 'Syne', sans-serif);
+  font-family: var(--font-display, 'Inter', sans-serif);
   font-size: 14px;
   font-weight: 700;
   color: var(--text-primary, #eaeaea);

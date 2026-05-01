@@ -1,0 +1,192 @@
+{
+  "domain": "inventory",
+  "total_samples_analyzed": 10000,
+  "feature_importance": [
+    {
+      "Feature": "supplierRiskScore",
+      "Mean |SHAP|": 9.441024780273438,
+      "Rank": 4
+    },
+    {
+      "Feature": "currentStock",
+      "Mean |SHAP|": 6.455621242523193,
+      "Rank": 5
+    },
+    {
+      "Feature": "leadTimeDays",
+      "Mean |SHAP|": 5.518317699432373,
+      "Rank": 3
+    },
+    {
+      "Feature": "isCriticalItem",
+      "Mean |SHAP|": 4.095865249633789,
+      "Rank": 8
+    },
+    {
+      "Feature": "demandVariance",
+      "Mean |SHAP|": 3.8632726669311523,
+      "Rank": 10
+    },
+    {
+      "Feature": "safetyStock",
+      "Mean |SHAP|": 1.9806456565856934,
+      "Rank": 6
+    },
+    {
+      "Feature": "pendingOrderQty",
+      "Mean |SHAP|": 0.8168613910675049,
+      "Rank": 7
+    },
+    {
+      "Feature": "averageDailyDemand",
+      "Mean |SHAP|": 0.5322515368461609,
+      "Rank": 1
+    },
+    {
+      "Feature": "reorderPoint",
+      "Mean |SHAP|": 0.33907249569892883,
+      "Rank": 9
+    },
+    {
+      "Feature": "incomingStockDays",
+      "Mean |SHAP|": 0.32420989871025085,
+      "Rank": 2
+    }
+  ],
+  "top_5_features": [
+    "supplierRiskScore",
+    "currentStock",
+    "leadTimeDays",
+    "isCriticalItem",
+    "demandVariance"
+  ],
+  "sample_explanations": [
+    {
+      "sample_index": 0,
+      "risk_score": 934.16650390625,
+      "risk_tier": "critical",
+      "top_3_features": [
+        {
+          "feature": "supplierRiskScore",
+          "shap_value": 9.99905014038086,
+          "feature_value": 79.46,
+          "impact": "high"
+        },
+        {
+          "feature": "isCriticalItem",
+          "shap_value": -4.590373516082764,
+          "feature_value": 0.0,
+          "impact": "high"
+        },
+        {
+          "feature": "currentStock",
+          "shap_value": 4.2907633781433105,
+          "feature_value": 261.35,
+          "impact": "high"
+        }
+      ]
+    },
+    {
+      "sample_index": 2500,
+      "risk_score": 314.55072021484375,
+      "risk_tier": "critical",
+      "top_3_features": [
+        {
+          "feature": "supplierRiskScore",
+          "shap_value": -6.320738315582275,
+          "feature_value": 40.91,
+          "impact": "high"
+        },
+        {
+          "feature": "leadTimeDays",
+          "shap_value": -4.8815083503723145,
+          "feature_value": 18.21,
+          "impact": "high"
+        },
+        {
+          "feature": "currentStock",
+          "shap_value": -3.35302996635437,
+          "feature_value": 991.41,
+          "impact": "high"
+        }
+      ]
+    },
+    {
+      "sample_index": 5000,
+      "risk_score": 1575.648681640625,
+      "risk_tier": "critical",
+      "top_3_features": [
+        {
+          "feature": "supplierRiskScore",
+          "shap_value": 13.843612670898438,
+          "feature_value": 79.04,
+          "impact": "high"
+        },
+        {
+          "feature": "leadTimeDays",
+          "shap_value": 8.804800987243652,
+          "feature_value": 57.57,
+          "impact": "high"
+        },
+        {
+          "feature": "currentStock",
+          "shap_value": 6.336857795715332,
+          "feature_value": 90.25,
+          "impact": "high"
+        }
+      ]
+    },
+    {
+      "sample_index": 7500,
+      "risk_score": 1388.6651611328125,
+      "risk_tier": "critical",
+      "top_3_features": [
+        {
+          "feature": "supplierRiskScore",
+          "shap_value": 14.84917163848877,
+          "feature_value": 89.26,
+          "impact": "high"
+        },
+        {
+          "feature": "leadTimeDays",
+          "shap_value": 8.07473373413086,
+          "feature_value": 56.43,
+          "impact": "high"
+        },
+        {
+          "feature": "demandVariance",
+          "shap_value": 6.863822937011719,
+          "feature_value": 137.78,
+          "impact": "high"
+        }
+      ]
+    },
+    {
+      "sample_index": 9999,
+      "risk_score": 929.961181640625,
+      "risk_tier": "critical",
+      "top_3_features": [
+        {
+          "feature": "leadTimeDays",
+          "shap_value": 5.825708866119385,
+          "feature_value": 44.89,
+          "impact": "high"
+        },
+        {
+          "feature": "currentStock",
+          "shap_value": -5.369725704193115,
+          "feature_value": 767.69,
+          "impact": "high"
+        },
+        {
+          "feature": "isCriticalItem",
+          "shap_value": 5.031043529510498,
+          "feature_value": 1.0,
+          "impact": "high"
+        }
+      ]
+    }
+  ],
+  "explainer_type": "TreeExplainer",
+  "model_type": "XGBRegressor"
+}
