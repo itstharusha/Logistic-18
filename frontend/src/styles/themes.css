@@ -563,6 +563,46 @@
   border-color: rgba(255, 255, 255, 0.30);
 }
 
+/* ── SHAP Explainability Panel ── */
+[data-theme="night"] .explainability-panel {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.08);
+  border-left-color: var(--brand-primary);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+[data-theme="night"] .shap-feature-card {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+[data-theme="night"] .shap-feature-card:hover {
+  background: rgba(255, 255, 255, 0.09);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+[data-theme="night"] .recommendations-section {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+[data-theme="night"] .shap-bar-track {
+  background: rgba(255, 255, 255, 0.10);
+}
+
+[data-theme="day"] .explainability-panel {
+  background: rgba(255, 255, 255, 0.72);
+  border-color: rgba(255, 255, 255, 0.90);
+  border-left-color: var(--brand-primary);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+[data-theme="day"] .shap-feature-card {
+  background: rgba(248, 250, 247, 0.85);
+  border-color: rgba(0, 0, 0, 0.06);
+}
+[data-theme="day"] .recommendations-section {
+  background: rgba(248, 250, 247, 0.80);
+  border-color: rgba(0, 0, 0, 0.06);
+}
+
 /* ── Urgent alert cards — dark background so CSS variable text stays readable ── */
 [data-theme="night"] .urgent-alert-card {
   background: rgba(255, 255, 255, 0.05);

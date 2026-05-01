@@ -36,6 +36,77 @@ function pastDate(minDays, maxDays) {
   return new Date(Date.now() - days * 86400000);
 }
 
+// ─────────────────────────────────────────────
+// SHAP helper functions — generate realistic
+// feature contributions based on entity data
+// ─────────────────────────────────────────────
+function r(n) { return Math.round(n * 1000) / 1000; }
+function impactLevel(abs) { return abs >= 8 ? 'high' : abs >= 3 ? 'medium' : 'low'; }
+
+function supplierShap(riskScore, onTimeRate, geoFlag, financialScore) {
+  const mag = Math.abs(riskScore - 30) * 0.22 + 1.5;
+  const v1 = r((onTimeRate < 85 ? 1 : -1) * mag * 0.95);
+  const v2 = r(geoFlag ? mag * 0.65 : -(mag * 0.35));
+  const v3 = r((financialScore < 75 ? 1 : -1) * mag * 0.52);
+  return [
+    { feature: 'onTimeDeliveryRate', value: v1, impact: impactLevel(Math.abs(v1)) },
+    { feature: 'geopoliticalRiskFlag', value: v2, impact: impactLevel(Math.abs(v2)) },
+    { feature: 'financialScore',       value: v3, impact: impactLevel(Math.abs(v3)) },
+  ];
+}
+function supplierRecs(riskScore, onTimeRate, geoFlag, financialScore) {
+  const recs = [];
+  if (onTimeRate < 85)  recs.push('Negotiate improved on-time delivery guarantees with performance penalties.');
+  if (onTimeRate >= 90) recs.push('On-time delivery rate is strong — maintain current monitoring cadence.');
+  if (geoFlag)          recs.push('Geopolitical risk detected — develop alternative sourcing strategy for this region.');
+  if (financialScore < 70) recs.push('Low financial score — request updated financial statements and credit check.');
+  if (riskScore > 60)   recs.push('High overall risk — escalate to procurement team for immediate review.');
+  if (riskScore <= 30)  recs.push('Supplier performance is healthy — continue standard review schedule.');
+  return recs.slice(0, 3);
+}
+
+function shipmentShap(supplierRisk, delayHours, weatherLevel) {
+  const sup     = r((supplierRisk - 30) * 0.35);
+  const delay   = r(delayHours > 0 ? delayHours * 0.045 + 2.2 : -1.8);
+  const weather = r(weatherLevel === 'high' ? 4.6 : weatherLevel === 'medium' ? 1.9 : -1.3);
+  return [
+    { feature: 'supplierRiskScore',  value: sup,     impact: impactLevel(Math.abs(sup)) },
+    { feature: 'etaDeviationHours',  value: delay,   impact: impactLevel(Math.abs(delay)) },
+    { feature: 'weatherLevel',       value: weather, impact: impactLevel(Math.abs(weather)) },
+  ];
+}
+function shipmentRecs(riskScore, delayHours, weatherLevel, carrier) {
+  const recs = [];
+  if (delayHours > 48)  recs.push(`Escalate ${delayHours}h delay — contact ${carrier} carrier for expedited handling.`);
+  if (delayHours > 0 && delayHours <= 48) recs.push('Minor delay detected — monitor closely for further deterioration.');
+  if (weatherLevel === 'high') recs.push('Severe weather exposure on route — check for advisories and consider rerouting.');
+  if (riskScore > 60)   recs.push('High-risk shipment — consider priority rerouting or switching to alternative carrier.');
+  if (riskScore <= 30)  recs.push('Shipment is on track — maintain standard monitoring schedule.');
+  return recs.slice(0, 3);
+}
+
+function inventoryShap(supplierRisk, currentStock, reorderPoint, leadTime) {
+  const sup   = r((supplierRisk - 30) * 0.22);
+  const stock = r(currentStock <= reorderPoint
+    ? 5 + (reorderPoint - currentStock) * 0.015
+    : -(Math.min((currentStock - reorderPoint) * 0.008, 4) + 1));
+  const lead  = r(leadTime > 20 ? leadTime * 0.17 : leadTime > 10 ? leadTime * 0.08 : -1.5);
+  return [
+    { feature: 'supplierRiskScore', value: sup,   impact: impactLevel(Math.abs(sup)) },
+    { feature: 'currentStock',      value: stock, impact: impactLevel(Math.abs(stock)) },
+    { feature: 'leadTimeDays',      value: lead,  impact: impactLevel(Math.abs(lead)) },
+  ];
+}
+function inventoryRecs(riskScore, currentStock, reorderPoint, leadTime, isCritical, supplierRisk) {
+  const recs = [];
+  if (currentStock <= reorderPoint) recs.push('Stock is at or below reorder point — initiate purchase order immediately.');
+  if (leadTime > 20)  recs.push(`Long lead time (${leadTime} days) — plan orders well in advance to prevent stockouts.`);
+  if (isCritical && riskScore > 50) recs.push('Critical item at elevated risk — increase safety stock buffer.');
+  if (supplierRisk > 60) recs.push('Linked supplier is high-risk — identify a backup supplier for this SKU.');
+  if (riskScore <= 30) recs.push('Inventory levels are healthy — maintain current replenishment schedule.');
+  return recs.slice(0, 3);
+}
+
 // ═══════════════════════════════════════════════
 // INLINE DATA — no external CSV files needed
 // ═══════════════════════════════════════════════
@@ -307,6 +378,10 @@ async function seed() {
       riskScore: s.riskScore,
       riskTier: tier,
       status: tier === "critical" ? "high_risk" : tier === "high" ? "under_watch" : "active",
+      shapValues: supplierShap(s.riskScore, s.onTimeDeliveryRate, s.geopoliticalRiskFlag, s.financialScore),
+      recommendations: supplierRecs(s.riskScore, s.onTimeDeliveryRate, s.geopoliticalRiskFlag, s.financialScore),
+      modelVersion: '1.0',
+      lastScoredAt: new Date(),
     };
   });
   const insertedSuppliers = await Supplier.insertMany(supplierDocs);
@@ -315,21 +390,31 @@ async function seed() {
 
   // ── Step 5: Seed Inventory ─────────────────────────────────────────
   console.log("3/5  Seeding inventory items...");
-  const inventoryDocs = INVENTORY_ITEMS.map(item => ({
-    orgId,
-    supplierId: supplierIds[item.supIdx],
-    sku: item.sku,
-    warehouseId: insertedWarehouses[item.whIdx]._id,
-    productName: item.productName,
-    currentStock: item.currentStock,
-    averageDailyDemand: item.avgDemand,
-    leadTimeDays: item.leadTime,
-    demandVariance: Math.round(item.avgDemand * 0.2),
-    isCriticalItem: item.isCritical,
-    supplierRiskScore: SUPPLIERS[item.supIdx].riskScore,
-    riskScore: item.riskScore,
-    riskTier: tierFromScore(item.riskScore),
-  }));
+  const inventoryDocs = INVENTORY_ITEMS.map(item => {
+    const supRisk = SUPPLIERS[item.supIdx].riskScore;
+    const reorderPt = Math.round(item.leadTime * item.avgDemand);
+    return {
+      orgId,
+      supplierId: supplierIds[item.supIdx],
+      sku: item.sku,
+      warehouseId: insertedWarehouses[item.whIdx]._id,
+      productName: item.productName,
+      currentStock: item.currentStock,
+      averageDailyDemand: item.avgDemand,
+      leadTimeDays: item.leadTime,
+      demandVariance: Math.round(item.avgDemand * 0.2),
+      isCriticalItem: item.isCritical,
+      supplierRiskScore: supRisk,
+      reorderPoint: reorderPt,
+      safetyStock: Math.round(reorderPt * 0.2),
+      riskScore: item.riskScore,
+      riskTier: tierFromScore(item.riskScore),
+      shapValues: inventoryShap(supRisk, item.currentStock, reorderPt, item.leadTime),
+      recommendations: inventoryRecs(item.riskScore, item.currentStock, reorderPt, item.leadTime, item.isCritical, supRisk),
+      modelVersion: '1.0',
+      lastScoredAt: new Date(),
+    };
+  });
   const insertedInventory = await InventoryItem.insertMany(inventoryDocs);
   console.log(`     ✓ ${insertedInventory.length} inventory items created.`);
 
@@ -340,6 +425,7 @@ async function seed() {
     const isDelivered = s.status === "delivered";
     const isDelayed = s.status === "delayed";
     const shipCreatedAt = pastDate(idx * 2 + 1, idx * 2 + 5);
+    const supRisk = SUPPLIERS[s.supIdx].riskScore;
 
     return {
       orgId,
@@ -363,6 +449,10 @@ async function seed() {
       destinationGeoRisk: 0,
       riskScore: s.riskScore,
       riskTier: tier,
+      shapValues: shipmentShap(supRisk, s.delayHours, s.weatherLevel),
+      recommendations: shipmentRecs(s.riskScore, s.delayHours, s.weatherLevel, s.carrier),
+      modelVersion: '1.0',
+      lastScoredAt: new Date(),
       trackingEvents: [
         {
           status: "registered",

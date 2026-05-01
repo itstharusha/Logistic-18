@@ -1,104 +1,108 @@
-/* ExplainabilityPanel.css */
-/* Styling for SHAP explainability display */
+/* ExplainabilityPanel.css — themed to match the app's design system */
 
 .explainability-panel {
-  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-  border: 2px solid #3b82f6;
+  background: var(--surface-card);
+  border: 1px solid var(--border-light);
+  border-left: 3px solid var(--brand-primary);
   border-radius: 12px;
-  padding: 24px;
+  padding: 20px 24px;
   margin: 20px 0;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
-  animation: slideIn 0.3s ease-out;
+  box-shadow: var(--shadow-sm);
+  animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 @keyframes slideIn {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
+/* ── Header ── */
 .explainability-header {
-  margin-bottom: 24px;
-  border-bottom: 2px solid #3b82f6;
-  padding-bottom: 12px;
+  margin-bottom: 20px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border-light);
 }
 
 .explainability-header h3 {
-  font-size: 18px;
+  font-size: 15px;
   font-weight: 700;
-  color: #1f2937;
-  margin: 0 0 8px 0;
+  color: var(--text-primary);
+  margin: 0 0 4px 0;
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.explainability-subtitle {
-  font-size: 13px;
-  color: #374151;
-  margin: 0;
-  font-style: italic;
+.explainability-header h3::before {
+  content: '';
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--brand-primary);
+  flex-shrink: 0;
 }
 
-/* SHAP Features Section */
+.explainability-subtitle {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  margin: 0;
+}
+
+/* ── Features Section ── */
 .shap-features-section {
-  margin-bottom: 24px;
+  margin-bottom: 20px;
 }
 
 .shap-features-section h4 {
-  font-size: 14px;
+  font-size: 11px;
   font-weight: 600;
-  color: #374151;
-  margin: 0 0 16px 0;
+  color: var(--text-tertiary);
+  margin: 0 0 14px 0;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.7px;
 }
 
 .shap-features-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
 }
 
-/* SHAP Feature Card */
+/* ── Feature Card ── */
 .shap-feature-card {
-  background: white;
-  border: 1px solid #e5e7eb;
+  background: var(--surface-card-alt);
+  border: 1px solid var(--border-light);
   border-radius: 8px;
-  padding: 16px;
+  padding: 14px;
   display: flex;
   gap: 12px;
-  transition: all 0.2s ease;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .shap-feature-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  border-color: #3b82f6;
+  border-color: var(--border-medium);
+  box-shadow: var(--shadow-sm);
 }
 
 .feature-rank {
+  flex-shrink: 0;
   display: flex;
   align-items: flex-start;
+  padding-top: 1px;
 }
 
 .rank-badge {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
-  background: linear-gradient(135deg, #3b82f6, #1e40af);
-  color: white;
+  width: 24px;
+  height: 24px;
+  background: var(--brand-primary);
+  color: #ffffff;
   border-radius: 50%;
   font-weight: 700;
-  font-size: 14px;
+  font-size: 11px;
   flex-shrink: 0;
 }
 
@@ -108,150 +112,128 @@
 }
 
 .feature-name {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
-  color: #1f2937;
-  margin: 0 0 8px 0;
+  color: var(--text-primary);
+  margin: 0 0 6px 0;
   word-break: break-word;
+  line-height: 1.3;
 }
 
+/* ── SHAP Magnitude Bar ── */
+.shap-bar-track {
+  height: 4px;
+  background: var(--border-light);
+  border-radius: 2px;
+  margin-bottom: 10px;
+  overflow: hidden;
+}
+
+.shap-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ── Detail Rows ── */
 .feature-details {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 5px;
 }
 
 .detail-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 12px;
+  font-size: 11px;
   gap: 8px;
 }
 
 .detail-label {
-  color: #374151;
+  color: var(--text-tertiary);
   font-weight: 500;
+  white-space: nowrap;
 }
 
 .detail-value {
-  color: #1f2937;
   font-weight: 600;
   text-align: right;
+  color: var(--text-primary);
 }
 
 .impact-badge {
-  padding: 4px 8px;
+  padding: 2px 8px;
   border-radius: 4px;
-  font-size: 11px;
-  font-weight: 600;
+  font-size: 10px;
+  font-weight: 700;
   text-align: right;
-  min-width: 80px;
+  letter-spacing: 0.3px;
 }
 
-/* Recommendations Section */
+/* ── Recommendations ── */
 .recommendations-section {
-  background: #dbeafe;
-  border: 1px solid #0ea5e9;
+  background: var(--surface-card-alt);
+  border: 1px solid var(--border-light);
   border-radius: 8px;
-  padding: 16px;
-  margin-bottom: 16px;
+  padding: 14px 16px;
+  margin-bottom: 14px;
 }
 
 .recommendations-section h4 {
-  font-size: 14px;
+  font-size: 11px;
   font-weight: 600;
-  color: #0369a1;
-  margin: 0 0 12px 0;
+  color: var(--text-tertiary);
+  margin: 0 0 10px 0;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.7px;
 }
 
 .recommendations-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 7px;
 }
 
 .recommendation-item {
   display: flex;
   align-items: flex-start;
   gap: 8px;
-  font-size: 13px;
-  color: #0369a1;
-  line-height: 1.4;
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.45;
 }
 
 .recommendation-icon {
   flex-shrink: 0;
   font-weight: 700;
-  color: #0ea5e9;
+  color: var(--brand-primary);
+  margin-top: 1px;
 }
 
 .recommendation-text {
   flex: 1;
 }
 
-/* SHAP Info */
+/* ── Info Footer ── */
 .shap-info {
-  background: #eff6ff;
-  border: 1px solid #bfdbfe;
-  border-radius: 6px;
-  padding: 12px;
-  margin-top: 12px;
+  border-top: 1px solid var(--border-light);
+  padding-top: 12px;
+  margin-top: 4px;
 }
 
 .info-text {
-  font-size: 12px;
-  color: #1e40af;
+  font-size: 11px;
+  color: var(--text-tertiary);
   margin: 0;
   line-height: 1.5;
 }
 
-/* Responsive Design */
-@media (max-width: 768px) {
-  .explainability-panel {
-    padding: 16px;
-  }
-
-  .shap-features-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .detail-row {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
+/* ── Responsive ── */
+@media (max-width: 640px) {
+  .explainability-panel  { padding: 16px; }
+  .shap-features-grid    { grid-template-columns: 1fr; }
+  .detail-row            { flex-direction: column; align-items: flex-start; gap: 2px; }
   .detail-value,
-  .impact-badge {
-    text-align: left;
-  }
+  .impact-badge          { text-align: left; }
 }
-
-@media (max-width: 480px) {
-  .explainability-panel {
-    padding: 12px;
-    margin: 12px 0;
-  }
-
-  .explainability-header h3 {
-    font-size: 16px;
-  }
-
-  .shap-feature-card {
-    flex-direction: column;
-    padding: 12px;
-  }
-
-  .feature-rank {
-    width: 100%;
-  }
-
-  .rank-badge {
-    width: 28px;
-    height: 28px;
-    font-size: 12px;
-  }
-}
-

@@ -94,6 +94,7 @@ const supplierSchema = new mongoose.Schema(
         impact: { type: String, enum: ['low', 'medium', 'high'], default: 'low' },
       },
     ],
+    recommendations: [{ type: String }],
     modelVersion: { type: String, default: '1.0' },
     lastScoredAt: { type: Date },
 

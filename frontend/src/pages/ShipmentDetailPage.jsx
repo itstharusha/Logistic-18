@@ -20,6 +20,7 @@ import {
 } from '../redux/shipmentsSlice.js';
 import { validateShipmentForm } from '../utils/validation.js';
 import Layout from '../components/Layout.jsx';
+import ExplainabilityPanel from '../components/ExplainabilityPanel.jsx';
 import '../styles/pages.css';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend, Filler);
@@ -646,6 +647,17 @@ export default function ShipmentDetailPage() {
           <MetricCard icon={Package}   label="Weight"    value={shipment?.weight}    unit=" kg" color="#9ca3af" delay="0.4s" />
         </div>
       </div>
+
+      {/* ── SHAP Explainability Panel ── */}
+      {shipment?.shapValues?.length > 0 && (
+        <div style={{ '--delay': '0.42s' }}>
+          <ExplainabilityPanel
+            features={shipment.shapValues}
+            recommendations={shipment.recommendations || []}
+            domain="shipment"
+          />
+        </div>
+      )}
 
       {/* ── Route Info ── */}
       <div className="dash-card anim-card" style={{ '--delay': '0.4s', marginBottom: 'var(--space-6)' }}>

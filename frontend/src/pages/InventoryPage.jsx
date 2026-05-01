@@ -84,6 +84,7 @@ export default function InventoryPage() {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingItemId, setEditingItemId] = useState(null);
   const [viewingForecast, setViewingForecast] = useState(null);
+  const [shapViewItem, setShapViewItem] = useState(null);
   const [stockUpdateId, setStockUpdateId] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterRiskTier, setFilterRiskTier] = useState('');
@@ -732,6 +733,14 @@ export default function InventoryPage() {
                       <button onClick={() => handleViewForecast(item._id)} title="View Forecast" className="icon-btn-premium">
                         <BarChart3 size={16} />
                       </button>
+                      <button
+                        onClick={() => setShapViewItem(item)}
+                        title="Risk Analysis (SHAP)"
+                        className="icon-btn-premium"
+                        style={{ color: item.shapValues?.length ? '#3b82f6' : 'var(--text-tertiary)' }}
+                      >
+                        <Activity size={16} />
+                      </button>
                       {canEdit && (
                         <>
                           <button onClick={() => { setStockUpdateId(item._id); setStockValue(item.currentStock); }} title="Update Stock" className="icon-btn-premium">
@@ -813,6 +822,40 @@ export default function InventoryPage() {
                 <button type="submit" className="hero-btn hero-btn--light" style={{ background: '#E85D2F', color: 'var(--surface-card)' }}>Save Changes</button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* SHAP Risk Analysis Modal */}
+      {shapViewItem && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1001, padding: '20px' }}>
+          <div className="dash-card" style={{ width: '100%', maxWidth: '680px', maxHeight: '90vh', overflow: 'auto', padding: '24px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
+              <div>
+                <h3 style={{ color: 'var(--text-primary)', fontWeight: '700', marginBottom: '8px' }}>
+                  {shapViewItem.productName} — Risk Analysis
+                </h3>
+                <RiskBadge tier={shapViewItem.riskTier} score={shapViewItem.riskScore} />
+              </div>
+              <button
+                onClick={() => setShapViewItem(null)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-primary)', fontSize: '20px', lineHeight: 1, padding: '4px' }}
+              >
+                &#10005;
+              </button>
+            </div>
+            {shapViewItem.shapValues?.length > 0 ? (
+              <ExplainabilityPanel
+                features={shapViewItem.shapValues}
+                recommendations={shapViewItem.recommendations || []}
+                domain="inventory"
+              />
+            ) : (
+              <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                <Activity size={40} style={{ marginBottom: '12px', opacity: 0.4 }} />
+                <p>No SHAP explanation available for this item yet. Risk analysis will appear after the next ML scoring cycle.</p>
+              </div>
+            )}
           </div>
         </div>
       )}

@@ -1,67 +1,44 @@
-﻿import React from 'react';
+import React from 'react';
 import './ExplainabilityPanel.css';
 
-/**
- * ExplainabilityPanel Component
- * Displays SHAP feature importance and ML recommendations
- * 
- * Props:
- *   - features: Array of SHAP features with {feature, value, shap_value, impact}
- *   - recommendations: Array of recommendation strings
- *   - domain: 'supplier' | 'shipment' | 'inventory'
- */
 export function ExplainabilityPanel({ features = [], recommendations = [], domain = 'supplier' }) {
   if (!features || features.length === 0) {
     return null;
   }
 
-  // Extract feature data from SHAP values
-  const shapFeatures = Array.isArray(features) 
-    ? features.map(f => {
-        // Handle both direct objects and string representations
-        if (typeof f === 'object') {
-          return f;
-        }
-        return null;
-      }).filter(Boolean)
+  const shapFeatures = Array.isArray(features)
+    ? features.map(f => (typeof f === 'object' ? f : null)).filter(Boolean)
     : [];
 
   const getImpactColor = (impact) => {
     switch (impact?.toLowerCase()) {
-      case 'high':
-        return '#ef4444'; // red
-      case 'medium':
-        return '#f59e0b'; // amber
-      case 'low':
-        return '#3b82f6'; // blue
-      default:
-        return '#6b7280'; // gray
+      case 'high':   return '#ef4444';
+      case 'medium': return '#f59e0b';
+      case 'low':    return '#3b82f6';
+      default:       return '#6b7280';
     }
   };
 
-  const getImpactBadge = (impact) => {
+  const getImpactLabel = (impact) => {
     switch (impact?.toLowerCase()) {
-      case 'high':
-        return 'ðŸ”´ High';
-      case 'medium':
-        return 'ðŸŸ  Medium';
-      case 'low':
-        return 'ðŸ”µ Low';
-      default:
-        return 'âšª Unknown';
+      case 'high':   return 'High';
+      case 'medium': return 'Medium';
+      case 'low':    return 'Low';
+      default:       return 'Unknown';
     }
   };
+
+  const maxAbsValue = Math.max(...shapFeatures.map(f => Math.abs(f.value ?? 0)), 1);
 
   return (
     <div className="explainability-panel">
       <div className="explainability-header">
-        <h3>ðŸ” Model Explainability (SHAP Analysis)</h3>
+        <h3>Model Explainability (SHAP Analysis)</h3>
         <p className="explainability-subtitle">
-          These are the top features influencing the risk prediction for this {domain}
+          Top features influencing the risk prediction for this {domain}
         </p>
       </div>
 
-      {/* Top Features */}
       <div className="shap-features-section">
         <h4>Top Contributing Features</h4>
         <div className="shap-features-grid">
@@ -71,20 +48,20 @@ export function ExplainabilityPanel({ features = [], recommendations = [], domai
               rank={idx + 1}
               feature={feature}
               impactColor={getImpactColor(feature.impact)}
-              impactBadge={getImpactBadge(feature.impact)}
+              impactLabel={getImpactLabel(feature.impact)}
+              maxAbsValue={maxAbsValue}
             />
           ))}
         </div>
       </div>
 
-      {/* Recommendations */}
       {recommendations && recommendations.length > 0 && (
         <div className="recommendations-section">
-          <h4>ðŸ’¡ Recommendations</h4>
+          <h4>Recommendations</h4>
           <div className="recommendations-list">
             {recommendations.map((rec, idx) => (
               <div key={idx} className="recommendation-item">
-                <span className="recommendation-icon">âœ“</span>
+                <span className="recommendation-icon">&#10003;</span>
                 <span className="recommendation-text">{rec}</span>
               </div>
             ))}
@@ -92,29 +69,29 @@ export function ExplainabilityPanel({ features = [], recommendations = [], domai
         </div>
       )}
 
-      {/* SHAP Info */}
       <div className="shap-info">
         <p className="info-text">
-          <strong>SHAP (SHapley Additive exPlanations)</strong> helps explain individual predictions 
-          by calculating each feature's contribution to the final risk score.
+          <strong>SHAP (SHapley Additive exPlanations)</strong> calculates each feature's
+          contribution to the final risk score. Positive values raise risk; negative values lower it.
         </p>
       </div>
     </div>
   );
 }
 
-/**
- * ShapFeatureCard Component
- * Individual feature importance card
- */
-function ShapFeatureCard({ rank, feature, impactColor, impactBadge }) {
-  const getFeatureFriendlyName = (featureName) => {
-    return featureName
-      .replace(/([A-Z])/g, ' $1') // Add space before capitals
-      .replace(/Delay/i, 'Delay')
-      .replace(/Delivery/i, 'Delivery')
+function ShapFeatureCard({ rank, feature, impactColor, impactLabel, maxAbsValue }) {
+  const shapValue = typeof feature.value === 'number' ? feature.value : 0;
+  const raisesRisk = shapValue >= 0;
+  const barWidth = Math.min((Math.abs(shapValue) / maxAbsValue) * 100, 100);
+  const barColor = raisesRisk ? '#ef4444' : '#2DB87A';
+  const directionLabel = raisesRisk ? '↑ Raises Risk' : '↓ Lowers Risk';
+  const directionColor = raisesRisk ? '#ef4444' : '#2DB87A';
+
+  const friendlyName = (name) =>
+    name
+      .replace(/([A-Z])/g, ' $1')
+      .replace(/^./, s => s.toUpperCase())
       .trim();
-  };
 
   return (
     <div className="shap-feature-card">
@@ -123,36 +100,37 @@ function ShapFeatureCard({ rank, feature, impactColor, impactBadge }) {
       </div>
 
       <div className="feature-content">
-        <h5 className="feature-name">
-          {getFeatureFriendlyName(feature.feature)}
-        </h5>
+        <h5 className="feature-name">{friendlyName(feature.feature)}</h5>
+
+        <div className="shap-bar-track">
+          <div
+            className="shap-bar-fill"
+            style={{ width: `${barWidth}%`, background: barColor }}
+          />
+        </div>
 
         <div className="feature-details">
           <div className="detail-row">
-            <span className="detail-label">Value:</span>
-            <span className="detail-value">
-              {typeof feature.feature_value === 'number' 
-                ? feature.feature_value.toFixed(2) 
-                : feature.value?.toFixed(2) || 'N/A'}
+            <span className="detail-label">Contribution:</span>
+            <span className="detail-value" style={{ color: directionColor, fontWeight: 700 }}>
+              {shapValue >= 0 ? '+' : ''}{shapValue.toFixed(3)}
             </span>
           </div>
 
           <div className="detail-row">
-            <span className="detail-label">SHAP Impact:</span>
-            <span className="detail-value">
-              {typeof feature.shap_value === 'number' 
-                ? feature.shap_value.toFixed(4) 
-                : (feature.value?.toFixed(4) || 'N/A')}
+            <span className="detail-label">Direction:</span>
+            <span className="detail-value" style={{ color: directionColor, fontSize: 11 }}>
+              {directionLabel}
             </span>
           </div>
 
           <div className="detail-row">
-            <span className="detail-label">Importance:</span>
-            <span 
-              className="impact-badge" 
+            <span className="detail-label">Impact:</span>
+            <span
+              className="impact-badge"
               style={{ backgroundColor: impactColor + '20', color: impactColor }}
             >
-              {impactBadge}
+              {impactLabel}
             </span>
           </div>
         </div>

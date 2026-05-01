@@ -24,12 +24,17 @@ export const userAPI = {
   checkEmailAvailability: (email) => apiClient.get(`/users/check-email/${email}`),
 };
 
-// Supplier API calls (placeholder)
+// Supplier API calls
 export const supplierAPI = {
   listSuppliers: (params) => apiClient.get('/suppliers', { params }),
   getSupplier: (id) => apiClient.get(`/suppliers/${id}`),
   createSupplier: (data) => apiClient.post('/suppliers', data),
   updateSupplier: (id, data) => apiClient.put(`/suppliers/${id}`, data),
+  compareSuppliers: (ids) => apiClient.post('/suppliers/compare', { supplierIds: ids }),
+  getRiskHistory: (id) => apiClient.get(`/suppliers/${id}/history`),
+  overrideScore: (id, data) => apiClient.post(`/suppliers/${id}/override-score`, data),
+  updateMetrics: (id, data) => apiClient.post(`/suppliers/${id}/update-metrics`, data),
+  updateStatus: (id, data) => apiClient.patch(`/suppliers/${id}/status`, data),
 };
 
 // Shipment API calls
