@@ -219,41 +219,10 @@ async function seed() {
   await mongoose.connect(MONGODB_URI);
   console.log("Connected to MongoDB.\n");
 
-  // ── Step 1: Resolve org & admin user (NEVER delete users) ──────────
-  let org = await Organisation.findOne();
-  if (!org) {
-    console.log("No organisation found — creating default org...");
-    org = await Organisation.create({
-      name: "Logistics18",
-      industry: "Logistics & Supply Chain",
-      country: "US",
-      timezone: "America/New_York",
-      planTier: "ENTERPRISE",
-    });
-  }
-  const orgId = org._id;
-  console.log(`Using organisation: "${org.name}" (${orgId})`);
-
-  let admin = await User.findOne({ role: "ORG_ADMIN" });
-  if (!admin) {
-    admin = await User.findOne(); // fallback to any user
-  }
-  if (!admin) {
-    console.log("No users found — creating default admin...");
-    admin = await User.create({
-      orgId,
-      name: "System Admin",
-      email: "admin@logistics18.com",
-      passwordHash: "AdminPass123!",
-      role: "ORG_ADMIN",
-      isActive: true,
-    });
-  }
-  const adminId = admin._id;
-  console.log(`Using admin user: "${admin.name}" (${adminId})\n`);
-
-  // ── Step 2: Clear all non-user collections ─────────────────────────
-  console.log("Clearing existing data (preserving users & org)...");
+  // ── Step 1: Clear all collections ─────────────────────────
+  console.log("Clearing existing data...");
+  await Organisation.deleteMany({});
+  await User.deleteMany({});
   await Supplier.deleteMany({});
   await Warehouse.deleteMany({});
   await InventoryItem.deleteMany({});
@@ -269,7 +238,47 @@ async function seed() {
   const collNames = collections.map(c => c.name);
   if (collNames.includes("reports")) await db.collection("reports").deleteMany({});
   if (collNames.includes("analytics_reports")) await db.collection("analytics_reports").deleteMany({});
-  console.log("✓ All non-user data cleared.\n");
+  console.log("✓ All data cleared.\n");
+
+  // ── Step 2: Create org & demo users ──────────
+  console.log("Creating default org...");
+  const org = await Organisation.create({
+    name: "Logistics18",
+    industry: "Logistics & Supply Chain",
+    country: "US",
+    timezone: "America/New_York",
+    planTier: "ENTERPRISE",
+  });
+  const orgId = org._id;
+  console.log(`Using organisation: "${org.name}" (${orgId})`);
+
+  console.log("Creating demo users...");
+  const usersToCreate = [
+    { name: "System Admin", email: "admin@demo.org", role: "ORG_ADMIN" },
+    { name: "Risk Analyst", email: "analyst@demo.org", role: "RISK_ANALYST" },
+    { name: "Logistics Operator", email: "operator@demo.org", role: "LOGISTICS_OPERATOR" },
+    { name: "Inventory Manager", email: "manager@demo.org", role: "INVENTORY_MANAGER" },
+    { name: "System Viewer", email: "viewer@demo.org", role: "VIEWER" }
+  ];
+
+  let adminId;
+  let admin;
+  for (const u of usersToCreate) {
+    const createdUser = await User.create({
+      orgId,
+      name: u.name,
+      email: u.email,
+      passwordHash: "AdminPass123!",
+      role: u.role,
+      isActive: true,
+    });
+    if (u.role === "ORG_ADMIN") {
+      adminId = createdUser._id;
+      admin = createdUser;
+    }
+  }
+
+  console.log(`Using admin user: "${admin.name}" (${adminId})\n`);
 
   // ── Step 3: Seed Warehouses ────────────────────────────────────────
   console.log("1/5  Seeding warehouses...");
@@ -542,7 +551,7 @@ async function seed() {
   console.log(`  Inventory    : ${insertedInventory.length}`);
   console.log(`  Shipments    : ${insertedShipments.length}`);
   console.log(`  Alerts       : ${spreadAlerts.length} current + ${trendAlertCount} historical`);
-  console.log(`  Users        : preserved (not modified)`);
+  console.log(`  Users        : 5 demo users created`);
   console.log("═══════════════════════════════════════════\n");
 
   await mongoose.disconnect();

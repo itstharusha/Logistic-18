@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { useLocation } from 'react-router-dom';
 import {
     Bell, AlertTriangle, CheckCircle2, Clock, Shield, ShieldAlert,
     ArrowUpRight, Filter, Search, ChevronDown, X, User,
@@ -90,6 +91,7 @@ function timeAgo(dateStr) {
 
 export default function AlertsPage() {
     const dispatch = useDispatch();
+    const location = useLocation();
     const user = useSelector((state) => state.auth.user);
     const {
         alerts: storeAlerts,
@@ -131,7 +133,7 @@ export default function AlertsPage() {
     const [resolveModalId, setResolveModalId] = useState(null);
     const [resolutionNote, setResolutionNote] = useState('');
     const [toast, setToast] = useState(null);
-    const [viewMode, setViewMode] = useState('dashboard'); // dashboard | feed | history
+    const [viewMode, setViewMode] = useState(location.state?.viewMode || 'dashboard'); // dashboard | feed | history
     const [createAlertModalOpen, setCreateAlertModalOpen] = useState(false);
     
     // Get loading state from Redux
@@ -142,6 +144,13 @@ export default function AlertsPage() {
         dispatch(fetchAlerts());
         dispatch(fetchAlertDashboard());
     }, [dispatch]);
+
+    // Handle viewMode change from navigation state
+    useEffect(() => {
+        if (location.state?.viewMode) {
+            setViewMode(location.state.viewMode);
+        }
+    }, [location.state]);
 
     // Handle action success toast
     useEffect(() => {

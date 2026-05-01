@@ -71,7 +71,7 @@ function NotificationDropdown() {
 
   const handleViewAll = () => {
     dispatch(closeNotificationDropdown());
-    navigate('/alerts');
+    navigate('/alerts', { state: { viewMode: 'feed' } });
   };
 
   return (
