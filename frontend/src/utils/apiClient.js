@@ -7,7 +7,7 @@
  *
  *   Key features:
  *   1. Base URL — reads VITE_API_URL from .env (defaults to '/api'), which
- *      Vite's dev proxy then forwards to http://localhost:5000/api.
+ *      Vite's dev proxy then forwards to http://localhost:5001/api.
  *   2. Request Interceptor — automatically attaches the JWT access token from
  *      localStorage as an Authorization: Bearer header before every request.
  *   3. Response Interceptor — detects 401 Unauthorized responses and
