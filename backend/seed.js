@@ -326,10 +326,11 @@ async function seed() {
 
   // ── Step 6: Seed Shipments ─────────────────────────────────────────
   console.log("4/5  Seeding shipments...");
-  const shipmentDocs = SHIPMENT_TEMPLATES.map(s => {
+  const shipmentDocs = SHIPMENT_TEMPLATES.map((s, idx) => {
     const tier = tierFromScore(s.riskScore);
     const isDelivered = s.status === "delivered";
     const isDelayed = s.status === "delayed";
+    const shipCreatedAt = pastDate(idx * 2 + 1, idx * 2 + 5);
 
     return {
       orgId,
@@ -392,6 +393,8 @@ async function seed() {
       statusHistory: [
         { status: "registered", changedAt: pastDate(5, 20), changedByName: admin.name, changedByEmail: admin.email || "", changedByRole: admin.role, notes: "Shipment created" },
       ],
+      createdAt: shipCreatedAt,
+      updatedAt: shipCreatedAt,
     };
   });
   const insertedShipments = await Shipment.insertMany(shipmentDocs);
@@ -461,10 +464,73 @@ async function seed() {
     }
   }
 
-  if (alerts.length > 0) {
-    await Alert.insertMany(alerts);
+  // Spread existing alert createdAt across past 30 days so dashboard "open" alerts
+  // aren't all on the same day, and KPI trend has some recent data points.
+  const spreadAlerts = alerts.map((alert, idx) => {
+    const daysBack = (idx % 14) + 1;
+    const d = new Date(Date.now() - daysBack * 86400000);
+    return { ...alert, createdAt: d, updatedAt: d };
+  });
+  if (spreadAlerts.length > 0) {
+    await Alert.insertMany(spreadAlerts);
   }
-  console.log(`     ✓ ${alerts.length} alerts generated.\n`);
+
+  // Generate 90-day historical alert trend so KPI trend charts have real data.
+  // Creates 3-6 resolved alerts per day (weekends get fewer), referencing real entities.
+  const entityPool = [
+    ...insertedSuppliers.filter(s => s.riskTier === "high" || s.riskTier === "critical")
+      .map(s => ({ type: "supplier", id: s._id.toString(), severity: s.riskTier, name: s.name })),
+    ...insertedShipments.filter(s => s.riskTier === "high" || s.riskTier === "critical")
+      .map(s => ({ type: "shipment", id: s._id.toString(), severity: s.riskTier, name: s.shipmentNumber })),
+    ...insertedInventory.filter(i => i.riskTier === "high" || i.riskTier === "critical")
+      .map(i => ({ type: "inventory", id: i._id.toString(), severity: i.riskTier, name: i.productName })),
+  ];
+
+  let trendAlertCount = 0;
+  if (entityPool.length > 0) {
+    const trendAlerts = [];
+    for (let daysBack = 90; daysBack >= 2; daysBack--) {
+      const baseDate = new Date(Date.now() - daysBack * 86400000);
+      const isWeekend = baseDate.getDay() === 0 || baseDate.getDay() === 6;
+      const dailyCount = (isWeekend ? 2 : 4) + Math.floor(Math.random() * 3);
+      for (let j = 0; j < dailyCount; j++) {
+        const entity = entityPool[Math.floor(Math.random() * entityPool.length)];
+        const alertTime = new Date(baseDate);
+        alertTime.setHours(8 + j * 2, Math.floor(Math.random() * 60), 0, 0);
+        trendAlerts.push({
+          orgId,
+          entityType: entity.type,
+          entityId: entity.id,
+          severity: entity.severity,
+          title: `Risk Alert: ${entity.name}`,
+          description: `Automated risk alert for ${entity.name}.`,
+          mitigationRecommendation: "Review entity risk profile and take appropriate action.",
+          status: "resolved",
+          createdAt: alertTime,
+          updatedAt: alertTime,
+        });
+      }
+    }
+    await Alert.insertMany(trendAlerts);
+    trendAlertCount = trendAlerts.length;
+  }
+  console.log(`     ✓ ${spreadAlerts.length} current alerts + ${trendAlertCount} historical trend alerts generated.\n`);
+
+  // Spread updatedAt for at-risk inventory items across past 30 days so the
+  // inventory KPI trend has multiple data points.
+  const atRiskInventory = insertedInventory.filter(
+    item => item.currentStock / Math.max(item.averageDailyDemand, 1) < 10
+  );
+  for (let i = 0; i < atRiskInventory.length; i++) {
+    const daysBack = Math.round((i / Math.max(atRiskInventory.length - 1, 1)) * 28) + 1;
+    await InventoryItem.collection.updateOne(
+      { _id: atRiskInventory[i]._id },
+      { $set: { updatedAt: new Date(Date.now() - daysBack * 86400000) } }
+    );
+  }
+  if (atRiskInventory.length > 0) {
+    console.log(`     ✓ ${atRiskInventory.length} at-risk inventory items spread across past 30 days.\n`);
+  }
 
   // ── Summary ────────────────────────────────────────────────────────
   console.log("═══════════════════════════════════════════");
@@ -475,7 +541,7 @@ async function seed() {
   console.log(`  Suppliers    : ${insertedSuppliers.length}`);
   console.log(`  Inventory    : ${insertedInventory.length}`);
   console.log(`  Shipments    : ${insertedShipments.length}`);
-  console.log(`  Alerts       : ${alerts.length}`);
+  console.log(`  Alerts       : ${spreadAlerts.length} current + ${trendAlertCount} historical`);
   console.log(`  Users        : preserved (not modified)`);
   console.log("═══════════════════════════════════════════\n");
 
