@@ -223,7 +223,7 @@ export class SupplierService {
       console.log(`[predictRiskScore] ML service returned in ${predictionTime}ms: riskScore=${response.data.riskScore}, riskTier=${response.data.riskTier}`);
 
       return {
-        riskScore: response.data.riskScore,
+        riskScore: Math.round(response.data.riskScore),
         riskTier: response.data.riskTier,
         recommendations: response.data.recommendations || [],
         shapValues: response.data.shapValues || [],

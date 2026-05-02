@@ -57,7 +57,7 @@ function RiskScoreBar({ score }) {
       <div className="risk-score-bar">
         <div className={`risk-score-fill tier-${tier}`} style={{ width: `${score ?? 0}%` }} />
       </div>
-      <span className="risk-score-number">{score ?? '—'}</span>
+      <span className="risk-score-number">{score != null ? Math.round(score) : '—'}</span>
     </div>
   );
 }
@@ -628,7 +628,7 @@ export default function SuppliersPage() {
                         <div className="user-email">{s.country}</div>
                       </div>
                     </div>
-                    <div className={`comparison-score tier-${tier}`}>{s.riskScore ?? '—'}</div>
+                    <div className={`comparison-score tier-${tier}`}>{s.riskScore != null ? Math.round(s.riskScore) : '—'}</div>
                     <div className="comparison-label">Risk Score</div>
                     <span className={`risk-tier-chip tier-${tier}`} style={{ marginTop: 8 }}>
                       {tier?.charAt(0).toUpperCase() + tier?.slice(1)}
