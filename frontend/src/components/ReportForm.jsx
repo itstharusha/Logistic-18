@@ -43,11 +43,22 @@ export default function ReportForm({ onGenerate, loading = false }) {
     // Validate custom range
     if (reportType === 'custom') {
       if (!dateFrom || !dateTo) {
-        setFormError('Please select both From and To dates for a custom date range.');
+        setFormError('Please select both start and end dates.');
         return;
       }
-      if (new Date(dateFrom) > new Date(dateTo)) {
-        setFormError('"From" date must be before "To" date.');
+      
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const fromD = new Date(dateFrom);
+      const toD = new Date(dateTo);
+      
+      if (fromD > today || toD > today) {
+        setFormError('Custom date range cannot include future dates.');
+        return;
+      }
+      
+      if (fromD > toD) {
+        setFormError('Start date cannot be after end date.');
         return;
       }
     }

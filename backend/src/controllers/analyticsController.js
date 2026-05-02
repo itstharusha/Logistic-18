@@ -9,6 +9,27 @@ export const getKpiDrilldown = asyncHandler(async (req, res) => {
 });
 
 export const getDashboard = asyncHandler(async (req, res) => {
+  const { dateRange, startDate, endDate } = req.query;
+
+  if (dateRange === 'custom') {
+    if (!startDate || !endDate) {
+      return res.status(400).json({ error: 'Please select both start and end dates.' });
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const startObj = new Date(startDate);
+    const endObj = new Date(endDate);
+
+    if (startObj > today || endObj > today) {
+      return res.status(400).json({ error: 'Custom date range cannot include future dates.' });
+    }
+
+    if (startObj > endObj) {
+      return res.status(400).json({ error: 'Start date cannot be after end date.' });
+    }
+  }
+
   const data = await analyticsService.getDashboardInfo(req.user.orgId);
   res.status(200).json({ status: 'success', data });
 });
@@ -36,6 +57,29 @@ export const getAlertSummary = asyncHandler(async (req, res) => {
 export const generateReport = asyncHandler(async (req, res) => {
   const { type, format, module, severity, include, dateRange } = req.validatedBody || req.body;
   const orgId = req.user.orgId;
+
+  if (!type || !format || !module) {
+    return res.status(400).json({ error: 'type, format, and module are required in the request body' });
+  }
+
+  if (type === 'custom') {
+    if (!dateRange || !dateRange.from || !dateRange.to) {
+      return res.status(400).json({ error: 'Please select both start and end dates.' });
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const fromDateObj = new Date(dateRange.from);
+    const toDateObj = new Date(dateRange.to);
+
+    if (fromDateObj > today || toDateObj > today) {
+      return res.status(400).json({ error: 'Custom date range cannot include future dates.' });
+    }
+
+    if (fromDateObj > toDateObj) {
+      return res.status(400).json({ error: 'Start date cannot be after end date.' });
+    }
+  }
 
   const newReport = await Report.create({
     orgId,
